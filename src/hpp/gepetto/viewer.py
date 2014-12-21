@@ -36,8 +36,8 @@ class Viewer (object):
             raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
                                 (Viewer.sceneName, Viewer.windowName))
 
-    def __init__ (self, robot, viewerClient, robotName):
-        self.robotName = robotName
+    def __init__ (self, robot, viewerClient):
+        self.robotName = robot.name
         if hasattr (robot, 'meshPackageName'):
             meshPackageName = robot.meshPackageName
         else:
@@ -45,7 +45,7 @@ class Viewer (object):
         self.client = viewerClient
         self.robot = robot
         self.objects = list ()
-        for j in robot.getJointNames ():
+        for j in robot.getAllJointNames ():
             self.objects.extend (robot.getJointInnerObjects (j))
         # Load robot in viewer
         rospack = rospkg.RosPack()
@@ -53,8 +53,8 @@ class Viewer (object):
         meshPackagePath = rospack.get_path (meshPackageName)
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + robot.urdfName + robot.urdfSuffix + '.urdf'
-        self.client.gui.addURDF (robotName, packagePath, dataRootDir)
-        self.client.gui.addToGroup (robotName, self.sceneName)
+        self.client.gui.addURDF (self.robotName, packagePath, dataRootDir)
+        self.client.gui.addToGroup (self.robotName, self.sceneName)
 
     def publishRobots (self):
         self.robot.setCurrentConfig (self.robotConfig)
