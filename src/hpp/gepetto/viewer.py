@@ -19,6 +19,7 @@
 
 import os.path
 import rospkg
+from gepetto.corbaserver import Client as GuiClient
 
 rospack = rospkg.RosPack()
 
@@ -36,33 +37,42 @@ class Viewer (object):
             raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
                                 (Viewer.sceneName, Viewer.windowName))
 
-    def __init__ (self, robot, viewerClient):
-        self.robotName = robot.name
+    def __init__ (self, robot, viewerClient = None):
+        self.robot = robot
+        if not viewerClient:
+            viewerClient = GuiClient ()
+            self.createWindowAndScene (viewerClient, "hpp_")
+        self.client = viewerClient
+        self.displayName = robot.displayName
         if hasattr (robot, 'meshPackageName'):
             meshPackageName = robot.meshPackageName
         else:
             meshPackageName = robot.packageName
-        self.client = viewerClient
-        self.robot = robot
-        self.objects = list ()
-        for j in robot.getAllJointNames ():
-            self.objects.extend (robot.getJointInnerObjects (j))
         # Load robot in viewer
+        self.buildRobotBodies ()
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (robot.packageName)
         meshPackagePath = rospack.get_path (meshPackageName)
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + robot.urdfName + robot.urdfSuffix + '.urdf'
-        self.client.gui.addURDF (self.robotName, packagePath, dataRootDir)
-        self.client.gui.addToGroup (self.robotName, self.sceneName)
+        self.client.gui.addUrdfCollision (self.displayName, packagePath,
+                                          dataRootDir)
+        self.client.gui.addToGroup (self.displayName, self.sceneName)
+
+    def buildRobotBodies (self):
+        self.robotBodies = list ()
+        # build list of pairs (robotName, objectName)
+        for j in self.robot.getAllJointNames ():
+            self.robotBodies.extend (map (lambda n:
+                                              (j, self.displayName + "/", n),
+                                          self.robot.getJointInnerObjects (j)))
 
     def publishRobots (self):
         self.robot.setCurrentConfig (self.robotConfig)
-        for o in self.objects:
-            pos = self.robot.getObjectPosition (o)
-            transform = tuple (pos.translation) + pos.quaternion.toTuple ()
-            objectName = self.robotName + "/" + o
-            self.client.gui.applyConfiguration (objectName, transform)
+        for j, prefix, o in self.robotBodies:
+            pos = self.robot.getLinkPosition (j)
+            objectName = prefix + o
+            self.client.gui.applyConfiguration (objectName, pos)
         self.client.gui.refresh ()
 
     def __call__ (self, args):
