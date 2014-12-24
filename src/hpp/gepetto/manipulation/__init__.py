@@ -17,32 +17,4 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-#dependency: python-rospkg
-
-cmake_minimum_required(VERSION 2.8.3)
-project(hpp-gepetto-viewer)
-include(cmake/base.cmake)
-include(cmake/python.cmake)
-
-set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
-set(PROJECT_URL "")
-
-findpython()
-setup_project()
-
-add_required_dependency(hpp-corbaserver >= 3)
-
-install(FILES
-  src/hpp/gepetto/path_player.py
-  src/hpp/gepetto/viewer.py
-  src/hpp/gepetto/__init__.py
-  DESTINATION ${PYTHON_SITELIB}/hpp/gepetto
-  )
-
-install(FILES
-  src/hpp/gepetto/manipulation/viewer.py
-  src/hpp/gepetto/manipulation/__init__.py
-  DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/manipulation
-  )
-
-setup_project_finalize()
+from viewer import Viewer
