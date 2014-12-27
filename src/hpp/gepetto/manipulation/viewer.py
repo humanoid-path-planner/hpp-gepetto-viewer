@@ -22,8 +22,8 @@ import rospkg
 from hpp.gepetto import Viewer as Parent
 
 class Viewer (Parent):
-    def __init__ (self, robot, viewerClient = None) :
-        Parent.__init__ (self, robot, viewerClient)
+    def __init__ (self, problemSolver, viewerClient = None) :
+        Parent.__init__ (self, problemSolver, viewerClient)
 
     ##
     #  Do nothing for compatibility with parent class
@@ -75,5 +75,5 @@ class Viewer (Parent):
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
-        self.client.gui.addUrdfCollision (robotName, packagePath, dataRootDir)
+        self.client.gui.addURDF (robotName, packagePath, dataRootDir)
         self.client.gui.addToGroup (robotName, self.sceneName)
