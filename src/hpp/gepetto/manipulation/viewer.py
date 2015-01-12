@@ -46,6 +46,12 @@ class Viewer (Parent):
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
+    def loadEnvironmentModel (self, EnvType, envName):
+        self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
+            EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
+        self.buildRobotBodies ()
+        self.loadUrdfInGUI (EnvType, envName)
+
     def loadObjectModel (self, RobotType, robotName):
         self.robot.loadObjectModel (robotName, RobotType.rootJointType,
                                     RobotType.packageName,
