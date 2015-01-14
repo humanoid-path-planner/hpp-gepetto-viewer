@@ -52,11 +52,11 @@ class Viewer (Parent):
         self.buildRobotBodies ()
         self.loadUrdfInGUI (EnvType, envName)
 
-    def loadObjectModel (self, RobotType, robotName):
-        self.robot.loadObjectModel (robotName, RobotType.rootJointType,
-                                    RobotType.packageName,
-                                    RobotType.urdfName, RobotType.urdfSuffix,
-                                    RobotType.srdfSuffix)
+    def loadObjectModel (self, RobotType, robotName, guiOnly = False):
+        if not guiOnly:
+            self.robot.loadObjectModel (robotName, RobotType.rootJointType,
+                                    RobotType.packageName, RobotType.urdfName,
+                                    RobotType.urdfSuffix, RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 

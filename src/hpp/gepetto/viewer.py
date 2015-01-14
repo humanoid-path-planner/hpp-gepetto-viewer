@@ -69,10 +69,11 @@ class Viewer (object):
                                           self.robot.getJointInnerObjects (j)))
 
     def loadObstacleModel (self, package, filename, prefix,
-                           meshPackageName = None):
+                           meshPackageName = None, guiOnly = False):
         if not meshPackageName:
             meshPackageName = package
-        self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
+        if not guiOnly:
+            self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (package)
         meshPackagePath = rospack.get_path (meshPackageName)
