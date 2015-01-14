@@ -82,6 +82,9 @@ class Viewer (object):
         self.client.gui.addUrdfObjects (prefix, packagePath, meshPackagePath,
                                         True)
         self.client.gui.addToGroup (prefix, self.sceneName)
+        self.computeObjectPosition ()
+
+    def computeObjectPosition (self):
         # compute object positions
         objects = self.problemSolver.getObstacleNames (True, False)
         for o in objects:

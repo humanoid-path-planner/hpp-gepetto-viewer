@@ -46,11 +46,25 @@ class Viewer (Parent):
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
-    def loadEnvironmentModel (self, EnvType, envName):
-        self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
-            EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (EnvType, envName)
+    def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
+        if hasattr (EnvType, 'meshPackageName'):
+            meshPackageName = EnvType.meshPackageName
+        else:
+            meshPackageName = EnvType.packageName
+        # Load robot in viewer
+        if not guiOnly:
+            self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
+                EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
+        rospack = rospkg.RosPack()
+        packagePath = rospack.get_path (EnvType.packageName)
+        meshPackagePath = rospack.get_path (meshPackageName)
+        dataRootDir = os.path.dirname (meshPackagePath) + "/"
+        packagePath += '/urdf/' + EnvType.urdfName + EnvType.urdfSuffix + \
+            '.urdf'
+        self.client.gui.addUrdfObjects (envName, packagePath, meshPackagePath,
+                                        True)
+        self.client.gui.addToGroup (envName, self.sceneName)
+        self.computeObjectPosition ()
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
@@ -59,6 +73,7 @@ class Viewer (Parent):
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
+        self.computeObjectPosition ()
 
     def buildCompositeRobot (self, robotNames):
         self.robot.buildCompositeRobot (robotNames)
