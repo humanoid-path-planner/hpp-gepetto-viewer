@@ -18,4 +18,5 @@
 # <http://www.gnu.org/licenses/>.
 
 from viewer import Viewer
+from fakeviewer import FakeViewer
 from path_player import PathPlayer

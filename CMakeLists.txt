@@ -35,12 +35,14 @@ add_required_dependency(hpp-corbaserver >= 3)
 install(FILES
   src/hpp/gepetto/path_player.py
   src/hpp/gepetto/viewer.py
+  src/hpp/gepetto/fakeviewer.py
   src/hpp/gepetto/__init__.py
   DESTINATION ${PYTHON_SITELIB}/hpp/gepetto
   )
 
 install(FILES
   src/hpp/gepetto/manipulation/viewer.py
+  src/hpp/gepetto/manipulation/fakeviewer.py
   src/hpp/gepetto/manipulation/__init__.py
   DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/manipulation
   )
