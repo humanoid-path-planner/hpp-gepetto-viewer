@@ -20,6 +20,7 @@
 import os.path
 import rospkg
 from gepetto.corbaserver import Client as GuiClient
+from hpp.gepetto import Viewer
 
 rospack = rospkg.RosPack()
 
@@ -41,6 +42,9 @@ class FakeViewer (object):
                            meshPackageName = None, guiOnly = False):
         if not guiOnly:
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
+        l = locals ();
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
     def computeObjectPosition (self):
         pass
@@ -51,3 +55,13 @@ class FakeViewer (object):
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
+
+    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
+        v = ViewerClass (self.problemSolver, viewerClient)
+        for call in self.guiRequest:
+            kwargs = call[1].copy ();
+            s = kwargs.pop ('self')
+            f = call[0];
+            f (v, **kwargs)
+        v.computeObjectPosition ()
+        return v

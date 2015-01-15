@@ -47,23 +47,10 @@ class Viewer (Parent):
         self.loadUrdfInGUI (RobotType, robotName)
 
     def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
-        if hasattr (EnvType, 'meshPackageName'):
-            meshPackageName = EnvType.meshPackageName
-        else:
-            meshPackageName = EnvType.packageName
-        # Load robot in viewer
         if not guiOnly:
             self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
                 EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (EnvType.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
-        packagePath += '/urdf/' + EnvType.urdfName + EnvType.urdfSuffix + \
-            '.urdf'
-        self.client.gui.addUrdfObjects (envName, packagePath, meshPackagePath,
-                                        True)
-        self.client.gui.addToGroup (envName, self.sceneName)
+        self.loadUrdfObjectsInGUI (EnvType, envName)
         self.computeObjectPosition ()
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
@@ -97,4 +84,19 @@ class Viewer (Parent):
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
         self.client.gui.addURDF (robotName, packagePath, dataRootDir)
+        self.client.gui.addToGroup (robotName, self.sceneName)
+
+    def loadUrdfObjectsInGUI (self, RobotType, robotName):
+        if hasattr (RobotType, 'meshPackageName'):
+            meshPackageName = RobotType.meshPackageName
+        else:
+            meshPackageName = RobotType.packageName
+        rospack = rospkg.RosPack()
+        packagePath = rospack.get_path (RobotType.packageName)
+        meshPackagePath = rospack.get_path (meshPackageName)
+        dataRootDir = os.path.dirname (meshPackagePath) + "/"
+        packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
+            '.urdf'
+        self.client.gui.addUrdfObjects (robotName, packagePath, meshPackagePath,
+                                        True)
         self.client.gui.addToGroup (robotName, self.sceneName)

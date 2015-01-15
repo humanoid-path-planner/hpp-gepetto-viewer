@@ -20,6 +20,7 @@
 import os
 import rospkg
 from hpp.gepetto import FakeViewer as Parent
+from hpp.gepetto.manipulation import Viewer
 
 class FakeViewer (Parent):
     def __init__ (self, problemSolver, viewerClient = None) :
@@ -50,6 +51,8 @@ class FakeViewer (Parent):
         if not guiOnly:
             self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
                 EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
+        self.loadUrdfObjectsInGUI (EnvType, envName)
+        self.computeObjectPosition ()
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
@@ -70,4 +73,12 @@ class FakeViewer (Parent):
                                           self.robot.getJointInnerObjects (j)))
 
     def loadUrdfInGUI (self, RobotType, robotName):
-        pass
+        self.guiRequest.append ((Viewer.loadUrdfInGUI, locals ()));
+
+    def loadUrdfObjectsInGUI (self, RobotType, robotName):
+        self.guiRequest.append ((Viewer.loadUrdfObjectsInGUI, locals ()));
+
+    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
+        v = Parent.createRealClient (self, ViewerClass, viewerClient)
+        v.robotBodies = self.robotBodies
+        return v
