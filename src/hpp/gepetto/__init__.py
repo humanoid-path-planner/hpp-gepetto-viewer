@@ -20,3 +20,4 @@
 from viewer import Viewer
 from fakeviewer import FakeViewer
 from path_player import PathPlayer
+from path_player_gui import PathPlayerGui

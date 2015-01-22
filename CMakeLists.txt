@@ -32,8 +32,20 @@ setup_project()
 
 add_required_dependency(hpp-corbaserver >= 3)
 
+set (PATH_PLAYER_GLADE_FILENAME
+    ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/hpp/gepetto/path_player_gui.glade
+    )
+
+configure_file (
+    src/hpp/gepetto/path_player_gui.py
+    ${CMAKE_BINARY_DIR}/src/hpp/gepetto/path_player_gui.py
+    @ONLY
+    )
+
 install(FILES
   src/hpp/gepetto/path_player.py
+  ${CMAKE_BINARY_DIR}/src/hpp/gepetto/path_player_gui.py
+  src/hpp/gepetto/path_player_gui.glade
   src/hpp/gepetto/viewer.py
   src/hpp/gepetto/fakeviewer.py
   src/hpp/gepetto/__init__.py
