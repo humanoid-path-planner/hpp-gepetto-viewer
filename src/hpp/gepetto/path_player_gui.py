@@ -27,13 +27,14 @@ class PathPlayerGui:
     self.glade.get_object ("MainWindow").connect("destroy", self.quit)
     self.publisher = publisher
     self.client = client
-    self.t = 0;
-    self.dt = 0.01
+    self.l = 0.
+    self.dt = 1. / 25.
+    self.total_time = 1
     self.isPlaying  = False
     self.pauseRequest = False
     self.pathplayer = None
     handlers = {
-      "on_Speed_value_changed": self.on_speed_changed,
+      "on_Time_value_changed": self.on_time_changed,
       "on_PathIndex_value_changed": self.on_pathindex_changed,
       "on_PlayButton_clicked": self.on_play_clicked,
       "on_PauseButton_clicked": self.on_pause_clicked,
@@ -41,6 +42,7 @@ class PathPlayerGui:
       }
     self.glade.connect_signals (handlers)
     self.refresh ()
+    self.dl = self.pathLength * self.dt / self.total_time
 
   def refresh (self):
     nbPaths = self.client.problem.numberPaths ()
@@ -51,15 +53,17 @@ class PathPlayerGui:
       self.glade.get_object ("PathScale").set_range (0, self.pathLength)
     else:
       self.glade.get_object ("PathIndex").set_range (0, 0)
-    self.glade.get_object ("Speed").set_value (self.dt)
+    self.glade.get_object ("Time").set_value (self.total_time)
 
-  def on_speed_changed (self, w):
-    self.dt = w.get_value ()
+  def on_time_changed (self, w):
+    self.total_time = w.get_value ()
+    self.dl = self.pathLength * self.dt / self.total_time
 
   def on_pathindex_changed (self, w):
     self.pathId = w.get_value_as_int ()
     self.pathLength = self.client.problem.pathLength (self.pathId)
     self.glade.get_object ("PathScale").set_range (0, self.pathLength)
+    self.dl = self.pathLength * self.dt / self.total_time
 
   def on_play_clicked (self, w):
     if not self.isPlaying:
@@ -70,22 +74,21 @@ class PathPlayerGui:
       self.pauseRequest = True
 
   def on_pathscale_changed (self, w):
-    if self.pathplayer is not None and self.pathplayer.is_alive ():
+    if self.isPlaying:
       return
-    self.t = w.get_value ()
-    q = self.client.problem.configAtParam (self.pathId, self.t)
-    self.publisher.robotConfig = q
+    self.l = w.get_value ()
+    self.publisher.robotConfig = self.client.problem.configAtParam (self.pathId, self.l)
     self.publisher.publishRobots ()
 
   def path_pulse (self):
-    if self.pauseRequest or self.t > self.pathLength:
-      if self.t > self.pathLength:
-        self.t = self.pathLength
+    if self.pauseRequest or self.l > self.pathLength:
+      if self.l > self.pathLength:
+        self.l = self.pathLength
       self.pauseRequest = False
       self.isPlaying = False
       return False
-    self.t += self.dt
-    self.glade.get_object ("PathScale").set_value (self.t)
+    self.l += self.dl
+    self.glade.get_object ("PathScale").set_value (self.l)
     return True
 
   def show (self):
