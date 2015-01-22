@@ -67,6 +67,7 @@ class PathPlayerGui:
 
   def on_play_clicked (self, w):
     if not self.isPlaying:
+      self.isPlaying = True
       glib.timeout_add (int (1000*self.dt), self.path_pulse)
 
   def on_pause_clicked (self, w):
@@ -74,8 +75,6 @@ class PathPlayerGui:
       self.pauseRequest = True
 
   def on_pathscale_changed (self, w):
-    if self.isPlaying:
-      return
     self.l = w.get_value ()
     self.publisher.robotConfig = self.client.problem.configAtParam (self.pathId, self.l)
     self.publisher.publishRobots ()
