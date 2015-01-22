@@ -18,4 +18,4 @@
 # <http://www.gnu.org/licenses/>.
 
 from viewer import Viewer
-from fakeviewer import FakeViewer
+from viewer_factory import ViewerFactory

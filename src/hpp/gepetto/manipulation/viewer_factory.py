@@ -19,10 +19,10 @@
 
 import os
 import rospkg
-from hpp.gepetto import FakeViewer as Parent
+from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer
 
-class FakeViewer (Parent):
+class ViewerFactory (Parent):
     def __init__ (self, problemSolver, viewerClient = None) :
         Parent.__init__ (self, problemSolver, viewerClient)
 

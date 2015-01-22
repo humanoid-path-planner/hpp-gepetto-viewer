@@ -24,7 +24,7 @@ from hpp.gepetto import Viewer
 
 rospack = rospkg.RosPack()
 
-class FakeViewer (object):
+class ViewerFactory (object):
     def __init__ (self, problemSolver, viewerClient = None):
         self.guiRequest = list ()
         self.problemSolver = problemSolver
