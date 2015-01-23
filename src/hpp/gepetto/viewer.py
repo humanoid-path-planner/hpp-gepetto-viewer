@@ -23,6 +23,15 @@ from gepetto.corbaserver import Client as GuiClient
 
 rospack = rospkg.RosPack()
 
+## Simultaneous control of hppcorbaserver and gepetto-viewer-server
+#
+#  This class implements clients to both
+#    \li hppcorbaserver through hpp.corbaserver.problem_solver.ProblemSolver
+#        python class,
+#    \li gepetto-viewer-server through gepetto.corbaserver.Client python class.
+#
+#  Operation that need to be synchronized between hppcorbaserver internal
+#  model and graphical user interface should be implemented by this class.
 class Viewer (object):
     @staticmethod
     def createWindowAndScene (viewerClient, name):
@@ -37,6 +46,12 @@ class Viewer (object):
             raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
                                 (Viewer.sceneName, Viewer.windowName))
 
+    ## Constructor
+    #  \param problemSolver object of type ProblemSolver
+    #  \param viewerClient if not provided, a new client to
+    #         gepetto-viewer-server is created.
+    #
+    #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
     def __init__ (self, problemSolver, viewerClient = None):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
@@ -68,6 +83,15 @@ class Viewer (object):
                                               (j, self.displayName + "/", n),
                                           self.robot.getJointInnerObjects (j)))
 
+    ## Load obstacles from a urdf file
+    #
+    #  \param package ros package containing the urdf file,
+    #  \param filename name of the urdf file without extension,
+    #  \param prefix prefix added to object names in case the same file
+    #         is loaded several times,
+    #  \param meshPackageName ros package containing the geometry files
+    #         (collada, stl,...) if different from package
+    #  \param guiOnly whether to control only gepetto-viewer-server
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
         if not meshPackageName:
@@ -78,12 +102,16 @@ class Viewer (object):
         packagePath = rospack.get_path (package)
         meshPackagePath = rospack.get_path (meshPackageName)
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
-        packagePath += '/urdf/' + filename + self.robot.urdfSuffix + '.urdf'
+        packagePath += '/urdf/' + filename + '.urdf'
         self.client.gui.addUrdfObjects (prefix, packagePath, meshPackagePath,
                                         True)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
+    ## Synchronize object positions in gepetto-viewer-server
+    #
+    #  Get position of objects from hppcorbaserver and forward to
+    #  gepetto-viewer-server.
     def computeObjectPosition (self):
         # compute object positions
         objects = self.problemSolver.getObstacleNames (True, False)

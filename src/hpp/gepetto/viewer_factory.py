@@ -24,8 +24,15 @@ from hpp.gepetto import Viewer
 
 rospack = rospkg.RosPack()
 
+## Viewer factory
+#
+#  Store commands to be sent to \c gepetto-viewer-server, create
+#  clients on demand and send stored commands.
 class ViewerFactory (object):
-    def __init__ (self, problemSolver, viewerClient = None):
+    ## Constructor
+    #  \param problemSolver instance of
+    #         hpp.corbaserver.problem_solver.ProblemSolver,
+    def __init__ (self, problemSolver):
         self.guiRequest = list ()
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
@@ -57,6 +64,8 @@ class ViewerFactory (object):
         self.robotConfig = args
         self.publishRobots ()
 
+    ## Create a client to \c gepetto-viewer-server and send stored commands
+    #
     def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
         v = ViewerClass (self.problemSolver, viewerClient)
         for call in self.guiRequest:

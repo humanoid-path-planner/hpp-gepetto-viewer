@@ -22,9 +22,16 @@ import rospkg
 from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer
 
+## Viewer factory for manipulation.Viewer
+#
+#  Store commands to be sent to \c gepetto-viewer-server, create
+#  clients on demand and send stored commands.
 class ViewerFactory (Parent):
-    def __init__ (self, problemSolver, viewerClient = None) :
-        Parent.__init__ (self, problemSolver, viewerClient)
+    ## Constructor
+    #  \param problemSolver instance of class
+    #         manipulation.problem_solver.ProblemSolver
+    def __init__ (self, problemSolver) :
+        Parent.__init__ (self, problemSolver)
 
     ##
     #  Do nothing for compatibility with parent class
@@ -78,6 +85,8 @@ class ViewerFactory (Parent):
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
         self.guiRequest.append ((Viewer.loadUrdfObjectsInGUI, locals ()));
 
+    ## Create a client to \c gepetto-viewer-server and send stored commands
+    #
     def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
         v = Parent.createRealClient (self, ViewerClass, viewerClient)
         v.robotBodies = self.robotBodies

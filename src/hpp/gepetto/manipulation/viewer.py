@@ -21,6 +21,8 @@ import os
 import rospkg
 from hpp.gepetto import Viewer as Parent
 
+## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
+#
 class Viewer (Parent):
     def __init__ (self, problemSolver, viewerClient = None) :
         Parent.__init__ (self, problemSolver, viewerClient)

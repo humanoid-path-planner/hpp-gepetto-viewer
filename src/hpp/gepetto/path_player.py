@@ -19,6 +19,8 @@ import time
 import numpy as np
 import pickle as pk
 
+## displays a path by sampling configurations along the path.
+#
 class PathPlayer (object):
     dt = 0.01
     def __init__ (self, client, publisher) :
