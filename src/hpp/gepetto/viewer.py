@@ -81,7 +81,7 @@ class Viewer (object):
         for j in self.robot.getAllJointNames ():
             self.robotBodies.extend (map (lambda n:
                                               (j, self.displayName + "/", n),
-                                          self.robot.getJointInnerObjects (j)))
+                                          [self.robot.getLinkName (j),]))
 
     ## Load obstacles from a urdf file
     #

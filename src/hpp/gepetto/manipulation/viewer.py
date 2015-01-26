@@ -71,7 +71,7 @@ class Viewer (Parent):
             # Guess robot name from joint name
             prefix = j.split ('/') [0]
             self.robotBodies.extend (map (lambda n: (j, prefix + '/', n),
-                                          self.robot.getJointInnerObjects (j)))
+                                          [self.robot.getLinkName (j),]))
 
     def loadUrdfInGUI (self, RobotType, robotName):
         if hasattr (RobotType, 'meshPackageName'):
