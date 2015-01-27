@@ -40,6 +40,10 @@ class ViewerFactory (object):
         l = locals ();
         self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
+    def addLandmark (self, linkname, size):
+        l = locals ();
+        self.guiRequest.append ((Viewer.addLandmark, l));
+
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
         if not guiOnly:

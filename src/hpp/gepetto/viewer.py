@@ -83,6 +83,11 @@ class Viewer (object):
                                               (j, self.displayName + "/", n),
                                           [self.robot.getLinkName (j),]))
 
+    ## Add a landmark
+    # \sa gepetto::corbaserver::GraphicalInterface::addLandmark
+    def addLandmark (self, linkname, size):
+        return self.client.gui.addLandmark (linkname, size)
+
     ## Load obstacles from a urdf file
     #
     #  \param package ros package containing the urdf file,
