@@ -186,12 +186,30 @@ class _Matplotlib:
     self.toolbar = NavigationToolbar (self.canvas, pp.glade.get_object ("MainWindow"))
     self.pp.glade.get_object ("BoxPlotArea").pack_start (self.toolbar, expand = False, fill = False) 
     self.pp.glade.get_object ("BoxPlotArea").pack_start (self.canvas , expand = True, fill = True) 
+    self.canvas.connect ("button_press_event", self.on_button_press_event)
 
     self.l = 0
     self.dataAreOld = True
     self.pathLength = None
     self.pathId = None
     self.dl = None
+
+  def get_x_cursor_position(self,event):
+    gca = self.figure.gca ()
+    ap = gca.get_position ()
+    xmin, xmax = gca.get_xbound ()
+    x,y = self.canvas.get_width_height()
+    posx = ((event.x/x)-ap.x0)*(1/(ap.x1-ap.x0))
+    sx = (posx*(xmax - xmin)) + xmin
+    return sx
+
+  def on_button_press_event (self, w, event):
+    if   not event.type == gtk.gdk._2BUTTON_PRESS \
+      or not event.button == 1:
+      return False
+    l = self.get_x_cursor_position(event)
+    self.pp ["PathScale"].set_value (l)
+    return True
 
   def selectData (self, x, ys):
     self.x = x
@@ -232,11 +250,11 @@ class _Matplotlib:
 
   def genPlot_pulse (self):
     self.pb.set_text ("Generating plots...")
-    datas = np.matrix (self.datas)
+    self.npdatas = np.matrix (self.datas)
     self.figure.clf ()
     gca = pylab.gca ()
     for elt in self.ys:
-      pylab.plot (datas [:,self.x[1]], datas [:,elt[1]], label=elt[0])
+      pylab.plot (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]], label=elt[0])
     gca.set_xlabel (self.x[0])
     pylab.legend (loc='best')
     self.canvas.draw ()
