@@ -27,12 +27,16 @@ class Viewer (Parent):
     def __init__ (self, problemSolver, viewerClient = None) :
         Parent.__init__ (self, problemSolver, viewerClient)
 
-    ##
-    #  Do nothing for compatibility with parent class
     def buildRobotBodies (self):
         self.robotBodies = list ()
+        # build list of pairs (robotName, objectName)
+        for j in self.robot.getAllJointNames ():
+            # Guess robot name from joint name
+            prefix = j.split ('/') [0]
+            self.robotBodies.extend (map (lambda n: (j, prefix + '/', n),
+                                          [self.robot.getLinkName (j), ]))
 
-    def loadRobotModel (self, RobotType, robotName):
+    def loadRobotModel (self, RobotType, robotName, guiOnly = False):
         self.robot.loadRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
@@ -40,7 +44,7 @@ class Viewer (Parent):
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
-    def loadHumanoidModel (self, RobotType, robotName):
+    def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
                                       RobotType.packageName,
                                       RobotType.modelName, RobotType.urdfSuffix,
@@ -66,12 +70,7 @@ class Viewer (Parent):
 
     def buildCompositeRobot (self, robotNames):
         self.robot.buildCompositeRobot (robotNames)
-        # build list of pairs (robotName, objectName)
-        for j in self.robot.getAllJointNames ():
-            # Guess robot name from joint name
-            prefix = j.split ('/') [0]
-            self.robotBodies.extend (map (lambda n: (j, prefix + '/', n),
-                                          [self.robot.getLinkName (j),]))
+        self.buildRobotBodies ()
 
     def loadUrdfInGUI (self, RobotType, robotName):
         if hasattr (RobotType, 'meshPackageName'):

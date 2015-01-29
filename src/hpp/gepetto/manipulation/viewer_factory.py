@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014 CNRS
-# Author: Florent Lamiraux
+# Copyright (c) 2015 CNRS
+# Author: Florent Lamiraux, Joseph Mirabel
 #
 # This file is part of hpp-gepetto-viewer.
 # hpp-gepetto-viewer is free software: you can redistribute it
@@ -33,51 +33,48 @@ class ViewerFactory (Parent):
     def __init__ (self, problemSolver) :
         Parent.__init__ (self, problemSolver)
 
-    ##
-    #  Do nothing for compatibility with parent class
     def buildRobotBodies (self):
-        self.robotBodies = list ()
+        l = locals ();
+        self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
     def loadRobotModel (self, RobotType, robotName):
         self.robot.loadRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
                                    RobotType.srdfSuffix)
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+        l = locals ();
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadRobotModel, l));
 
     def loadHumanoidModel (self, RobotType, robotName):
         self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
                                       RobotType.packageName,
                                       RobotType.modelName, RobotType.urdfSuffix,
                                       RobotType.srdfSuffix)
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+        l = locals ();
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadHumanoidModel, l));
 
     def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
         if not guiOnly:
             self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
                 EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
-        self.loadUrdfObjectsInGUI (EnvType, envName)
-        self.computeObjectPosition ()
+        l = locals ();
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
             self.robot.loadObjectModel (robotName, RobotType.rootJointType,
                                     RobotType.packageName, RobotType.urdfName,
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
-        self.computeObjectPosition ()
+        l = locals ();
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadObjectModel, l));
 
     def buildCompositeRobot (self, robotNames):
         self.robot.buildCompositeRobot (robotNames)
-        # build list of pairs (robotName, objectName)
-        for j in self.robot.getAllJointNames ():
-            # Guess robot name from joint name
-            prefix = j.split ('/') [0]
-            self.robotBodies.extend (map (lambda n: (j, prefix + '/', n),
-                                          [self.robot.getLinkName (j), ]))
+        self.buildRobotBodies ()
 
     def loadUrdfInGUI (self, RobotType, robotName):
         self.guiRequest.append ((Viewer.loadUrdfInGUI, locals ()));
@@ -89,5 +86,4 @@ class ViewerFactory (Parent):
     #
     def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
         v = Parent.createRealClient (self, ViewerClass, viewerClient)
-        v.robotBodies = self.robotBodies
         return v

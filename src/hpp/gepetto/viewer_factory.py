@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014 CNRS
-# Author: Florent Lamiraux
+# Copyright (c) 2015 CNRS
+# Author: Florent Lamiraux, Joseph Mirabel
 #
 # This file is part of hpp-gepetto-viewer.
 # hpp-gepetto-viewer is free software: you can redistribute it
@@ -19,7 +19,6 @@
 
 import os.path
 import rospkg
-from gepetto.corbaserver import Client as GuiClient
 from hpp.gepetto import Viewer
 
 rospack = rospkg.RosPack()
@@ -36,15 +35,10 @@ class ViewerFactory (object):
         self.guiRequest = list ()
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
-        self.buildRobotBodies ()
 
     def buildRobotBodies (self):
-        self.robotBodies = list ()
-        # build list of pairs (robotName, objectName)
-        for j in self.robot.getAllJointNames ():
-            self.robotBodies.extend (map (lambda n:
-                                              (j, self.displayName + "/", n),
-                                          [self.robot.getLinkName (j),]))
+        l = locals ();
+        self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
@@ -55,7 +49,8 @@ class ViewerFactory (object):
         self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
     def computeObjectPosition (self):
-        pass
+        l = locals ();
+        self.guiRequest.append ((Viewer.computeObjectPosition, l));
 
     def publishRobots (self):
         pass
@@ -73,5 +68,4 @@ class ViewerFactory (object):
             s = kwargs.pop ('self')
             f = call[0];
             f (v, **kwargs)
-        v.computeObjectPosition ()
         return v
