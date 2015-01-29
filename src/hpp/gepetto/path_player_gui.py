@@ -43,7 +43,6 @@ class PathPlayerGui:
     self.total_time = 1
     self.isPlaying  = False
     self.pauseRequest = False
-    self.pathplayer = None
     self.createPlotCheckButton (self.glade.get_object ("VBoxYSelect"))
     self.fillComboBoxXSelect (self.glade.get_object ("XSelectList"))
     self.plotRefresher = _Matplotlib (self, self.glade.get_object ("ProgressBarPlot"))
@@ -52,12 +51,14 @@ class PathPlayerGui:
       "on_PathIndex_value_changed": self.on_pathindex_changed,
       "on_PlayButton_clicked": self.on_play_clicked,
       "on_PauseButton_clicked": self.on_pause_clicked,
+      "on_StopButton_clicked": self.on_stop_clicked,
       "on_PathScale_value_changed": self.on_pathscale_changed,
       "on_ButtonPlotRefresh_clicked": self.refreshPlot,
+      "on_PathScale_value_changed": self.on_pathscale_changed
       }
     self.glade.connect_signals (handlers)
     self.refresh ()
-    self.dl = self.pathLength * self.dt / self.total_time
+    self.adjust_increments ()
 
   def refresh (self):
     nbPaths = self.client.problem.numberPaths ()
@@ -65,7 +66,8 @@ class PathPlayerGui:
       self.glade.get_object ("PathIndex").set_range (0, nbPaths - 1)
       self.pathId = self.glade.get_object ("PathIndex").get_value_as_int ()
       self.pathLength = self.client.problem.pathLength (self.pathId)
-      self.glade.get_object ("PathScale").set_range (0, self.pathLength)
+      self["PathAdjustment"].set_lower (0)
+      self["PathAdjustment"].set_upper (self.pathLength)
     else:
       self.glade.get_object ("PathIndex").set_range (0, 0)
       self.pathLength = 0
@@ -73,13 +75,18 @@ class PathPlayerGui:
 
   def on_time_changed (self, w):
     self.total_time = w.get_value ()
+    self.adjust_increments ()
+
+  def adjust_increments (self):
     self.dl = self.pathLength * self.dt / self.total_time
+    self["PathAdjustment"].set_step_increment (self.dl)
+    self["PathAdjustment"].set_page_increment (10 * self.dl)
 
   def on_pathindex_changed (self, w):
     self.pathId = w.get_value_as_int ()
     self.pathLength = self.client.problem.pathLength (self.pathId)
-    self.glade.get_object ("PathScale").set_range (0, self.pathLength)
-    self.dl = self.pathLength * self.dt / self.total_time
+    self["PathAdjustement"].set_upper (self.pathLength)
+    self.adjust_increments ()
 
   def on_play_clicked (self, w):
     if not self.isPlaying:
@@ -89,6 +96,11 @@ class PathPlayerGui:
   def on_pause_clicked (self, w):
     if self.isPlaying:
       self.pauseRequest = True
+
+  def on_stop_clicked (self, w):
+    if self.isPlaying:
+      self.pauseRequest = True
+    self.glade.get_object ("PathScale").set_value (0)
 
   def on_pathscale_changed (self, w):
     self.l = w.get_value ()
@@ -157,6 +169,9 @@ class PathPlayerGui:
   def show (self):
     self.glade.get_object ("MainWindow").show_all ()
     gtk.main ()
+
+  def __getitem__ (self, key):
+      return self.glade.get_object (key)
 
   def quit (self, window):
     self.glade.get_object ("PauseButton").clicked ()

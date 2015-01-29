@@ -2,6 +2,10 @@
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
   <!-- interface-naming-policy toplevel-contextual -->
+  <object class="GtkAdjustment" id="PathAdjustment">
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkAdjustment" id="PathIndexAdjustment">
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
@@ -174,6 +178,21 @@
                     <property name="position">1</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="StopButton">
+                    <property name="label">gtk-media-stop</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="on_StopButton_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -186,6 +205,7 @@
               <object class="GtkHScale" id="PathScale">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="adjustment">PathAdjustment</property>
                 <property name="round_digits">2</property>
                 <property name="digits">2</property>
                 <property name="value_pos">left</property>
@@ -328,6 +348,18 @@
                   </packing>
                 </child>
                 <child>
+                  <object class="GtkVBox" id="BoxPlotArea">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="right_attach">2</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkComboBox" id="ComboBoxXSelect">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -342,21 +374,6 @@
                     <property name="top_attach">1</property>
                     <property name="bottom_attach">2</property>
                     <property name="y_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <placeholder/>
-                </child>
-                <child>
-                  <object class="GtkVBox" id="BoxPlotArea">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <child>
-                      <placeholder/>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="right_attach">2</property>
                   </packing>
                 </child>
               </object>
