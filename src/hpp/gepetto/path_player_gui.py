@@ -110,16 +110,28 @@ class PathPlayerGui:
     self.yselectcb = list ()
     rank = 0
     for n in self.client.robot.getJointNames ():
-      cb = gtk.CheckButton (label = n)
-      self.yselectcb.append ((cb, rank))
-      w.pack_end (cb)
-      rank = rank + self.client.robot.getJointConfigSize (n)
+      size = self.client.robot.getJointConfigSize (n)
+      if size == 1:
+        cb = gtk.CheckButton (label = n)
+        self.yselectcb.append ((cb, rank))
+        w.pack_end (cb)
+      else:
+        for i in xrange (size):
+          cb = gtk.CheckButton (label = "%s (%i)" % (n, i))
+          self.yselectcb.append ((cb, rank + i))
+          w.pack_end (cb)
+      rank = rank + size
 
   def fillComboBoxXSelect (self, w):
     rank = 0
     for n in self.client.robot.getJointNames ():
-      w.append ([n,rank])
-      rank = rank + self.client.robot.getJointConfigSize (n)
+      size = self.client.robot.getJointConfigSize (n)
+      if size == 1:
+        w.append ([n,rank])
+      else:
+        for i in xrange (size):
+          w.append (["%s (%i)" % (n, i),rank+i])
+      rank = rank + size
 
   def refreshPlot (self, w):
     pb = self.glade.get_object ("ProgressBarPlot")
@@ -209,7 +221,7 @@ class _Matplotlib:
     self.figure.clf ()
     gca = pylab.gca ()
     for elt in self.ys:
-        pylab.plot (datas [:,self.x[1]], datas [:,elt[1]], label=elt[0])
+      pylab.plot (datas [:,self.x[1]], datas [:,elt[1]], label=elt[0])
     gca.set_xlabel (self.x[0])
     pylab.legend (loc='best')
     self.canvas.draw ()
