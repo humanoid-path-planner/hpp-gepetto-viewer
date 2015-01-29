@@ -33,19 +33,6 @@ rospack = rospkg.RosPack()
 #  Operation that need to be synchronized between hppcorbaserver internal
 #  model and graphical user interface should be implemented by this class.
 class Viewer (object):
-    @staticmethod
-    def createWindowAndScene (viewerClient, name):
-        Viewer.windowName = "window_" + name
-        Viewer.sceneName = "scene_" + name
-        if not viewerClient.gui.createWindow (Viewer.windowName):
-            raise RuntimeError ('Failed to create window "%s"'%
-                                Viewer.windowName)
-        viewerClient.gui.createScene ("scene_" + name)
-        if not viewerClient.gui.addSceneToWindow (Viewer.sceneName,
-                                                  Viewer.windowName):
-            raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
-                                (Viewer.sceneName, Viewer.windowName))
-
     ## Constructor
     #  \param problemSolver object of type ProblemSolver
     #  \param viewerClient if not provided, a new client to
@@ -74,6 +61,17 @@ class Viewer (object):
             '.urdf'
         self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
+
+    def createWindowAndScene (self, viewerClient, name):
+        self.windowName = "window_" + name
+        self.windowId = viewerClient.gui.createWindow (self.windowName)
+        self.sceneName = "%i_scene_%s" % (self.windowId, name)
+        viewerClient.gui.createScene (self.sceneName)
+        if not viewerClient.gui.addSceneToWindow (self.sceneName,
+                                                  self.windowId):
+            raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
+                                (self.sceneName, self.windowId, self.windowName))
+
 
     def buildRobotBodies (self):
         self.robotBodies = list ()
