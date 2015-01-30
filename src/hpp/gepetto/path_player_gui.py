@@ -29,13 +29,13 @@ from matplotlib.backends.backend_gtkagg   import NavigationToolbar2GTKAgg as Nav
 #from matplotlib.backends.backend_gtkcairo import FigureCanvasGTKCairo as FigureCanvas
 #from matplotlib.backends.backend_gtkcairo import NavigationToolbar2GTKCairo as NavigationToolbar
 
-class PathPlayerGui:
+class PathPlayerGui (object):
 
   def __init__(self, client, publisher):
     self.gladefile = "@PATH_PLAYER_GLADE_FILENAME@"
     self.glade = gtk.Builder ()
     self.glade.add_from_file (self.gladefile)
-    self.glade.get_object ("MainWindow").connect("destroy", self.quit)
+    self ["MainWindow"].connect("destroy", self.quit)
     self.publisher = publisher
     self.client = client
     self.l = 0.
@@ -43,9 +43,9 @@ class PathPlayerGui:
     self.total_time = 1
     self.isPlaying  = False
     self.pauseRequest = False
-    self.createPlotCheckButton (self.glade.get_object ("VBoxYSelect"))
-    self.fillComboBoxXSelect (self.glade.get_object ("XSelectList"))
-    self.plotRefresher = _Matplotlib (self, self.glade.get_object ("ProgressBarPlot"))
+    self.createPlotCheckButton (self ["VBoxYSelect"])
+    self.fillComboBoxXSelect (self ["XSelectList"])
+    self.plotRefresher = _Matplotlib (self, self ["ProgressBarPlot"])
     handlers = {
       "on_Time_value_changed": self.on_time_changed,
       "on_PathIndex_value_changed": self.on_pathindex_changed,
@@ -63,15 +63,15 @@ class PathPlayerGui:
   def refresh (self):
     nbPaths = self.client.problem.numberPaths ()
     if nbPaths > 0:
-      self.glade.get_object ("PathIndex").set_range (0, nbPaths - 1)
-      self.pathId = self.glade.get_object ("PathIndex").get_value_as_int ()
+      self ["PathIndex"].set_range (0, nbPaths - 1)
+      self.pathId = self ["PathIndex"].get_value_as_int ()
       self.pathLength = self.client.problem.pathLength (self.pathId)
-      self["PathAdjustment"].set_lower (0)
-      self["PathAdjustment"].set_upper (self.pathLength)
+      self ["PathAdjustment"].set_lower (0)
+      self ["PathAdjustment"].set_upper (self.pathLength)
     else:
-      self.glade.get_object ("PathIndex").set_range (0, 0)
+      self ["PathIndex"].set_range (0, 0)
       self.pathLength = 0
-    self.glade.get_object ("Time").set_value (self.total_time)
+    self ["Time"].set_value (self.total_time)
 
   def on_time_changed (self, w):
     self.total_time = w.get_value ()
@@ -79,13 +79,13 @@ class PathPlayerGui:
 
   def adjust_increments (self):
     self.dl = self.pathLength * self.dt / self.total_time
-    self["PathAdjustment"].set_step_increment (self.dl)
-    self["PathAdjustment"].set_page_increment (10 * self.dl)
+    self ["PathAdjustment"].set_step_increment (self.dl)
+    self ["PathAdjustment"].set_page_increment (10 * self.dl)
 
   def on_pathindex_changed (self, w):
     self.pathId = w.get_value_as_int ()
     self.pathLength = self.client.problem.pathLength (self.pathId)
-    self["PathAdjustement"].set_upper (self.pathLength)
+    self ["PathAdjustement"].set_upper (self.pathLength)
     self.adjust_increments ()
 
   def on_play_clicked (self, w):
@@ -100,7 +100,7 @@ class PathPlayerGui:
   def on_stop_clicked (self, w):
     if self.isPlaying:
       self.pauseRequest = True
-    self.glade.get_object ("PathScale").set_value (0)
+    self["PathScale"].set_value (0)
 
   def on_pathscale_changed (self, w):
     self.l = w.get_value ()
@@ -115,7 +115,7 @@ class PathPlayerGui:
       self.isPlaying = False
       return False
     self.l += self.dl
-    self.glade.get_object ("PathScale").set_value (self.l)
+    self["PathScale"].set_value (self.l)
     return True
 
   def createPlotCheckButton (self, w):
@@ -146,8 +146,8 @@ class PathPlayerGui:
       rank = rank + size
 
   def refreshPlot (self, w):
-    pb = self.glade.get_object ("ProgressBarPlot")
-    xselect = self.glade.get_object ("ComboBoxXSelect")
+    pb = self ["ProgressBarPlot"]
+    xselect = self ["ComboBoxXSelect"]
     xiter = xselect.get_active_iter ()
     if iter is None:
       pb.set_text ("Wrong X data")
@@ -167,14 +167,14 @@ class PathPlayerGui:
     glib.idle_add (self.plotRefresher.init_pulse)
 
   def show (self):
-    self.glade.get_object ("MainWindow").show_all ()
+    self ["MainWindow"].show_all ()
     gtk.main ()
 
   def __getitem__ (self, key):
-      return self.glade.get_object (key)
+    return self.glade.get_object (key)
 
   def quit (self, window):
-    self.glade.get_object ("PauseButton").clicked ()
+    self ["PauseButton"].clicked ()
     gtk.main_quit ()
 
 class _Matplotlib:
@@ -183,9 +183,9 @@ class _Matplotlib:
     self.pb = progressbar
     self.figure = pylab.figure ()
     self.canvas = FigureCanvas (self.figure)
-    self.toolbar = NavigationToolbar (self.canvas, pp.glade.get_object ("MainWindow"))
-    self.pp.glade.get_object ("BoxPlotArea").pack_start (self.toolbar, expand = False, fill = False) 
-    self.pp.glade.get_object ("BoxPlotArea").pack_start (self.canvas , expand = True, fill = True) 
+    self.toolbar = NavigationToolbar (self.canvas, pp ["MainWindow"])
+    self.pp ["BoxPlotArea"].pack_start (self.toolbar, expand = False, fill = False) 
+    self.pp ["BoxPlotArea"].pack_start (self.canvas , expand = True, fill = True) 
     self.canvas.connect ("button_press_event", self.on_button_press_event)
 
     self.l = 0
