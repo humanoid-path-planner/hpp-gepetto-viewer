@@ -33,6 +33,7 @@ rospack = rospkg.RosPack()
 #  Operation that need to be synchronized between hppcorbaserver internal
 #  model and graphical user interface should be implemented by this class.
 class Viewer (object):
+    withFloor = False
     @staticmethod
     def createWindowAndScene (viewerClient, name):
         Viewer.windowName = "window_" + name
@@ -40,7 +41,10 @@ class Viewer (object):
         if not viewerClient.gui.createWindow (Viewer.windowName):
             raise RuntimeError ('Failed to create window "%s"'%
                                 Viewer.windowName)
-        viewerClient.gui.createScene ("scene_" + name)
+        if Viewer.withFloor:
+            viewerClient.gui.createSceneWithFloor ("scene_" + name)
+        else:
+            viewerClient.gui.createScene ("scene_" + name)
         if not viewerClient.gui.addSceneToWindow (Viewer.sceneName,
                                                   Viewer.windowName):
             raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
@@ -103,8 +107,7 @@ class Viewer (object):
         meshPackagePath = rospack.get_path (meshPackageName)
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, packagePath, meshPackagePath,
-                                        True)
+        self.client.gui.addUrdfObjects (prefix, packagePath, dataRootDir, True)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
