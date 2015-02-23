@@ -134,3 +134,9 @@ class Viewer (object):
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
+
+    def startCapture (self, filename, extension):
+        return self.client.gui.startCapture (self.windowId, filename, extension)
+
+    def stopCapture (self):
+        return self.client.gui.stopCapture (self.windowId)

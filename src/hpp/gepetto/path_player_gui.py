@@ -43,6 +43,7 @@ class PathPlayerGui (object):
     self.total_time = 1
     self.isPlaying  = False
     self.pauseRequest = False
+    self.isRecording = False
     self.createPlotCheckButton (self ["VBoxYSelect"])
     self.fillComboBoxXSelect (self ["XSelectList"])
     self.plotRefresher = _Matplotlib (self, self ["ProgressBarPlot"])
@@ -54,7 +55,8 @@ class PathPlayerGui (object):
       "on_StopButton_clicked": self.on_stop_clicked,
       "on_PathScale_value_changed": self.on_pathscale_changed,
       "on_ButtonPlotRefresh_clicked": self.refreshPlot,
-      "on_PathScale_value_changed": self.on_pathscale_changed
+      "on_PathScale_value_changed": self.on_pathscale_changed,
+      "on_Record_button_toggled": self.on_record_toggled
       }
     self.glade.connect_signals (handlers)
     self.refresh ()
@@ -101,6 +103,16 @@ class PathPlayerGui (object):
     if self.isPlaying:
       self.pauseRequest = True
     self["PathScale"].set_value (0)
+
+  def on_record_toggled (self, w):
+    if self.isRecording:
+      self.publisher.stopCapture ()
+      self.isRecording = False;
+    else:
+      filename = self["Record_basename"].get_text ()
+      extension = self["Record_extension"].get_text ()
+      self.publisher.startCapture (filename, extension)
+      self.isRecording = True;
 
   def on_pathscale_changed (self, w):
     self.l = w.get_value ()
