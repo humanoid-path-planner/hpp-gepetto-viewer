@@ -109,9 +109,10 @@ class PathPlayerGui (object):
       self.publisher.stopCapture ()
       self.isRecording = False;
     else:
+      dir = self["Record_filechooser"].get_filename ()
       filename = self["Record_basename"].get_text ()
       extension = self["Record_extension"].get_text ()
-      self.publisher.startCapture (filename, extension)
+      self.publisher.startCapture (dir + '/' + filename, extension)
       self.isRecording = True;
 
   def on_pathscale_changed (self, w):
