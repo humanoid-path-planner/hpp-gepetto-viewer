@@ -135,8 +135,12 @@ class Viewer (object):
         self.robotConfig = args
         self.publishRobots ()
 
+    ## Start a screen capture
+    # \sa gepetto::corbaserver::GraphicalInterface::startCapture
     def startCapture (self, filename, extension):
         return self.client.gui.startCapture (self.windowId, filename, extension)
 
+    ## Stop a screen capture
+    # \sa gepetto::corbaserver::GraphicalInterface::stopCapture
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
