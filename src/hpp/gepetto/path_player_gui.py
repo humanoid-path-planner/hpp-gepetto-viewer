@@ -87,7 +87,7 @@ class PathPlayerGui (object):
   def on_pathindex_changed (self, w):
     self.pathId = w.get_value_as_int ()
     self.pathLength = self.client.problem.pathLength (self.pathId)
-    self ["PathAdjustement"].set_upper (self.pathLength)
+    self ["PathAdjustment"].set_upper (self.pathLength)
     self.adjust_increments ()
 
   def on_play_clicked (self, w):
