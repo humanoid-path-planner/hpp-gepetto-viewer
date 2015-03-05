@@ -33,23 +33,6 @@ rospack = rospkg.RosPack()
 #  Operation that need to be synchronized between hppcorbaserver internal
 #  model and graphical user interface should be implemented by this class.
 class Viewer (object):
-    withFloor = False
-    @staticmethod
-    def createWindowAndScene (viewerClient, name):
-        Viewer.windowName = "window_" + name
-        Viewer.sceneName = "scene_" + name
-        if not viewerClient.gui.createWindow (Viewer.windowName):
-            raise RuntimeError ('Failed to create window "%s"'%
-                                Viewer.windowName)
-        if Viewer.withFloor:
-            viewerClient.gui.createSceneWithFloor ("scene_" + name)
-        else:
-            viewerClient.gui.createScene ("scene_" + name)
-        if not viewerClient.gui.addSceneToWindow (Viewer.sceneName,
-                                                  Viewer.windowName):
-            raise RuntimeError ('Failed to add scene "%s" to window "%s"'%
-                                (Viewer.sceneName, Viewer.windowName))
-
     ## Constructor
     #  \param problemSolver object of type ProblemSolver
     #  \param viewerClient if not provided, a new client to
@@ -79,6 +62,22 @@ class Viewer (object):
         self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
+    withFloor = False
+    def createWindowAndScene (self, viewerClient, name):
+        self.windowName = "window_" + name
+        self.windowId = viewerClient.gui.createWindow (self.windowName)
+        self.sceneName = "%i_scene_%s" % (self.windowId, name)
+        if Viewer.withFloor:
+            viewerClient.gui.createSceneWithFloor (self.sceneName)
+        else:
+            viewerClient.gui.createScene ("scene_" + name)
+            viewerClient.gui.createScene (self.sceneName)
+        if not viewerClient.gui.addSceneToWindow (self.sceneName,
+                                              self.windowId):
+            raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
+                                (self.sceneName, self.windowId, self.windowName))
+
+
     def buildRobotBodies (self):
         self.robotBodies = list ()
         # build list of pairs (robotName, objectName)
@@ -86,6 +85,11 @@ class Viewer (object):
             self.robotBodies.extend (map (lambda n:
                                               (j, self.displayName + "/", n),
                                           [self.robot.getLinkName (j),]))
+
+    ## Add a landmark
+    # \sa gepetto::corbaserver::GraphicalInterface::addLandmark
+    def addLandmark (self, linkname, size):
+        return self.client.gui.addLandmark (linkname, size)
 
     ## Load obstacles from a urdf file
     #
@@ -134,3 +138,13 @@ class Viewer (object):
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
+
+    ## Start a screen capture
+    # \sa gepetto::corbaserver::GraphicalInterface::startCapture
+    def startCapture (self, filename, extension):
+        return self.client.gui.startCapture (self.windowId, filename, extension)
+
+    ## Stop a screen capture
+    # \sa gepetto::corbaserver::GraphicalInterface::stopCapture
+    def stopCapture (self):
+        return self.client.gui.stopCapture (self.windowId)

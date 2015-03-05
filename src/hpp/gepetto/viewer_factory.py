@@ -40,6 +40,10 @@ class ViewerFactory (object):
         l = locals ();
         self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
+    def addLandmark (self, linkname, size):
+        l = locals ();
+        self.guiRequest.append ((Viewer.addLandmark, l));
+
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
         if not guiOnly:
@@ -56,8 +60,8 @@ class ViewerFactory (object):
         pass
 
     def __call__ (self, args):
-        self.robotConfig = args
-        self.publishRobots ()
+        l = locals ();
+        self.guiRequest.append ((Viewer.__call__, l));
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #

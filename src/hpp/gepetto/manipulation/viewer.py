@@ -33,11 +33,10 @@ class Viewer (Parent):
         for j in self.robot.getAllJointNames ():
             # Guess robot name from joint name
             prefix = j.split ('/') [0]
-            self.robotBodies.extend (map (lambda n: (j, prefix + '/', n),
-                                          [self.robot.getLinkName (j), ]))
+            self.robotBodies.append ((j, '', self.robot.getLinkName (j)))
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False):
-        self.robot.loadRobotModel (robotName, RobotType.rootJointType,
+        self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
                                    RobotType.srdfSuffix)
@@ -61,7 +60,7 @@ class Viewer (Parent):
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
-            self.robot.loadObjectModel (robotName, RobotType.rootJointType,
+            self.robot.insertObjectModel (robotName, RobotType.rootJointType,
                                     RobotType.packageName, RobotType.urdfName,
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
         self.buildRobotBodies ()
