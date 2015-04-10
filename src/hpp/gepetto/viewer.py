@@ -86,6 +86,81 @@ class Viewer (object):
     def addLandmark (self, linkname, size):
         return self.client.gui.addLandmark (linkname, size)
 
+		##Display the roadmap created by problem.solve()
+		# \param colorNode : the color of the sphere for the nodes
+		# \param radiusSphere : the radius of the node
+		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+		# \param colorEdge : the color of the edges
+    def displayRoadmap (self,colorNode,radiusSphere,sizeAxis,colorEdge):
+      ps = self.problemSolver
+      problem = self.problemSolver.client.problem
+      gui = self.client.gui
+      for i in range(0,ps.numberNodes()) :	
+        name = "R_node%d" % i
+        if not gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis):
+          return False
+        gui.addToGroup(name,self.sceneName)
+        gui.applyConfiguration(name,ps.node(i)[0:7])
+      for i in range(0,ps.numberEdges()) : 
+        if i%2 == 0 :
+          name = "R_edge%d" % i
+          gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
+          gui.addToGroup(name,self.sceneName)
+      gui.refresh()
+      return True
+
+	
+
+		##build the roadmap and diplay it during construction
+		# (delete existing roadmap if problem already solved )
+		# \param colorNode : the color of the sphere for the nodes
+		# \param radiusSphere : the radius of the node
+		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+		# \param colorEdge : the color of the edges
+    def solveAndDisplay (self,colorNode,radiusSphere,sizeAxis,colorEdge):
+      import time
+      ps = self.problemSolver
+      problem = self.problemSolver.client.problem
+      gui = self.client.gui
+      if ps.numberNodes() > 0 : 
+        ps.clearRoadmap()
+      tStart = time.time()
+      problem.prepareSolveStepByStep()
+      beginEdge = 0
+      beginNode = 0
+      while not problem.executeOneStep():
+        for i in range(beginNode,ps.numberNodes()) :	
+          name = "R_node%d" % i
+          gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis)
+          gui.addToGroup(name,self.sceneName)
+          gui.applyConfiguration(name,ps.node(i)[0:7])
+        for i in range(beginEdge,ps.numberEdges()) : 
+          if i%2 == 0:
+            name = "R_edge%d" % i
+            gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
+            gui.addToGroup(name,self.sceneName)
+        if beginNode < (ps.numberNodes()):
+          gui.refresh()
+        beginNode = ps.numberNodes() 
+        beginEdge = ps.numberEdges()
+      problem.finishSolveStepByStep()
+			#display new edge (node ?) added by finish()
+      for i in range(beginNode,ps.numberNodes()) :	
+        name = "R_node%d" % i
+        gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis)
+        gui.addToGroup(name,self.sceneName)
+        gui.applyConfiguration(name,ps.node(i)[0:7])
+      for i in range(beginEdge,ps.numberEdges()) : 
+        name = "R_edge%d" % i
+        gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
+        gui.addToGroup(name,self.sceneName)
+      if beginNode < (ps.numberNodes()):
+        gui.refresh()
+      tStop = time.time()
+      return tStop-tStart
+
+
+
     ## Load obstacles from a urdf file
     #
     #  \param package ros package containing the urdf file,
