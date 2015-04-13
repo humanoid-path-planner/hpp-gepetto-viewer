@@ -91,21 +91,19 @@ class Viewer (object):
 		# \param radiusSphere : the radius of the node
 		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
 		# \param colorEdge : the color of the edges
-    def displayRoadmap (self,colorNode,radiusSphere,sizeAxis,colorEdge):
+    def displayRoadmap (self,nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
       ps = self.problemSolver
       problem = self.problemSolver.client.problem
       gui = self.client.gui
+      if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
+        return False
       for i in range(0,ps.numberNodes()) :	
-        name = "R_node%d" % i
-        if not gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis):
+        if not gui.addNodeToRoadmap(nameRoadmap,ps.node(i)):
           return False
-        gui.addToGroup(name,self.sceneName)
-        gui.applyConfiguration(name,ps.node(i)[0:7])
       for i in range(0,ps.numberEdges()) : 
         if i%2 == 0 :
-          name = "R_edge%d" % i
-          gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
-          gui.addToGroup(name,self.sceneName)
+          gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
+      gui.addToGroup(nameRoadmap,self.sceneName)
       gui.refresh()
       return True
 
@@ -113,11 +111,14 @@ class Viewer (object):
 
 		##build the roadmap and diplay it during construction
 		# (delete existing roadmap if problem already solved )
+		# \param nameRoadmap : name of the new roadmap
+		# \param numberIt : number of iteration beetwen to refresh of the roadmap
+		# (be careful, if numberIt is too low it can crash gepetto-viewer-server)
 		# \param colorNode : the color of the sphere for the nodes
 		# \param radiusSphere : the radius of the node
 		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
 		# \param colorEdge : the color of the edges
-    def solveAndDisplay (self,colorNode,radiusSphere,sizeAxis,colorEdge):
+    def solveAndDisplay (self,nameRoadmap,numberIt,colorNode,radiusSphere,sizeAxis,colorEdge):
       import time
       ps = self.problemSolver
       problem = self.problemSolver.client.problem
@@ -126,36 +127,29 @@ class Viewer (object):
         ps.clearRoadmap()
       tStart = time.time()
       problem.prepareSolveStepByStep()
-      beginEdge = 0
-      beginNode = 0
+      beginEdge = ps.numberEdges()
+      beginNode = ps.numberNodes()
+      it = 1
+      self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge)
       while not problem.executeOneStep():
-        for i in range(beginNode,ps.numberNodes()) :	
-          name = "R_node%d" % i
-          gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis)
-          gui.addToGroup(name,self.sceneName)
-          gui.applyConfiguration(name,ps.node(i)[0:7])
-        for i in range(beginEdge,ps.numberEdges()) : 
-          if i%2 == 0:
-            name = "R_edge%d" % i
-            gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
-            gui.addToGroup(name,self.sceneName)
-        if beginNode < (ps.numberNodes()):
-          gui.refresh()
-        beginNode = ps.numberNodes() 
-        beginEdge = ps.numberEdges()
+        if it == numberIt :
+          for i in range(beginNode,ps.numberNodes()-1) :	
+            gui.addNodeToRoadmap(nameRoadmap,ps.node(i)) 
+          for i in range(beginEdge,ps.numberEdges()-1) : 
+            if i%2 == 0:
+              gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
+          beginNode = ps.numberNodes() - 1
+          beginEdge = ps.numberEdges() - 1
+          it = 1
+        else :
+          it = it + 1
       problem.finishSolveStepByStep()
 			#display new edge (node ?) added by finish()
       for i in range(beginNode,ps.numberNodes()) :	
-        name = "R_node%d" % i
-        gui.addXYZaxis(name,colorNode,radiusSphere,sizeAxis)
-        gui.addToGroup(name,self.sceneName)
-        gui.applyConfiguration(name,ps.node(i)[0:7])
+        gui.addNodeToRoadmap(nameRoadmap,ps.node(i))
       for i in range(beginEdge,ps.numberEdges()) : 
-        name = "R_edge%d" % i
-        gui.addLine(name,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3],colorEdge)
-        gui.addToGroup(name,self.sceneName)
-      if beginNode < (ps.numberNodes()):
-        gui.refresh()
+        if i%2 == 0:
+          gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
       tStop = time.time()
       return tStop-tStart
 
