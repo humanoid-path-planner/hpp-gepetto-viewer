@@ -186,9 +186,6 @@ class Viewer (object):
       for i in range(beginNode,ps.numberNodes()) :	
         if joint == 0 :
           gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
-        elif joint == -1 :
-          robot.setCurrentConfig(ps.node(i))
-          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(robot.tf_root+'_joint'))
         else : 
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
@@ -196,12 +193,6 @@ class Viewer (object):
         if i%2 == 0:
           if joint == 0 :
             gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
-          elif joint == -1 :
-            robot.setCurrentConfig(ps.edge(i)[0])
-            e0 = robot.getLinkPosition(robot.tf_root+'_joint')[0:3]
-            robot.setCurrentConfig(ps.edge(i)[1])
-            e1 = robot.getLinkPosition(robot.tf_root+'_joint')[0:3]
-            gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
           else : 
             robot.setCurrentConfig(ps.edge(i)[0])
             e0 = robot.getLinkPosition(joint)[0:3]
