@@ -86,6 +86,124 @@ class Viewer (object):
     def addLandmark (self, linkname, size):
         return self.client.gui.addLandmark (linkname, size)
 
+		##Display the roadmap created by problem.solve()
+		# \param colorNode : the color of the sphere for the nodes
+		# \param radiusSphere : the radius of the node
+		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+		# \param colorEdge : the color of the edges
+    # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
+		# BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
+    # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
+    def displayRoadmap (self,nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint=0):
+      ps = self.problemSolver
+      problem = self.problemSolver.client.problem
+      gui = self.client.gui
+      robot = self.robot
+      # find the link : 
+      if joint == 0 :
+        if robot.rootJointType == 'planar' :
+          joint = robot.tf_root+'_joint'
+      if ps.numberNodes() == 0 :
+        return False
+      if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
+        return False
+      for i in range(0,ps.numberNodes()) :	
+        if joint == 0 :
+          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+        else : 
+          robot.setCurrentConfig(ps.node(i))
+          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
+      for i in range(0,ps.numberEdges()) : 
+        if i%2 == 0 :
+          if joint == 0 :
+            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+          else : 
+            robot.setCurrentConfig(ps.edge(i)[0])
+            e0 = robot.getLinkPosition(joint)[0:3]
+            robot.setCurrentConfig(ps.edge(i)[1])
+            e1 = robot.getLinkPosition(joint)[0:3]
+            gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+      gui.addToGroup(nameRoadmap,self.sceneName)
+      gui.refresh()
+      return True
+
+	
+
+		##build the roadmap and diplay it during construction
+		# (delete existing roadmap if problem already solved )
+		# \param nameRoadmap : name of the new roadmap
+		# \param numberIt : number of iteration beetwen to refresh of the roadmap
+		# (be careful, if numberIt is too low it can crash gepetto-viewer-server)
+		# \param colorNode : the color of the sphere for the nodes
+		# \param radiusSphere : the radius of the node
+		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+		# \param colorEdge : the color of the edges
+		# \param joint : the link we want to display the configuration (by defaut, root link of the robot)
+    def solveAndDisplay (self,nameRoadmap,numberIt,colorNode,radiusSphere,sizeAxis,colorEdge,joint = 0):
+      import time
+      ps = self.problemSolver
+      problem = self.problemSolver.client.problem
+      gui = self.client.gui
+      robot = self.robot
+      # find the link : 
+      if joint == 0 :
+        if robot.rootJointType == 'planar' :
+          joint = robot.tf_root+'_joint'
+
+      if ps.numberNodes() > 0 : 
+        ps.clearRoadmap()
+      tStart = time.time()
+      problem.prepareSolveStepByStep()
+      beginEdge = ps.numberEdges()
+      beginNode = ps.numberNodes()
+      it = 1
+      self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint)
+      while not problem.executeOneStep():
+        if it == numberIt :
+          for i in range(beginNode,ps.numberNodes()) :	
+            if joint == 0 :
+              gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
+            else : 
+              robot.setCurrentConfig(ps.node(i))
+              gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+          for i in range(beginEdge,ps.numberEdges()) : 
+            if i%2 == 0:
+              if joint == 0 :
+                gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+              else : 
+                robot.setCurrentConfig(ps.edge(i)[0])
+                e0 = robot.getLinkPosition(joint)[0:3]
+                robot.setCurrentConfig(ps.edge(i)[1])
+                e1 = robot.getLinkPosition(joint)[0:3]
+                gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+          beginNode = ps.numberNodes() 
+          beginEdge = ps.numberEdges() 
+          it = 1
+        else :
+          it = it + 1
+      problem.finishSolveStepByStep()
+			#display new edge (node ?) added by finish()
+      for i in range(beginNode,ps.numberNodes()) :	
+        if joint == 0 :
+          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+        else : 
+          robot.setCurrentConfig(ps.node(i))
+          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+      for i in range(beginEdge,ps.numberEdges()) : 
+        if i%2 == 0:
+          if joint == 0 :
+            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+          else : 
+            robot.setCurrentConfig(ps.edge(i)[0])
+            e0 = robot.getLinkPosition(joint)[0:3]
+            robot.setCurrentConfig(ps.edge(i)[1])
+            e1 = robot.getLinkPosition(joint)[0:3]
+            gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+      tStop = time.time()
+      return tStop-tStart
+
+
+
     ## Load obstacles from a urdf file
     #
     #  \param package ros package containing the urdf file,
