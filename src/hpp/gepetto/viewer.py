@@ -62,13 +62,18 @@ class Viewer (object):
         self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
+    withFloor = False
     def createWindowAndScene (self, viewerClient, name):
         self.windowName = "window_" + name
         self.windowId = viewerClient.gui.createWindow (self.windowName)
         self.sceneName = "%i_scene_%s" % (self.windowId, name)
-        viewerClient.gui.createScene (self.sceneName)
+        if Viewer.withFloor:
+            viewerClient.gui.createSceneWithFloor (self.sceneName)
+        else:
+            viewerClient.gui.createScene ("scene_" + name)
+            viewerClient.gui.createScene (self.sceneName)
         if not viewerClient.gui.addSceneToWindow (self.sceneName,
-                                                  self.windowId):
+                                              self.windowId):
             raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
                                 (self.sceneName, self.windowId, self.windowName))
 
@@ -224,8 +229,7 @@ class Viewer (object):
         meshPackagePath = rospack.get_path (meshPackageName)
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, packagePath, meshPackagePath,
-                                        True)
+        self.client.gui.addUrdfObjects (prefix, packagePath, dataRootDir, True)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
