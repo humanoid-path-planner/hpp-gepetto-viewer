@@ -33,6 +33,11 @@ rospack = rospkg.RosPack()
 #  Operation that need to be synchronized between hppcorbaserver internal
 #  model and graphical user interface should be implemented by this class.
 class Viewer (object):
+    ## Default scene name
+    #  Useful when debugging for creating an instance with a client to an
+    #  existing server.
+    sceneName = '0_scene_hpp_'
+
     ## Constructor
     #  \param problemSolver object of type ProblemSolver
     #  \param viewerClient if not provided, a new client to
@@ -42,7 +47,9 @@ class Viewer (object):
     def __init__ (self, problemSolver, viewerClient = None):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
+        shouldLoadRobot = False
         if not viewerClient:
+            shouldLoadRobot = True
             viewerClient = GuiClient ()
             self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
@@ -53,14 +60,15 @@ class Viewer (object):
             meshPackageName = self.robot.packageName
         # Load robot in viewer
         self.buildRobotBodies ()
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (self.robot.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
-        packagePath += '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix +\
-            '.urdf'
-        self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
-        self.client.gui.addToGroup (self.displayName, self.sceneName)
+        if shouldLoadRobot:
+            rospack = rospkg.RosPack()
+            packagePath = rospack.get_path (self.robot.packageName)
+            meshPackagePath = rospack.get_path (meshPackageName)
+            dataRootDir = os.path.dirname (meshPackagePath) + "/"
+            packagePath += '/urdf/' + self.robot.urdfName + \
+                           self.robot.urdfSuffix + '.urdf'
+            self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
+            self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
         self.windowName = "window_" + name
