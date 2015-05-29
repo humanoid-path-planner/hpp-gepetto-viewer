@@ -17,15 +17,16 @@
 
 import pygtk
 pygtk.require("2.0")
-import os, sys, time, gtk, glib
+import os, sys, time, gtk, glib, importlib
 
 import numpy as np
 import pylab
 # uncomment to select /GTK/GTKAgg/GTKCairo
 #from matplotlib.backends.backend_gtk      import FigureCanvasGTK as FigureCanvas
 #from matplotlib.backends.backend_gtk      import NavigationToolbar2GTK as NavigationToolbar
-from matplotlib.backends.backend_gtkagg   import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg   import NavigationToolbar2GTKAgg as NavigationToolbar
+## Done dynamically to avoid causing troubles when there is no server X (SSH session).
+#from matplotlib.backends.backend_gtkagg   import FigureCanvasGTKAgg as FigureCanvas
+#from matplotlib.backends.backend_gtkagg   import NavigationToolbar2GTKAgg as NavigationToolbar
 #from matplotlib.backends.backend_gtkcairo import FigureCanvasGTKCairo as FigureCanvas
 #from matplotlib.backends.backend_gtkcairo import NavigationToolbar2GTKCairo as NavigationToolbar
 
@@ -191,12 +192,14 @@ class PathPlayerGui (object):
     gtk.main_quit ()
 
 class _Matplotlib:
+
   def __init__ (self, pp, progressbar):
+    self.mpltlib_backends = importlib.import_module ("matplotlib.backends.backend_gtkagg")
     self.pp = pp
     self.pb = progressbar
     self.figure = pylab.figure ()
-    self.canvas = FigureCanvas (self.figure)
-    self.toolbar = NavigationToolbar (self.canvas, pp ["MainWindow"])
+    self.canvas = self.mpltlib_backends.FigureCanvasGTKAgg (self.figure)
+    self.toolbar = self.mpltlib_backends.NavigationToolbar2GTKAgg (self.canvas, pp ["MainWindow"])
     self.pp ["BoxPlotArea"].pack_start (self.toolbar, expand = False, fill = False) 
     self.pp ["BoxPlotArea"].pack_start (self.canvas , expand = True, fill = True) 
     self.canvas.connect ("button_press_event", self.on_button_press_event)
