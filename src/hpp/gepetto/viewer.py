@@ -104,7 +104,6 @@ class Viewer (object):
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
     def displayRoadmap (self,nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint=0):
       ps = self.problemSolver
-      problem = self.problemSolver.client.problem
       gui = self.client.gui
       robot = self.robot
       # find the link : 
