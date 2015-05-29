@@ -26,6 +26,9 @@ from hpp.gepetto import Viewer as Parent
 class Viewer (Parent):
     def __init__ (self, problemSolver, viewerClient = None) :
         Parent.__init__ (self, problemSolver, viewerClient)
+        self.compositeRobotName = self.robot.client.basic.robot.getRobotName()
+        self.client.gui.createGroup (self.compositeRobotName)
+        self.client.gui.addToGroup (self.displayName, self.compositeRobotName)
 
     def buildRobotBodies (self):
         self.robotBodies = list ()
