@@ -237,6 +237,15 @@ class Viewer (object):
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
+    ## Move Obstacle
+    #
+    #  \param name Name of the object
+    #  \param position Position of the object as a 7-d vector
+    #         (translation-quaternion)
+    def moveObstacle (self, name, position):
+        self.problemSolver.moveObstacle ("box/base_link_0", position)
+        self.computeObjectPosition ()
+
     ## Synchronize object positions in gepetto-viewer-server
     #
     #  Get position of objects from hppcorbaserver and forward to
