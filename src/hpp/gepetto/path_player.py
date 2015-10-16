@@ -56,7 +56,7 @@ class PathPlayer (object):
         while t < length :
             q = self.client.problem.configAtParam (pathId, t)
             tau.append(q)
-            t += self.dt
+            t += (self.dt * self.speed)
         fh = open(fname,"wb")
         pk.dump(tau,fh)
         fh.close()
@@ -88,6 +88,11 @@ class PathPlayer (object):
         self.tau = self.getTrajFromFile(fname)
         for tauK in self.tau:
             for q in tauK:
+                start = time.time()
                 self.publisher.robotConfig = q
                 self.publisher.publishRobots ()
-                time.sleep (self.dt)
+                elapsed = time.time() - start
+                if elapsed < self.dt :
+                  time.sleep(self.dt-elapsed)
+                else :
+                  print("Warning : time step is shorter than computation time for robot geometry ("+str(elapsed)+")")
