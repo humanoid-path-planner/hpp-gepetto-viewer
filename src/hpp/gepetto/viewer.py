@@ -157,11 +157,14 @@ class Viewer (object):
       if joint == 0 :
         if robot.rootJointType == 'planar' :
           joint = robot.tf_root+'_joint'
-
       if ps.numberNodes() > 0 : 
         ps.clearRoadmap()
       tStart = time.time()
-      problem.prepareSolveStepByStep()
+      if problem.prepareSolveStepByStep() :
+        problem.finishSolveStepByStep()
+        self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint)
+        tStop = time.time()
+        return tStop-tStart
       beginEdge = ps.numberEdges()
       beginNode = ps.numberNodes()
       it = 1
