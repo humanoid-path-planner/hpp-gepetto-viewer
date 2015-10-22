@@ -60,4 +60,9 @@ install(FILES
   DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/manipulation
   )
 
+install(FILES
+  src/hpp/gepetto/blender/exportmotion.py
+  src/hpp/gepetto/blender/__init__.py
+  DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/blender
+  )
 setup_project_finalize()
