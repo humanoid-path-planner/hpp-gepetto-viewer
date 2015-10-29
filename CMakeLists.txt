@@ -30,8 +30,8 @@ set(PROJECT_URL "")
 findpython()
 setup_project()
 
-add_required_dependency(hpp-corbaserver >= 3)
-add_optional_dependency(gepetto-viewer-corba)
+add_required_dependency("hpp-corbaserver >= 3")
+add_optional_dependency("gepetto-viewer-corba")
 
 set (PATH_PLAYER_GLADE_FILENAME
     ${CMAKE_INSTALL_PREFIX}/${PYTHON_SITELIB}/hpp/gepetto/path_player_gui.glade

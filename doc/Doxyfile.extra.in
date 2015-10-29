@@ -4,3 +4,5 @@ TAGFILES		 = @HPP_CORBASERVER_DOXYGENDOCDIR@/hpp-corbaserver.doxytag=@HPP_CORBAS
 INPUT			 = @CMAKE_SOURCE_DIR@/src/hpp/gepetto \
 			   @CMAKE_SOURCE_DIR@/doc
 FILE_PATTERNS		 = *.py *.hh
+
+GENERATE_TREEVIEW      = NO
