@@ -27,6 +27,8 @@ class PathPlayer (object):
         self.publisher = publisher
         self.dt = dt
         self.speed = speed
+        self.start = 0.
+        self.end = 1.
 
     def setDt(self,dt):
       self.dt = dt
@@ -35,8 +37,8 @@ class PathPlayer (object):
       self.speed = speed
 
     def __call__ (self, pathId) :
-        length = self.client.problem.pathLength (pathId)
-        t = 0
+        length = self.end*self.client.problem.pathLength (pathId)
+        t = self.start*self.client.problem.pathLength (pathId)
         while t < length :
             start = time.time()
             q = self.client.problem.configAtParam (pathId, t)
