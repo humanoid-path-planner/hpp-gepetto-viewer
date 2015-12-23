@@ -52,6 +52,17 @@ class ViewerFactory (object):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
+    ## Move Obstacle
+    #
+    #  \param name Name of the object
+    #  \param position Position of the object as a 7-d vector
+    #         (translation-quaternion)
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def moveObstacle (self, name, position, guiOnly = False):
+        if not guiOnly:
+            self.problemSolver.moveObstacle (name, position)
+        self.computeObjectPosition ()
+
     def computeObjectPosition (self):
         l = locals ();
         self.guiRequest.append ((Viewer.computeObjectPosition, l));
