@@ -19,6 +19,7 @@
 
 import os.path
 import rospkg
+import warnings
 from hpp.gepetto import Viewer
 
 rospack = rospkg.RosPack()
@@ -52,6 +53,17 @@ class ViewerFactory (object):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
+    ## Move Obstacle
+    #
+    #  \param name Name of the object
+    #  \param position Position of the object as a 7-d vector
+    #         (translation-quaternion)
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def moveObstacle (self, name, position, guiOnly = False):
+        if not guiOnly:
+            self.problemSolver.moveObstacle (name, position)
+        self.computeObjectPosition ()
+
     def computeObjectPosition (self):
         l = locals ();
         self.guiRequest.append ((Viewer.computeObjectPosition, l));
@@ -65,7 +77,7 @@ class ViewerFactory (object):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None):
         v = ViewerClass (self.problemSolver, viewerClient)
         for call in self.guiRequest:
             kwargs = call[1].copy ();
@@ -73,3 +85,10 @@ class ViewerFactory (object):
             f = call[0];
             f (v, **kwargs)
         return v
+
+    ## Create a client to \c gepetto-viewer-server and send stored commands
+    #
+    #  \deprecated use createViewer instead.
+    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
+        warnings.warn ("Deprecated method, use createViewer instead.")
+        self.createViewer (ViewerClass, viewerClient)

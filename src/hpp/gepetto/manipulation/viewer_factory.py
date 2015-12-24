@@ -19,6 +19,7 @@
 
 import os
 import rospkg
+import warnings
 from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer
 
@@ -84,6 +85,13 @@ class ViewerFactory (Parent):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
-        v = Parent.createRealClient (self, ViewerClass, viewerClient)
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None):
+        v = Parent.createViewer (self, ViewerClass, viewerClient)
         return v
+
+    ## Create a client to \c gepetto-viewer-server and send stored commands
+    #
+    #  \deprecated use createViewer instead.
+    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
+        warnings.warn ("Deprecated method, use createViewer instead.")
+        self.createViewer (ViewerClass, viewerClient)

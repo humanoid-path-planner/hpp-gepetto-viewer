@@ -245,8 +245,10 @@ class Viewer (object):
     #  \param name Name of the object
     #  \param position Position of the object as a 7-d vector
     #         (translation-quaternion)
-    def moveObstacle (self, name, position):
-        self.problemSolver.moveObstacle ("box/base_link_0", position)
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def moveObstacle (self, name, position, guiOnly = False):
+        if not guiOnly:
+            self.problemSolver.moveObstacle (name, position)
         self.computeObjectPosition ()
 
     ## Synchronize object positions in gepetto-viewer-server
