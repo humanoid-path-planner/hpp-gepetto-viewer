@@ -45,7 +45,7 @@ class Viewer (object):
     #         gepetto-viewer-server is created.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None):
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         shouldLoadRobot = False
@@ -68,7 +68,10 @@ class Viewer (object):
             dataRootDir = os.path.dirname (meshPackagePath) + "/"
             packagePath += '/urdf/' + self.robot.urdfName + \
                            self.robot.urdfSuffix + '.urdf'
-            self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
+            if collisionURDF:
+                self.client.gui.addUrdfCollision (self.displayName, packagePath, dataRootDir)
+            else:
+                self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
             self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):

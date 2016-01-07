@@ -77,8 +77,8 @@ class ViewerFactory (object):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None):
-        v = ViewerClass (self.problemSolver, viewerClient)
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None, collisionURDF = False):
+        v = ViewerClass (self.problemSolver, viewerClient, collisionURDF)
         for call in self.guiRequest:
             kwargs = call[1].copy ();
             s = kwargs.pop ('self')

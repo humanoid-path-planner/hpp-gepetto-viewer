@@ -24,8 +24,8 @@ from hpp.gepetto import Viewer as Parent
 ## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
 #
 class Viewer (Parent):
-    def __init__ (self, problemSolver, viewerClient = None) :
-        Parent.__init__ (self, problemSolver, viewerClient)
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False) :
+        Parent.__init__ (self, problemSolver, viewerClient, collisionURDF)
         self.compositeRobotName = self.robot.client.basic.robot.getRobotName()
         self.client.gui.createGroup (self.compositeRobotName)
         self.client.gui.addToGroup (self.displayName, self.compositeRobotName)
@@ -38,7 +38,7 @@ class Viewer (Parent):
             prefix = j.split ('/') [0]
             self.robotBodies.append ((j, '', self.robot.getLinkName (j)))
 
-    def loadRobotModel (self, RobotType, robotName, guiOnly = False):
+    def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
         self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
@@ -74,7 +74,7 @@ class Viewer (Parent):
         self.robot.buildCompositeRobot (robotNames)
         self.buildRobotBodies ()
 
-    def loadUrdfInGUI (self, RobotType, robotName):
+    def loadUrdfInGUI (self, RobotType, robotName, collisionURDF = False):
         if hasattr (RobotType, 'meshPackageName'):
             meshPackageName = RobotType.meshPackageName
         else:
@@ -86,7 +86,10 @@ class Viewer (Parent):
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
-        self.client.gui.addURDF (robotName, packagePath, dataRootDir)
+        if collisionURDF:
+            self.client.gui.addUrdfCollision (robotName, packagePath, dataRootDir)
+        else:
+            self.client.gui.addURDF (robotName, packagePath, dataRootDir)
         self.client.gui.addToGroup (robotName, self.sceneName)
 
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
