@@ -48,6 +48,7 @@ class Viewer (object):
     def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
+        self.collisionURDF = collisionURDF
         shouldLoadRobot = False
         if not viewerClient:
             shouldLoadRobot = True
@@ -241,7 +242,7 @@ class Viewer (object):
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + filename + '.urdf'
         self.client.gui.addUrdfObjects (prefix, packagePath, dataRootDir,
-                                        True)
+                                        not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 

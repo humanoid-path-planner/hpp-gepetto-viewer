@@ -74,7 +74,7 @@ class Viewer (Parent):
         self.robot.buildCompositeRobot (robotNames)
         self.buildRobotBodies ()
 
-    def loadUrdfInGUI (self, RobotType, robotName, collisionURDF = False):
+    def loadUrdfInGUI (self, RobotType, robotName):
         if hasattr (RobotType, 'meshPackageName'):
             meshPackageName = RobotType.meshPackageName
         else:
@@ -86,7 +86,7 @@ class Viewer (Parent):
         dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
-        if collisionURDF:
+        if self.collisionURDF:
             self.client.gui.addUrdfCollision (robotName, packagePath, dataRootDir)
         else:
             self.client.gui.addURDF (robotName, packagePath, dataRootDir)
@@ -104,5 +104,5 @@ class Viewer (Parent):
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
         self.client.gui.addUrdfObjects (robotName, packagePath, meshPackagePath,
-                                        True)
+                                        not self.collisionURDF)
         self.client.gui.addToGroup (robotName, self.sceneName)

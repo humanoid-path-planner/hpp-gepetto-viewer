@@ -86,7 +86,7 @@ class ViewerFactory (Parent):
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
     def createViewer (self, ViewerClass = Viewer, viewerClient = None, collisionURDF = False):
-        v = Parent.createRealClient (self, ViewerClass, viewerClient, collisionURDF)
+        v = Parent.createViewer (self, ViewerClass, viewerClient, collisionURDF)
         return v
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
