@@ -101,6 +101,47 @@ class Viewer (object):
     def addLandmark (self, linkname, size):
         return self.client.gui.addLandmark (linkname, size)
 
+    ##Display the part of the roadmap used by the solution path
+    # \param nameRoadmap : the name of the osgNode added to the scene
+    # \param pathID : the id of the path we want to display
+    # \param colorNode : the color of the sphere for the nodes
+    # \param radiusSphere : the radius of the node
+    # \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+    # \param colorEdge : the color of the edges
+    # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
+    # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
+    # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
+    def displayPathMap (self,nameRoadmap,pathID, colorNode,radiusSphere,sizeAxis,colorEdge,joint=0):
+      ps = self.problemSolver
+      gui = self.client.gui
+      robot = self.robot
+      lastPos=0;
+      currentPos=0;
+      # find the link : 
+      if joint == 0 :
+        if robot.rootJointType == 'planar' :
+          joint = robot.tf_root+'_joint'
+      if ps.numberNodes() == 0 :
+        return False
+      if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
+        return False
+      for i in range(0,len(ps.getWaypoints(pathID))) :	
+        if joint == 0 :
+          currentPos = ps.getWaypoints(pathID)[i][0:7]
+          gui.addNodeToRoadmap(nameRoadmap,currentPos) 
+        else : 
+          robot.setCurrentConfig(ps.getWaypoints(pathID)[i])
+          currentPos = robot.getLinkPosition(joint)
+          gui.addNodeToRoadmap(nameRoadmap,currentPos)
+        if i > 0 :
+          gui.addEdgeToRoadmap(nameRoadmap,lastPos[0:3],currentPos[0:3])
+        lastPos = currentPos
+        
+      gui.addToGroup(nameRoadmap,self.sceneName)
+      gui.setVisibility(nameRoadmap,"ALWAYS_ON_TOP")
+      gui.refresh()
+      return True
+
 		##Display the roadmap created by problem.solve()
 		# \param colorNode : the color of the sphere for the nodes
 		# \param radiusSphere : the radius of the node
