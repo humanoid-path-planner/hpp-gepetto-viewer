@@ -104,14 +104,14 @@ class Viewer (object):
     ##Display the part of the roadmap used by the solution path
     # \param nameRoadmap : the name of the osgNode added to the scene
     # \param pathID : the id of the path we want to display
-    # \param colorNode : the color of the sphere for the nodes
     # \param radiusSphere : the radius of the node
     # \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
-    # \param colorEdge : the color of the edges
+    # \param colorNode : the color of the sphere for the nodes (default value : red)
+    # \param colorEdge : the color of the edges (default value : light red)
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayPathMap (self,nameRoadmap,pathID, colorNode,radiusSphere,sizeAxis,colorEdge,joint=0):
+    def displayPathMap (self,nameRoadmap,pathID,radiusSphere,sizeAxis=1,colorNode=[0.8,0.0,0.0,1.0],colorEdge=[0.8,0.0,0.0,0.7],joint=0):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
@@ -142,15 +142,15 @@ class Viewer (object):
       gui.refresh()
       return True
 
-		##Display the roadmap created by problem.solve()
-		# \param colorNode : the color of the sphere for the nodes
-		# \param radiusSphere : the radius of the node
-		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
-		# \param colorEdge : the color of the edges
+    ##Display the roadmap created by problem.solve()
+    # \param radiusSphere : the radius of the node
+    # \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+    # \param colorNode : the color of the sphere for the nodes (default value : white)
+    # \param colorEdge : the color of the edges (default value : yellow)
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
-		# BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
+    # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayRoadmap (self,nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint=0):
+    def displayRoadmap (self,nameRoadmap,radiusSphere,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=0):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
@@ -184,17 +184,17 @@ class Viewer (object):
 
 	
 
-		##build the roadmap and diplay it during construction
-		# (delete existing roadmap if problem already solved )
-		# \param nameRoadmap : name of the new roadmap
-		# \param numberIt : number of iteration beetwen to refresh of the roadmap
-		# (be careful, if numberIt is too low it can crash gepetto-viewer-server)
-		# \param colorNode : the color of the sphere for the nodes
-		# \param radiusSphere : the radius of the node
-		# \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
-		# \param colorEdge : the color of the edges
-		# \param joint : the link we want to display the configuration (by defaut, root link of the robot)
-    def solveAndDisplay (self,nameRoadmap,numberIt,colorNode,radiusSphere,sizeAxis,colorEdge,joint = 0):
+    ##build the roadmap and diplay it during construction
+    # (delete existing roadmap if problem already solved )
+    # \param nameRoadmap : name of the new roadmap
+    # \param numberIt : number of iteration beetwen to refresh of the roadmap
+    # (be careful, if numberIt is too low it can crash gepetto-viewer-server)
+    # \param radiusSphere : the radius of the node
+    # \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
+    # \param colorNode : the color of the sphere for the nodes (default value : white)
+    # \param colorEdge : the color of the edges (default value : yellow)
+    # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
+    def solveAndDisplay (self,nameRoadmap,numberIt,radiusSphere,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint = 0):
       import time
       ps = self.problemSolver
       problem = self.problemSolver.client.problem
@@ -209,13 +209,13 @@ class Viewer (object):
       tStart = time.time()
       if problem.prepareSolveStepByStep() :
         problem.finishSolveStepByStep()
-        self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint)
+        self.displayRoadmap(nameRoadmap,radiusSphere,sizeAxis,colorNode,colorEdge,joint)
         tStop = time.time()
         return tStop-tStart
       beginEdge = ps.numberEdges()
       beginNode = ps.numberNodes()
       it = 1
-      self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint)
+      self.displayRoadmap(nameRoadmap,radiusSphere,sizeAxis,colorNode,colorEdge,joint)
       while not problem.executeOneStep():
         if it == numberIt :
           for i in range(beginNode,ps.numberNodes()) :	
