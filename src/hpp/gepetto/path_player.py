@@ -49,6 +49,29 @@ class PathPlayer (object):
             if elapsed < self.dt :
               time.sleep(self.dt-elapsed)
 
+    def displayPath(self,pathId,color=[0.85,0.75,0.15,0.9],jointName=0) :
+      if jointName == 0 :
+        if self.publisher.robot.rootJointType == 'planar' :
+          jointName = self.publisher.robot.tf_root+'_joint'
+      pathPos=[]
+      length = self.end*self.client.problem.pathLength (pathId)
+      t = self.start*self.client.problem.pathLength (pathId)
+      while t < length :
+        q = self.client.problem.configAtParam (pathId, t)
+        if jointName != 0 : 
+          self.publisher.robot.setCurrentConfig(q)
+          q = self.publisher.robot.getLinkPosition(jointName)
+        pathPos = pathPos + [q[:3]]
+        t += self.dt
+      if jointName == 0 :
+        jointName = "root"
+      nameCurve = "path_"+str(pathId)+"_"+jointName
+      self.publisher.client.gui.addCurve(nameCurve,pathPos,color)
+      self.publisher.client.gui.addToGroup(nameCurve,self.publisher.sceneName)
+      self.publisher.client.gui.refresh()
+
+
+
     def toFile(self, pathId, fname):
         length = self.client.problem.pathLength (pathId)
         t = 0
