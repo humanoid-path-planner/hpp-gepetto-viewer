@@ -49,6 +49,7 @@ class Viewer (object):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
+        self.color=Color()
         shouldLoadRobot = False
         if not viewerClient:
             shouldLoadRobot = True
@@ -111,7 +112,7 @@ class Viewer (object):
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayPathMap (self,nameRoadmap,pathID,radiusSphere,sizeAxis=1,colorNode=[0.8,0.0,0.0,1.0],colorEdge=[0.8,0.0,0.0,0.7],joint=0):
+    def displayPathMap (self,nameRoadmap,pathID,radiusSphere,sizeAxis=1,colorNode=[1,0.0,0.0,1.0],colorEdge=[1,0.0,0.0,0.5],joint=0):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
@@ -331,3 +332,25 @@ class Viewer (object):
     # \sa gepetto::corbaserver::GraphicalInterface::stopCapture
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
+
+## Helper class 
+class Color(object):
+  def __init__(self):
+    # Define some RGBA-normalized color (osg convention)
+    self.white=[1.0,1.0,1.0,1.0]
+    self.lightWhite=[1.0,1.0,1.0,0.5]
+    self.green=[0,1,0,1]
+    self.lightGreen=[0,1,0,0.5]
+    self.yellow=[1,1,0,1]
+    self.lightYellow=[1,1,0,0.5]
+    self.blue = [0.0, 0.0, 1, 1.0]
+    self.lightBlue = [0.0, 0.0, 1, 0.5]
+    self.grey = [0.7,0.7,0.7,1.0]
+    self.lightGrey= [0.7,0.7,0.7,0.7]
+    self.red = [1,0.0,0.0,1.0]
+    self.lightRed = [1,0.0,0.0,0.5]
+    self.black=[0,0,0,1.0]
+    self.lightBlack=[0,0,0,0.5]
+    self.brown = [0.85,0.75,0.15,1.0]
+    self.lightBrown = [0.85,0.75,0.15,1.0]
+
