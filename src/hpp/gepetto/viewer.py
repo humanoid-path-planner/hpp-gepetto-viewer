@@ -107,7 +107,7 @@ class Viewer (object):
       problem = self.problemSolver.client.problem
       gui = self.client.gui
       robot = self.robot
-      # find the link :
+      # find the link : 
       if joint == 0 :
         if robot.rootJointType == 'planar' :
           joint = robot.tf_root+'_joint'
@@ -115,17 +115,17 @@ class Viewer (object):
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
-      for i in range(0,ps.numberNodes()) :
+      for i in range(0,ps.numberNodes()) :	
         if joint == 0 :
-          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
-        else :
+          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+        else : 
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
-      for i in range(0,ps.numberEdges()) :
+      for i in range(0,ps.numberEdges()) : 
         if i%2 == 0 :
           if joint == 0 :
-            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
-          else :
+            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+          else : 
             robot.setCurrentConfig(ps.edge(i)[0])
             e0 = robot.getLinkPosition(joint)[0:3]
             robot.setCurrentConfig(ps.edge(i)[1])
@@ -135,7 +135,7 @@ class Viewer (object):
       gui.refresh()
       return True
 
-
+	
 
 		##build the roadmap and diplay it during construction
 		# (delete existing roadmap if problem already solved )
@@ -153,11 +153,11 @@ class Viewer (object):
       problem = self.problemSolver.client.problem
       gui = self.client.gui
       robot = self.robot
-      # find the link :
+      # find the link : 
       if joint == 0 :
         if robot.rootJointType == 'planar' :
           joint = robot.tf_root+'_joint'
-      if ps.numberNodes() > 0 :
+      if ps.numberNodes() > 0 : 
         ps.clearRoadmap()
       tStart = time.time()
       if problem.prepareSolveStepByStep() :
@@ -171,40 +171,40 @@ class Viewer (object):
       self.displayRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge,joint)
       while not problem.executeOneStep():
         if it == numberIt :
-          for i in range(beginNode,ps.numberNodes()) :
+          for i in range(beginNode,ps.numberNodes()) :	
             if joint == 0 :
               gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
-            else :
+            else : 
               robot.setCurrentConfig(ps.node(i))
-              gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
-          for i in range(beginEdge,ps.numberEdges()) :
+              gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+          for i in range(beginEdge,ps.numberEdges()) : 
             if i%2 == 0:
               if joint == 0 :
-                gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
-              else :
+                gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+              else : 
                 robot.setCurrentConfig(ps.edge(i)[0])
                 e0 = robot.getLinkPosition(joint)[0:3]
                 robot.setCurrentConfig(ps.edge(i)[1])
                 e1 = robot.getLinkPosition(joint)[0:3]
                 gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
-          beginNode = ps.numberNodes()
-          beginEdge = ps.numberEdges()
+          beginNode = ps.numberNodes() 
+          beginEdge = ps.numberEdges() 
           it = 1
         else :
           it = it + 1
       problem.finishSolveStepByStep()
 			#display new edge (node ?) added by finish()
-      for i in range(beginNode,ps.numberNodes()) :
+      for i in range(beginNode,ps.numberNodes()) :	
         if joint == 0 :
-          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
-        else :
+          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+        else : 
           robot.setCurrentConfig(ps.node(i))
-          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
-      for i in range(beginEdge,ps.numberEdges()) :
+          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+      for i in range(beginEdge,ps.numberEdges()) : 
         if i%2 == 0:
           if joint == 0 :
-            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
-          else :
+            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
+          else : 
             robot.setCurrentConfig(ps.edge(i)[0])
             e0 = robot.getLinkPosition(joint)[0:3]
             robot.setCurrentConfig(ps.edge(i)[1])
