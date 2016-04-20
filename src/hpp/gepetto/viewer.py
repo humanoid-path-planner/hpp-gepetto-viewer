@@ -332,22 +332,43 @@ class Viewer (object):
 
 ## Helper class 
 class Color(object):
-  def __init__(self):
     # Define some RGBA-normalized color (osg convention)
-    self.white=[1.0,1.0,1.0,1.0]
-    self.lightWhite=[1.0,1.0,1.0,0.5]
-    self.green=[0,1,0,1]
-    self.lightGreen=[0,1,0,0.5]
-    self.yellow=[1,1,0,1]
-    self.lightYellow=[1,1,0,0.5]
-    self.blue = [0.0, 0.0, 1, 1.0]
-    self.lightBlue = [0.0, 0.0, 1, 0.5]
-    self.grey = [0.7,0.7,0.7,1.0]
-    self.lightGrey= [0.7,0.7,0.7,0.7]
-    self.red = [1,0.0,0.0,1.0]
-    self.lightRed = [1,0.0,0.0,0.5]
-    self.black=[0,0,0,1.0]
-    self.lightBlack=[0,0,0,0.5]
-    self.brown = [0.85,0.75,0.15,1.0]
-    self.lightBrown = [0.85,0.75,0.15,1.0]
+    white=[1.0,1.0,1.0,1.0]
+    lightWhite=[1.0,1.0,1.0,0.5]
+    green=[0,1,0,1]
+    lightGreen=[0,1,0,0.5]
+    yellow=[1,1,0,1]
+    lightYellow=[1,1,0,0.5]
+    blue = [0.0, 0.0, 1, 1.0]
+    lightBlue = [0.0, 0.0, 1, 0.5]
+    grey = [0.7,0.7,0.7,1.0]
+    lightGrey= [0.7,0.7,0.7,0.7]
+    red = [1,0.0,0.0,1.0]
+    lightRed = [1,0.0,0.0,0.5]
+    black=[0,0,0,1.0]
+    lightBlack=[0,0,0,0.5]
+    brown = [0.85,0.75,0.15,1.0]
+    lightBrown = [0.85,0.75,0.15,1.0]
+    
+    def __init__(self):
+        self.colors = (
+                [1.0,1.0,1.0,1.0],
+                [1.0,1.0,1.0,0.5],
+                [0,1,0,1],
+                [0,1,0,0.5],
+                [1,1,0,1],
+                [1,1,0,0.5],
+                [0.0, 0.0, 1, 1.0],
+                [0.0, 0.0, 1, 0.5],
+                [0.7,0.7,0.7,1.0],
+                [0.7,0.7,0.7,0.7],
+                [1,0.0,0.0,1.0],
+                [1,0.0,0.0,0.5],
+                [0,0,0,1.0],
+                [0,0,0,0.5],
+                [0.85,0.75,0.15,1.0],
+                [0.85,0.75,0.15,1.0],
+                )
 
+    def __getitem__ (self, i):
+        return self.colors[i]
