@@ -50,9 +50,7 @@ class Viewer (object):
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
         self.color=Color()
-        shouldLoadRobot = False
         if not viewerClient:
-            shouldLoadRobot = True
             viewerClient = GuiClient ()
             self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
@@ -63,18 +61,17 @@ class Viewer (object):
             meshPackageName = self.robot.packageName
         # Load robot in viewer
         self.buildRobotBodies ()
-        if shouldLoadRobot:
-            rospack = rospkg.RosPack()
-            packagePath = rospack.get_path (self.robot.packageName)
-            meshPackagePath = rospack.get_path (meshPackageName)
-            dataRootDir = os.path.dirname (meshPackagePath) + "/"
-            packagePath += '/urdf/' + self.robot.urdfName + \
-                           self.robot.urdfSuffix + '.urdf'
-            if collisionURDF:
-                self.client.gui.addUrdfCollision (self.displayName, packagePath, dataRootDir)
-            else:
-                self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
-            self.client.gui.addToGroup (self.displayName, self.sceneName)
+        rospack = rospkg.RosPack()
+        packagePath = rospack.get_path (self.robot.packageName)
+        meshPackagePath = rospack.get_path (meshPackageName)
+        dataRootDir = os.path.dirname (meshPackagePath) + "/"
+        packagePath += '/urdf/' + self.robot.urdfName + \
+                       self.robot.urdfSuffix + '.urdf'
+        if collisionURDF:
+            self.client.gui.addUrdfCollision (self.displayName, packagePath, dataRootDir)
+        else:
+            self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
+        self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
         self.windowName = "window_" + name
