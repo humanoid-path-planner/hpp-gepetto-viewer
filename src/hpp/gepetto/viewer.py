@@ -18,11 +18,8 @@
 # <http://www.gnu.org/licenses/>.
 
 import os.path
-import rospkg
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
-
-rospack = rospkg.RosPack()
 
 ## Simultaneous control of hppcorbaserver and gepetto-viewer-server
 #
@@ -60,22 +57,14 @@ class Viewer (object):
             self.displayName =  "collision_" + self.robot.displayName
         else:
             self.displayName = self.robot.displayName
-        if hasattr (self.robot, 'meshPackageName'):
-            meshPackageName = self.robot.meshPackageName
-        else:
-            meshPackageName = self.robot.packageName
         # Load robot in viewer
         self.buildRobotBodies ()
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (self.robot.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
-        packagePath += '/urdf/' + self.robot.urdfName + \
-                       self.robot.urdfSuffix + '.urdf'
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + self.robot.packageName + '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix + '.urdf'
         if collisionURDF:
-            self.client.gui.addUrdfCollision (self.displayName, packagePath, dataRootDir)
+            self.client.gui.addUrdfCollision (self.displayName, path, dataRootDir)
         else:
-            self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
+            self.client.gui.addURDF (self.displayName, path, dataRootDir)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
@@ -276,16 +265,11 @@ class Viewer (object):
     #  \param guiOnly whether to control only gepetto-viewer-server
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
-        if not meshPackageName:
-            meshPackageName = package
         if not guiOnly:
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (package)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
-        packagePath += '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, packagePath, dataRootDir,
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + package + '/urdf/' + filename + '.urdf'
+        self.client.gui.addUrdfObjects (prefix, path, dataRootDir,
                                         not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
