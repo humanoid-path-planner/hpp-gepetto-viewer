@@ -49,7 +49,7 @@ class Viewer (object):
         self.color=Color()
         if not viewerClient:
             viewerClient = GuiClient ()
-            self.createWindowAndScene (viewerClient, "hpp_")
+        self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
         if displayName is not None:
             self.displayName = displayName
@@ -86,7 +86,7 @@ class Viewer (object):
         for j in self.robot.getAllJointNames ():
             self.robotBodies.extend (map (lambda n:
                                               (j, self.displayName + "/", n),
-                                          [self.robot.getLinkName (j),]))
+                                          self.robot.getLinkNames (j)))
 
     ## Add a landmark
     # \sa gepetto::corbaserver::GraphicalInterface::addLandmark
@@ -300,7 +300,7 @@ class Viewer (object):
     def publishRobots (self):
         self.robot.setCurrentConfig (self.robotConfig)
         for j, prefix, o in self.robotBodies:
-            pos = self.robot.getLinkPosition (j)
+            pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
             self.client.gui.applyConfiguration (objectName, pos)
         self.client.gui.refresh ()
