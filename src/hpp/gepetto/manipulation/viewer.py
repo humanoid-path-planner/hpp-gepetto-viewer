@@ -32,25 +32,28 @@ class Viewer (Parent):
 
     def buildRobotBodies (self):
         self.robotBodies = list ()
+        base = "collision_" if self.collisionURDF else ""
         # build list of pairs (robotName, objectName)
         for j in self.robot.getAllJointNames ():
             # Guess robot name from joint name
             prefix = j.split ('/') [0]
-            self.robotBodies.append ((j, '', self.robot.getLinkName (j)))
+            self.robotBodies.append ((j, base, self.robot.getLinkName (j)))
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
-        self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                   RobotType.packageName,
-                                   RobotType.modelName, RobotType.urdfSuffix,
-                                   RobotType.srdfSuffix)
+        if not guiOnly:
+            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
+                                       RobotType.packageName,
+                                       RobotType.modelName, RobotType.urdfSuffix,
+                                       RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
-        self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                      RobotType.packageName,
-                                      RobotType.modelName, RobotType.urdfSuffix,
-                                      RobotType.srdfSuffix)
+        if not guiOnly:
+            self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
+                                          RobotType.packageName,
+                                          RobotType.modelName, RobotType.urdfSuffix,
+                                          RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
@@ -67,7 +70,8 @@ class Viewer (Parent):
                                     RobotType.packageName, RobotType.urdfName,
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
         self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+        base = "collision_" if self.collisionURDF else ""
+        self.loadUrdfInGUI (RobotType, base + robotName)
         self.computeObjectPosition ()
 
     def buildCompositeRobot (self, robotNames):

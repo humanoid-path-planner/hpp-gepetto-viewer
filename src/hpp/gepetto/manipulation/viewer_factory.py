@@ -38,7 +38,7 @@ class ViewerFactory (Parent):
         l = locals ();
         self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
-    def loadRobotModel (self, RobotType, robotName):
+    def loadRobotModel (self, RobotType, robotName, guiOnly = False):
         self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
@@ -47,7 +47,7 @@ class ViewerFactory (Parent):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadRobotModel, l));
 
-    def loadHumanoidModel (self, RobotType, robotName):
+    def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
                                       RobotType.packageName,
                                       RobotType.modelName, RobotType.urdfSuffix,
