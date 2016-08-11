@@ -55,22 +55,16 @@ class Viewer (object):
             self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
         self.displayName = self.robot.displayName
-        if hasattr (self.robot, 'meshPackageName'):
-            meshPackageName = self.robot.meshPackageName
-        else:
-            meshPackageName = self.robot.packageName
         # Load robot in viewer
         self.buildRobotBodies ()
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (self.robot.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + self.robot.urdfName + \
                        self.robot.urdfSuffix + '.urdf'
         if collisionURDF:
-            self.client.gui.addUrdfCollision (self.displayName, packagePath, dataRootDir)
+            self.client.gui.addUrdfCollision (self.displayName, packagePath, "")
         else:
-            self.client.gui.addURDF (self.displayName, packagePath, dataRootDir)
+            self.client.gui.addURDF (self.displayName, packagePath, "")
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
@@ -277,10 +271,8 @@ class Viewer (object):
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (package)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, packagePath, dataRootDir,
+        self.client.gui.addUrdfObjects (prefix, packagePath, "",
                                         not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()

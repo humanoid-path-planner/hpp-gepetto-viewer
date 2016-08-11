@@ -75,34 +75,22 @@ class Viewer (Parent):
         self.buildRobotBodies ()
 
     def loadUrdfInGUI (self, RobotType, robotName):
-        if hasattr (RobotType, 'meshPackageName'):
-            meshPackageName = RobotType.meshPackageName
-        else:
-            meshPackageName = RobotType.packageName
         # Load robot in viewer
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (RobotType.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
         if self.collisionURDF:
-            self.client.gui.addUrdfCollision (robotName, packagePath, dataRootDir)
+            self.client.gui.addUrdfCollision (robotName, packagePath, "")
         else:
-            self.client.gui.addURDF (robotName, packagePath, dataRootDir)
+            self.client.gui.addURDF (robotName, packagePath, "")
         self.client.gui.addToGroup (robotName, self.sceneName)
 
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
-        if hasattr (RobotType, 'meshPackageName'):
-            meshPackageName = RobotType.meshPackageName
-        else:
-            meshPackageName = RobotType.packageName
         rospack = rospkg.RosPack()
         packagePath = rospack.get_path (RobotType.packageName)
-        meshPackagePath = rospack.get_path (meshPackageName)
-        dataRootDir = os.path.dirname (meshPackagePath) + "/"
         packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
             '.urdf'
-        self.client.gui.addUrdfObjects (robotName, packagePath, meshPackagePath,
+        self.client.gui.addUrdfObjects (robotName, packagePath, "",
                                         not self.collisionURDF)
         self.client.gui.addToGroup (robotName, self.sceneName)
