@@ -21,6 +21,13 @@ import os.path
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 
+def hppToViewerTransform(input):
+    output = list()
+    output[0:3] = input[0:3]
+    output[3:4] = input[6:7]
+    output[4:6] = input[3:6]
+    return output
+
 ## Simultaneous control of hppcorbaserver and gepetto-viewer-server
 #
 #  This class implements clients to both
@@ -269,8 +276,10 @@ class Viewer (object):
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
         dataRootDir = "" # Ignored for now. Will soon disappear
         path = "package://" + package + '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, path, dataRootDir,
-                                        not self.collisionURDF)
+        if self.collisionURDF:
+            self.client.gui.addUrdfCollision (prefix, path, dataRootDir)
+        else:
+            self.client.gui.addURDF (prefix, path, dataRootDir)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
@@ -291,10 +300,10 @@ class Viewer (object):
     #  gepetto-viewer-server.
     def computeObjectPosition (self):
         # compute object positions
-        objects = self.problemSolver.getObstacleNames (True, False)
+        objects = self.problemSolver.getObstacleLinkNames ()
         for o in objects:
-            pos = self.problemSolver.getObstaclePosition (o)
-            self.client.gui.applyConfiguration (o, pos)
+            pos = self.problemSolver.getObstacleLinkPosition (o)
+            self.client.gui.applyConfiguration (o, hppToViewerTransform(pos))
         self.client.gui.refresh ()
 
     def publishRobots (self):
@@ -302,7 +311,7 @@ class Viewer (object):
         for j, prefix, o in self.robotBodies:
             pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
-            self.client.gui.applyConfiguration (objectName, pos)
+            self.client.gui.applyConfiguration (objectName, hppToViewerTransform(pos))
         self.client.gui.refresh ()
 
     def __call__ (self, args):
