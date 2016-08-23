@@ -276,10 +276,8 @@ class Viewer (object):
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
         dataRootDir = "" # Ignored for now. Will soon disappear
         path = "package://" + package + '/urdf/' + filename + '.urdf'
-        if self.collisionURDF:
-            self.client.gui.addUrdfCollision (prefix, path, dataRootDir)
-        else:
-            self.client.gui.addURDF (prefix, path, dataRootDir)
+        self.client.gui.addUrdfObjects (prefix, path, dataRootDir,
+                                        not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
@@ -300,9 +298,9 @@ class Viewer (object):
     #  gepetto-viewer-server.
     def computeObjectPosition (self):
         # compute object positions
-        objects = self.problemSolver.getObstacleLinkNames ()
+        objects = self.problemSolver.getObstacleNames (True, False)
         for o in objects:
-            pos = self.problemSolver.getObstacleLinkPosition (o)
+            pos = self.problemSolver.getObstaclePosition (o)
             self.client.gui.applyConfiguration (o, hppToViewerTransform(pos))
         self.client.gui.refresh ()
 
