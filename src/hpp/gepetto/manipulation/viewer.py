@@ -35,8 +35,8 @@ class Viewer (Parent):
         # build list of pairs (robotName, objectName)
         for j in self.robot.getAllJointNames ():
             # Guess robot name from joint name
-            prefix = j.split ('/') [0]
-            self.robotBodies.append ((j, base, self.robot.getLinkName (j)))
+            self.robotBodies.extend (map (lambda n:
+                                              (j, base, n), self.robot.getLinkNames (j)))
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
         if not guiOnly:
