@@ -41,9 +41,9 @@ class Viewer (Parent):
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
         if not guiOnly:
             self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                       RobotType.packageName,
-                                       RobotType.modelName, RobotType.urdfSuffix,
-                                       RobotType.srdfSuffix)
+                                         RobotType.packageName,
+                                         RobotType.modelName, RobotType.urdfSuffix,
+                                         RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
