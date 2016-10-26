@@ -21,6 +21,7 @@ import os.path
 import rospkg
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
+import math
 
 rospack = rospkg.RosPack()
 
@@ -66,6 +67,21 @@ class Viewer (object):
         else:
             self.client.gui.addURDF (self.displayName, packagePath, "")
         self.client.gui.addToGroup (self.displayName, self.sceneName)
+        # create velocity and acceleration arrows :
+        self.colorVelocity=[0.2,1,0,0.6]
+        self.colorAcceleration = [1,0,0,0.6]
+        self.arrowRadius = 0.01
+        self.arrowMinSize = 0.05
+        self.arrowMaxSize = 1. - self.arrowMinSize
+        self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
+        self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
+        self.client.gui.setVisibility("Vec_Velocity","OFF")
+        self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
+        self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
+        self.client.gui.setVisibility("Vec_Acceleration","OFF")
+        self.amax = self.problemSolver.client.problem.getParameter("aMax")*math.sqrt(2)
+        self.vmax = self.problemSolver.client.problem.getParameter("vMax")*math.sqrt(2)
+
 
     def createWindowAndScene (self, viewerClient, name):
         self.windowName = "window_" + name
@@ -306,6 +322,26 @@ class Viewer (object):
             pos = self.robot.getLinkPosition (j)
             objectName = prefix + o
             self.client.gui.applyConfiguration (objectName, pos)
+        # display velocity and acceleration arrows :
+        if self.robot.client.robot.getDimensionExtraConfigSpace() >= 6 :
+          configSize = self.robot.getConfigSize() - self.robot.client.robot.getDimensionExtraConfigSpace()
+          q=self.robotConfig[::]
+          qV=q[0:3]+self.robot.client.robot.quaternionFromVector(q[configSize:configSize+3])
+          qA=q[0:3]+self.robot.client.robot.quaternionFromVector(q[configSize+3:configSize+6])
+          v = (math.sqrt(q[configSize] * q[configSize] + q[configSize+1] * q[configSize+1] + q[configSize+2] * q[configSize+2]))/self.vmax
+          a = (math.sqrt(q[configSize+3] * q[configSize+3] + q[configSize+1+3] * q[configSize+1+3] + q[configSize+2+3] * q[configSize+2+3]))/self.amax
+          if v > 0 :
+            self.client.gui.resizeArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize+ v*self.arrowMaxSize)
+            self.client.gui.applyConfiguration("Vec_Velocity",qV[0:7])
+            self.client.gui.setVisibility("Vec_Velocity","ALWAYS_ON_TOP")
+          else :
+            self.client.gui.setVisibility("Vec_Velocity","OFF")
+          if a > 0 :
+            self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize+ a*self.arrowMaxSize)
+            self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
+            self.client.gui.setVisibility("Vec_Acceleration","ALWAYS_ON_TOP")
+          else :
+            self.client.gui.setVisibility("Vec_Acceleration","OFF")
         self.client.gui.refresh ()
 
     def __call__ (self, args):

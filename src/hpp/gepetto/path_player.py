@@ -31,6 +31,7 @@ class PathPlayer (object):
         self.start = 0.
         self.end = 1.
 
+
     def setDt(self,dt):
       self.dt = dt
 
@@ -49,6 +50,11 @@ class PathPlayer (object):
             elapsed = time.time() - start
             if elapsed < self.dt :
               time.sleep(self.dt-elapsed)
+            else:
+              print "Warning : you should choose a greater dt for the PathPlayer."
+        q = self.client.problem.configAtParam (pathId, length)
+        self.publisher.robotConfig = q
+        self.publisher.publishRobots ()
 
     def displayPath(self,pathId,color=[0.85,0.75,0.15,0.9],jointName=0) :
       if jointName == 0 :
