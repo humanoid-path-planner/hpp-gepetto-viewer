@@ -119,7 +119,7 @@ class Viewer (object):
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayPathMap (self,nameRoadmap,pathID,radiusSphere,sizeAxis=1,colorNode=[1,0.0,0.0,1.0],colorEdge=[1,0.0,0.0,0.5],joint=0):
+    def displayPathMap (self,nameRoadmap,pathID,radiusSphere=0.1,sizeAxis=1,colorNode=[1,0.0,0.0,1.0],colorEdge=[1,0.0,0.0,0.5],joint=0):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
@@ -158,7 +158,7 @@ class Viewer (object):
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayRoadmap (self,nameRoadmap,radiusSphere,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=0):
+    def displayRoadmap (self,nameRoadmap,radiusSphere=0.5,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=0):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
@@ -202,7 +202,7 @@ class Viewer (object):
     # \param colorNode : the color of the sphere for the nodes (default value : white)
     # \param colorEdge : the color of the edges (default value : yellow)
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
-    def solveAndDisplay (self,nameRoadmap,numberIt,radiusSphere,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint = 0):
+    def solveAndDisplay (self,nameRoadmap,numberIt,radiusSphere=0.05,sizeAxis=1,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint = 0):
       import time
       ps = self.problemSolver
       problem = self.problemSolver.client.problem
