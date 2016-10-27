@@ -177,15 +177,14 @@ class Viewer (object):
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
       for i in range(0,ps.numberEdges()) : 
-        if i%2 == 0 :
-          if joint == 0 :
-            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
-          else : 
-            robot.setCurrentConfig(ps.edge(i)[0])
-            e0 = robot.getLinkPosition(joint)[0:3]
-            robot.setCurrentConfig(ps.edge(i)[1])
-            e1 = robot.getLinkPosition(joint)[0:3]
-            gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+        if joint == 0 :
+          gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
+        else :
+          robot.setCurrentConfig(ps.edge(i)[0])
+          e0 = robot.getLinkPosition(joint)[0:3]
+          robot.setCurrentConfig(ps.edge(i)[1])
+          e1 = robot.getLinkPosition(joint)[0:3]
+          gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
       gui.addToGroup(nameRoadmap,self.sceneName)
       gui.refresh()
       return True
@@ -233,15 +232,14 @@ class Viewer (object):
               robot.setCurrentConfig(ps.node(i))
               gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
           for i in range(beginEdge,ps.numberEdges()) : 
-            if i%2 == 0:
-              if joint == 0 :
-                gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
-              else : 
-                robot.setCurrentConfig(ps.edge(i)[0])
-                e0 = robot.getLinkPosition(joint)[0:3]
-                robot.setCurrentConfig(ps.edge(i)[1])
-                e1 = robot.getLinkPosition(joint)[0:3]
-                gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+            if joint == 0 :
+              gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
+            else :
+              robot.setCurrentConfig(ps.edge(i)[0])
+              e0 = robot.getLinkPosition(joint)[0:3]
+              robot.setCurrentConfig(ps.edge(i)[1])
+              e1 = robot.getLinkPosition(joint)[0:3]
+              gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
           beginNode = ps.numberNodes() 
           beginEdge = ps.numberEdges() 
           it = 1
@@ -256,15 +254,14 @@ class Viewer (object):
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
       for i in range(beginEdge,ps.numberEdges()) : 
-        if i%2 == 0:
-          if joint == 0 :
-            gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3]) 
-          else : 
-            robot.setCurrentConfig(ps.edge(i)[0])
-            e0 = robot.getLinkPosition(joint)[0:3]
-            robot.setCurrentConfig(ps.edge(i)[1])
-            e1 = robot.getLinkPosition(joint)[0:3]
-            gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+        if joint == 0 :
+          gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
+        else :
+          robot.setCurrentConfig(ps.edge(i)[0])
+          e0 = robot.getLinkPosition(joint)[0:3]
+          robot.setCurrentConfig(ps.edge(i)[1])
+          e1 = robot.getLinkPosition(joint)[0:3]
+          gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
       tStop = time.time()
       return tStop-tStart
 
