@@ -262,6 +262,7 @@ class Viewer (object):
           robot.setCurrentConfig(ps.edge(i)[1])
           e1 = robot.getLinkPosition(joint)[0:3]
           gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+      problem.optimizePath(problem.numberPaths()-1)
       tStop = time.time()
       return tStop-tStart
 
