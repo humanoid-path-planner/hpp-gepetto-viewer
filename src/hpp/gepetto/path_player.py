@@ -52,7 +52,7 @@ class PathPlayer (object):
               time.sleep(self.dt-elapsed)
             else:
               print "Warning : you should choose a greater dt for the PathPlayer."
-        q = self.client.problem.configAtParam (pathId, length)
+        q = self.client.problem.configAtParam (pathId, length+self.dt)
         self.publisher.robotConfig = q
         self.publisher.publishRobots ()
 
@@ -81,7 +81,7 @@ class PathPlayer (object):
       if jointName == 0 :
         if self.publisher.robot.rootJointType == 'planar' :
           jointName = self.publisher.robot.tf_root+'_joint'
-      vmax=self.client.problem.getParameter("vMax") * math.sqrt(3)
+      vmax=self.client.problem.getParameter("vMax") * math.sqrt(2)
       configSize = self.client.robot.getConfigSize() - self.client.robot.getDimensionExtraConfigSpace()
       last_q = 0
       length = self.end*self.client.problem.pathLength (pathId)
