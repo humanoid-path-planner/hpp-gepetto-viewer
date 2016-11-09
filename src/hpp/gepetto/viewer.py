@@ -19,6 +19,7 @@
 
 import os.path
 import rospkg
+from hpp import quaternion as Quaternion
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 import math
@@ -79,8 +80,13 @@ class Viewer (object):
         self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
         self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
         self.client.gui.setVisibility("Vec_Acceleration","OFF")
-        self.amax = self.problemSolver.client.problem.getParameter("aMax")*math.sqrt(2)
-        self.vmax = self.problemSolver.client.problem.getParameter("vMax")*math.sqrt(2)
+        try:
+          self.amax = self.problemSolver.client.problem.getParameter("aMax")*math.sqrt(2)
+          self.vmax = self.problemSolver.client.problem.getParameter("vMax")*math.sqrt(2)
+        except:
+          print "No values found for velocity and acceleration bounds, use 1 by default"
+          self.amax = 1.0
+          self.vmax = 1.0
 
 
     def createWindowAndScene (self, viewerClient, name):
@@ -321,11 +327,13 @@ class Viewer (object):
             objectName = prefix + o
             self.client.gui.applyConfiguration (objectName, pos)
         # display velocity and acceleration arrows :
-        if self.robot.client.robot.getDimensionExtraConfigSpace() >= 6 :
-          configSize = self.robot.getConfigSize() - self.robot.client.robot.getDimensionExtraConfigSpace()
+        if self.robot.getDimensionExtraConfigSpace() >= 6 :
+          configSize = self.robot.getConfigSize() - self.robot.getDimensionExtraConfigSpace()
           q=self.robotConfig[::]
-          qV=q[0:3]+self.robot.client.robot.quaternionFromVector(q[configSize:configSize+3])
-          qA=q[0:3]+self.robot.client.robot.quaternionFromVector(q[configSize+3:configSize+6])
+          qV=q[0:3]+self.robot.quaternionFromVector(q[configSize:configSize+3])
+          qA=q[0:3]+self.robot.quaternionFromVector(q[configSize+3:configSize+6])
+          #qV=q[0:3]+Quaternion.Quaternion([1,0,0],q[configSize:configSize+3]).normalize().array.tolist()
+          #qA=q[0:3]+Quaternion.Quaternion([1,0,0],q[configSize+3:configSize+6]).normalize().array.tolist()
           v = (math.sqrt(q[configSize] * q[configSize] + q[configSize+1] * q[configSize+1] + q[configSize+2] * q[configSize+2]))/self.vmax
           a = (math.sqrt(q[configSize+3] * q[configSize+3] + q[configSize+1+3] * q[configSize+1+3] + q[configSize+2+3] * q[configSize+2+3]))/self.amax
           if v > 0 :
