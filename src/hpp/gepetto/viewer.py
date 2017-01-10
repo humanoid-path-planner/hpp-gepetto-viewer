@@ -74,12 +74,13 @@ class Viewer (object):
         self.arrowRadius = 0.01
         self.arrowMinSize = 0.05
         self.arrowMaxSize = 1. - self.arrowMinSize
-        self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
-        self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
-        self.client.gui.setVisibility("Vec_Velocity","OFF")
-        self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
-        self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
-        self.client.gui.setVisibility("Vec_Acceleration","OFF")
+        if (not ("Vec_Velocity" in self.client.gui.getNodeList())):
+          self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
+          self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
+          self.client.gui.setVisibility("Vec_Velocity","OFF")
+          self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
+          self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
+          self.client.gui.setVisibility("Vec_Acceleration","OFF")
         try:
           self.amax = self.problemSolver.client.problem.getParameter("aMax")*math.sqrt(2)
           self.vmax = self.problemSolver.client.problem.getParameter("vMax")*math.sqrt(2)
