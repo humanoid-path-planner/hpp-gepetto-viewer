@@ -81,7 +81,8 @@ class Viewer (object):
         except GepettoError:
             self.windowId = viewerClient.gui.createWindow (self.windowName)
         self.sceneName = "%i_scene_%s" % (self.windowId, name)
-        if viewerClient.gui.createGroup (self.sceneName):
+        if not viewerClient.gui.nodeExists (self.sceneName):
+            viewerClient.gui.createGroup (self.sceneName)
             if not viewerClient.gui.addSceneToWindow (self.sceneName, self.windowId):
                 raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
                                 (self.sceneName, self.windowId, self.windowName))
