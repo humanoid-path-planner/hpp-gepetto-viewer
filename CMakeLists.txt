@@ -30,7 +30,7 @@ set(PROJECT_URL "")
 findpython()
 setup_project()
 
-add_required_dependency("hpp-corbaserver >= 3")
+add_required_dependency("hpp-corbaserver >= 4")
 add_optional_dependency("gepetto-viewer-corba")
 
 set (PATH_PLAYER_GLADE_FILENAME
