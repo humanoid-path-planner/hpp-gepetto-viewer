@@ -193,6 +193,14 @@ class Viewer (object):
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
+      # set the start in green and the goal in red :
+      gui.addSphere(nameRoadmap+"start",radiusSphere*1.5,self.color.green)
+      gui.applyConfiguration(nameRoadmap+"start",ps.node(0)[0:7])
+      gui.addToGroup(nameRoadmap+"start",self.sceneName)
+      gui.addSphere(nameRoadmap+"goal",radiusSphere*1.5,self.color.red)
+      gui.applyConfiguration(nameRoadmap+"goal",ps.node(1)[0:7])
+      gui.addToGroup(nameRoadmap+"goal",self.sceneName)
+      # add all the nodes :
       for i in range(0,ps.numberNodes()) :	
         if joint == 0 :
           gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
