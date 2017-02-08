@@ -82,8 +82,8 @@ class Viewer (object):
           self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
           self.client.gui.setVisibility("Vec_Acceleration","OFF")
         try:
-          self.amax = self.problemSolver.client.problem.getParameter("aMax")*math.sqrt(2)
-          self.vmax = self.problemSolver.client.problem.getParameter("vMax")*math.sqrt(2)
+          self.amax = self.problemSolver.client.problem.getParameter("aMax")
+          self.vmax = self.problemSolver.client.problem.getParameter("vMax")
         except:
           print "No values found for velocity and acceleration bounds, use 1 by default"
           self.amax = 1.0
@@ -157,6 +157,20 @@ class Viewer (object):
       gui.refresh()
       return True
 
+    def addVectorToRoadmap(self,nameRoadmap,radius,index,conf):
+      name = "vecRM"+str(index)
+      pos = conf[0:3]
+      quat = self.robot.quaternionFromVector(conf[-6:-3])
+      v = (math.sqrt(conf[-6] * conf[-6] + conf[-5] * conf[-5] + conf[-4] * conf[-4]))/self.vmax
+      length = 0.02+ v*0.2
+      self.client.gui.addArrow(name,radius,length,self.color.black)
+      self.client.gui.addToGroup(name,self.sceneName)
+      self.client.gui.applyConfiguration(name,pos+quat)
+      self.client.gui.refresh()
+      return index+1
+
+
+
     ##Display the roadmap created by problem.solve()
     # \param radiusSphere : the radius of the node
     # \param sizeAxis : size of axes (proportionnaly to the radius of the sphere) 0 = only sphere
@@ -169,6 +183,8 @@ class Viewer (object):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
+      radiusVector = radiusSphere/3.
+      numVector=0
       # find the link : 
       if joint == 0 :
         if robot.rootJointType == 'planar' :
@@ -179,10 +195,12 @@ class Viewer (object):
         return False
       for i in range(0,ps.numberNodes()) :	
         if joint == 0 :
-          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
+          numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
         else : 
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
+          numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
       for i in range(0,ps.numberEdges()) : 
         if joint == 0 :
           gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
@@ -214,6 +232,7 @@ class Viewer (object):
       problem = self.problemSolver.client.problem
       gui = self.client.gui
       robot = self.robot
+      radiusVector = radiusSphere/3.
       # find the link : 
       if joint == 0 :
         if robot.rootJointType == 'planar' :
@@ -230,14 +249,17 @@ class Viewer (object):
       beginNode = ps.numberNodes()
       it = 1
       self.displayRoadmap(nameRoadmap,radiusSphere,sizeAxis,colorNode,colorEdge,joint)
+      numVector = ps.numberNodes()
       while not problem.executeOneStep():
         if it == numberIt :
           for i in range(beginNode,ps.numberNodes()) :	
             if joint == 0 :
               gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
+              numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
             else : 
               robot.setCurrentConfig(ps.node(i))
               gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+              numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
           for i in range(beginEdge,ps.numberEdges()) : 
             if joint == 0 :
               gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
@@ -257,9 +279,11 @@ class Viewer (object):
       for i in range(beginNode,ps.numberNodes()) :	
         if joint == 0 :
           gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
+          numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
         else : 
           robot.setCurrentConfig(ps.node(i))
           gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+          numVector = self.addVectorToRoadmap(nameRoadmap,radiusVector,numVector,ps.node(i))
       for i in range(beginEdge,ps.numberEdges()) : 
         if joint == 0 :
           gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
