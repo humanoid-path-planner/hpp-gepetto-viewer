@@ -375,12 +375,16 @@ class Viewer (object):
             self.client.gui.setVisibility("Vec_Velocity","ALWAYS_ON_TOP")
           else :
             self.client.gui.setVisibility("Vec_Velocity","OFF")
+            self.client.gui.resizeArrow("Vec_Velocity",self.arrowRadius,0)
+            self.client.gui.applyConfiguration("Vec_Velocity",qV[0:7])
           if a > 0 :
             self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize+ a*self.arrowMaxSize)
             self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
             self.client.gui.setVisibility("Vec_Acceleration","ALWAYS_ON_TOP")
           else :
             self.client.gui.setVisibility("Vec_Acceleration","OFF")
+            self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,0)
+            self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
         self.client.gui.refresh ()
 
     def __call__ (self, args):
