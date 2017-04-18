@@ -19,6 +19,7 @@ import time
 import numpy as np
 import pickle as pk
 import math
+import omniORB.any
 
 ## displays a path by sampling configurations along the path.
 #
@@ -81,7 +82,7 @@ class PathPlayer (object):
       if jointName == 0 :
         if self.publisher.robot.rootJointType == 'planar' :
           jointName = self.publisher.robot.tf_root+'_joint'
-      vmax=self.client.problem.getParameter("vMax") * math.sqrt(2)
+      vmax=omniORB.any.from_any(self.client.problem.getParameter("vMax")) * math.sqrt(2)
       configSize = self.client.robot.getConfigSize() - self.client.robot.getDimensionExtraConfigSpace()
       last_q = 0
       length = self.end*self.client.problem.pathLength (pathId)

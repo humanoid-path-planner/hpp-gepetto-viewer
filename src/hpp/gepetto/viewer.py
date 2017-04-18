@@ -23,6 +23,7 @@ from hpp import quaternion as Quaternion
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 import math
+import omniORB.any
 
 rospack = rospkg.RosPack()
 
@@ -82,8 +83,8 @@ class Viewer (object):
           self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
           self.client.gui.setVisibility("Vec_Acceleration","OFF")
         try:
-          self.amax = self.problemSolver.client.problem.getParameter("aMax")
-          self.vmax = self.problemSolver.client.problem.getParameter("vMax")
+          self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("aMax"))
+          self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("vMax"))
         except:
           print "No values found for velocity and acceleration bounds, use 1 by default"
           self.amax = 1.0
