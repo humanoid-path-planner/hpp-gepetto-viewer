@@ -327,6 +327,16 @@ class Viewer (object):
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
 
+    def drawRobotAABB(self):
+        aabb = self.robot.getRobotAABB()
+        n = self.sceneName + "/robotAABB"
+        if self.client.gui.nodeExists(n):
+            self.client.gui.deleteNode(n, True)
+        self.client.gui.addBox(n, (aabb[3]-aabb[0])/2, (aabb[4]-aabb[1])/2, (aabb[5]-aabb[2])/2, self.color.black)
+        self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,1,0,0,0])
+        self.client.gui.setWireFrameMode(n, "WIREFRAME")
+        self.client.gui.refresh()
+
 ## Helper class 
 class Color(object):
     # Define some RGBA-normalized color (osg convention)
