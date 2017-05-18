@@ -60,18 +60,15 @@ class Viewer (object):
         self.client = viewerClient
         if displayName is not None:
             self.displayName = displayName
-        elif collisionURDF:
-            self.displayName =  "collision_" + self.robot.displayName
         else:
             self.displayName = self.robot.displayName
         # Load robot in viewer
         self.buildRobotBodies ()
         dataRootDir = "" # Ignored for now. Will soon disappear
         path = "package://" + self.robot.packageName + '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix + '.urdf'
+        self.client.gui.addURDF (self.displayName, path, dataRootDir)
         if collisionURDF:
-            self.client.gui.addUrdfCollision (self.displayName, path, dataRootDir)
-        else:
-            self.client.gui.addURDF (self.displayName, path, dataRootDir)
+            self.toggleVisual(False)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
@@ -326,6 +323,10 @@ class Viewer (object):
     # \sa gepetto::corbaserver::GraphicalInterface::stopCapture
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
+
+    def toggleVisual(self, visual):
+        for n in self.client.gui.getGroupNodeList(self.displayName):
+            self.client.gui.setBoolProperty(n, "ShowVisual", visual)
 
     def drawRobotAABB(self):
         aabb = self.robot.getRobotAABB()
