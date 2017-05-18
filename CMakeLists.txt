@@ -27,7 +27,7 @@ include(cmake/python.cmake)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 set(PROJECT_URL "")
 
-findpython()
+findpython(2.7 EXACT)
 setup_project()
 
 add_required_dependency("hpp-corbaserver >= 4")
