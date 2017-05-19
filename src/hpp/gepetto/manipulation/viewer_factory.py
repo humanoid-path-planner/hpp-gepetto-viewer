@@ -91,10 +91,3 @@ class ViewerFactory (Parent):
             viewerClient = GuiClient (host = host)
         v = Parent.createViewer (self, ViewerClass, viewerClient, host, collisionURDF)
         return v
-
-    ## Create a client to \c gepetto-viewer-server and send stored commands
-    #
-    #  \deprecated use createViewer instead.
-    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
-        warnings.warn ("Deprecated method, use createViewer instead.")
-        self.createViewer (ViewerClass, viewerClient)
