@@ -77,7 +77,10 @@ class ViewerFactory (object):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None, collisionURDF = False):
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, collisionURDF = False):
+        if host is not None and viewerClient is None:
+            from gepetto.corbaserver import Client as GuiClient
+            viewerClient = GuiClient (host = host)
         v = ViewerClass (self.problemSolver, viewerClient, collisionURDF)
         for call in self.guiRequest:
             kwargs = call[1].copy ();
@@ -85,10 +88,3 @@ class ViewerFactory (object):
             f = call[0];
             f (v, **kwargs)
         return v
-
-    ## Create a client to \c gepetto-viewer-server and send stored commands
-    #
-    #  \deprecated use createViewer instead.
-    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
-        warnings.warn ("Deprecated method, use createViewer instead.")
-        self.createViewer (ViewerClass, viewerClient)

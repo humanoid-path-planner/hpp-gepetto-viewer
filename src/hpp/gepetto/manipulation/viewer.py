@@ -18,7 +18,6 @@
 # <http://www.gnu.org/licenses/>.
 
 import os
-import rospkg
 from hpp.gepetto import Viewer as Parent
 
 ## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
@@ -32,11 +31,12 @@ class Viewer (Parent):
 
     def buildRobotBodies (self):
         self.robotBodies = list ()
+        base = "collision_" if self.collisionURDF else ""
         # build list of pairs (robotName, objectName)
         for j in self.robot.getAllJointNames ():
             # Guess robot name from joint name
-            prefix = j.split ('/') [0]
-            self.robotBodies.append ((j, '', self.robot.getLinkName (j)))
+            self.robotBodies.extend (map (lambda n:
+                                              (j, base, n), self.robot.getLinkNames (j)))
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
         if not guiOnly:
@@ -48,10 +48,11 @@ class Viewer (Parent):
         self.loadUrdfInGUI (RobotType, robotName)
 
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
-        self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                      RobotType.packageName,
-                                      RobotType.modelName, RobotType.urdfSuffix,
-                                      RobotType.srdfSuffix)
+        if not guiOnly:
+            self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
+                                          RobotType.packageName,
+                                          RobotType.modelName, RobotType.urdfSuffix,
+                                          RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
@@ -68,7 +69,8 @@ class Viewer (Parent):
                                     RobotType.packageName, RobotType.urdfName,
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
         self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+        base = "collision_" if self.collisionURDF else ""
+        self.loadUrdfInGUI (RobotType, base + robotName)
         self.computeObjectPosition ()
 
     def buildCompositeRobot (self, robotNames):
@@ -77,21 +79,17 @@ class Viewer (Parent):
 
     def loadUrdfInGUI (self, RobotType, robotName):
         # Load robot in viewer
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (RobotType.packageName)
-        packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
-            '.urdf'
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + RobotType.packageName + '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + '.urdf'
         if self.collisionURDF:
-            self.client.gui.addUrdfCollision (robotName, packagePath, "")
+            self.client.gui.addUrdfCollision (robotName, path, dataRootDir)
         else:
-            self.client.gui.addURDF (robotName, packagePath, "")
+            self.client.gui.addURDF (robotName, path, dataRootDir)
         self.client.gui.addToGroup (robotName, self.sceneName)
 
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (RobotType.packageName)
-        packagePath += '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + \
-            '.urdf'
-        self.client.gui.addUrdfObjects (robotName, packagePath, "",
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + RobotType.packageName + '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + '.urdf'
+        self.client.gui.addUrdfObjects (robotName, path, dataRootDir,
                                         not self.collisionURDF)
         self.client.gui.addToGroup (robotName, self.sceneName)

@@ -18,11 +18,15 @@
 # <http://www.gnu.org/licenses/>.
 
 import os.path
-import rospkg
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 
-rospack = rospkg.RosPack()
+def hppToViewerTransform(input):
+    output = list()
+    output[0:3] = input[0:3]
+    output[3:4] = input[6:7]
+    output[4:6] = input[3:6]
+    return output
 
 ## Simultaneous control of hppcorbaserver and gepetto-viewer-server
 #
@@ -45,7 +49,7 @@ class Viewer (object):
     #         gepetto-viewer-server is created.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, postContextId=""):
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, postContextId=""):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
@@ -54,17 +58,20 @@ class Viewer (object):
             viewerClient = GuiClient (postContextId=postContextId)
             self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
-        self.displayName = self.robot.displayName
+        if displayName is not None:
+            self.displayName = displayName
+        elif collisionURDF:
+            self.displayName =  "collision_" + self.robot.displayName
+        else:
+            self.displayName = self.robot.displayName
         # Load robot in viewer
         self.buildRobotBodies ()
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (self.robot.packageName)
-        packagePath += '/urdf/' + self.robot.urdfName + \
-                       self.robot.urdfSuffix + '.urdf'
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + self.robot.packageName + '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix + '.urdf'
         if collisionURDF:
-            self.client.gui.addUrdfCollision (self.displayName, packagePath, "")
+            self.client.gui.addUrdfCollision (self.displayName, path, dataRootDir)
         else:
-            self.client.gui.addURDF (self.displayName, packagePath, "")
+            self.client.gui.addURDF (self.displayName, path, dataRootDir)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
@@ -74,7 +81,8 @@ class Viewer (object):
         except GepettoError:
             self.windowId = viewerClient.gui.createWindow (self.windowName)
         self.sceneName = "%i_scene_%s" % (self.windowId, name)
-        if viewerClient.gui.createGroup (self.sceneName):
+        if not viewerClient.gui.nodeExists (self.sceneName):
+            viewerClient.gui.createGroup (self.sceneName)
             if not viewerClient.gui.addSceneToWindow (self.sceneName, self.windowId):
                 raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
                                 (self.sceneName, self.windowId, self.windowName))
@@ -86,7 +94,7 @@ class Viewer (object):
         for j in self.robot.getAllJointNames ():
             self.robotBodies.extend (map (lambda n:
                                               (j, self.displayName + "/", n),
-                                          [self.robot.getLinkName (j),]))
+                                          self.robot.getLinkNames (j)))
 
     ## Add a landmark
     # \sa gepetto::corbaserver::GraphicalInterface::addLandmark
@@ -265,14 +273,11 @@ class Viewer (object):
     #  \param guiOnly whether to control only gepetto-viewer-server
     def loadObstacleModel (self, package, filename, prefix,
                            meshPackageName = None, guiOnly = False):
-        if not meshPackageName:
-            meshPackageName = package
         if not guiOnly:
             self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
-        rospack = rospkg.RosPack()
-        packagePath = rospack.get_path (package)
-        packagePath += '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, packagePath, "",
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = "package://" + package + '/urdf/' + filename + '.urdf'
+        self.client.gui.addUrdfObjects (prefix, path, dataRootDir,
                                         not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
@@ -297,15 +302,15 @@ class Viewer (object):
         objects = self.problemSolver.getObstacleNames (True, False)
         for o in objects:
             pos = self.problemSolver.getObstaclePosition (o)
-            self.client.gui.applyConfiguration (o, pos)
+            self.client.gui.applyConfiguration (o, hppToViewerTransform(pos))
         self.client.gui.refresh ()
 
     def publishRobots (self):
         self.robot.setCurrentConfig (self.robotConfig)
         for j, prefix, o in self.robotBodies:
-            pos = self.robot.getLinkPosition (j)
+            pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
-            self.client.gui.applyConfiguration (objectName, pos)
+            self.client.gui.applyConfiguration (objectName, hppToViewerTransform(pos))
         self.client.gui.refresh ()
 
     def __call__ (self, args):

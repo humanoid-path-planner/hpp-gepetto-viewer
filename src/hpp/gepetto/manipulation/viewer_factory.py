@@ -38,7 +38,7 @@ class ViewerFactory (Parent):
         l = locals ();
         self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
-    def loadRobotModel (self, RobotType, robotName):
+    def loadRobotModel (self, RobotType, robotName, guiOnly = False):
         self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
                                    RobotType.modelName, RobotType.urdfSuffix,
@@ -47,7 +47,7 @@ class ViewerFactory (Parent):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadRobotModel, l));
 
-    def loadHumanoidModel (self, RobotType, robotName):
+    def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
                                       RobotType.packageName,
                                       RobotType.modelName, RobotType.urdfSuffix,
@@ -85,13 +85,9 @@ class ViewerFactory (Parent):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None, collisionURDF = False):
-        v = Parent.createViewer (self, ViewerClass, viewerClient, collisionURDF)
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, collisionURDF = False):
+        if host is not None and viewerClient is None:
+            from gepetto.corbaserver import Client as GuiClient
+            viewerClient = GuiClient (host = host)
+        v = Parent.createViewer (self, ViewerClass, viewerClient, host, collisionURDF)
         return v
-
-    ## Create a client to \c gepetto-viewer-server and send stored commands
-    #
-    #  \deprecated use createViewer instead.
-    def createRealClient (self, ViewerClass = Viewer, viewerClient = None):
-        warnings.warn ("Deprecated method, use createViewer instead.")
-        self.createViewer (ViewerClass, viewerClient)
