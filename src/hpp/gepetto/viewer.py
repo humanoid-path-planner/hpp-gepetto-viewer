@@ -22,11 +22,7 @@ from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 
 def hppToViewerTransform(input):
-    output = list()
-    output[0:3] = input[0:3]
-    output[3:4] = input[6:7]
-    output[4:6] = input[3:6]
-    return output
+    return input
 
 ## Simultaneous control of hppcorbaserver and gepetto-viewer-server
 #
@@ -299,7 +295,7 @@ class Viewer (object):
         objects = self.problemSolver.getObstacleNames (True, False)
         for o in objects:
             pos = self.problemSolver.getObstaclePosition (o)
-            self.client.gui.applyConfiguration (o, hppToViewerTransform(pos))
+            self.client.gui.applyConfiguration (o, pos)
         self.client.gui.refresh ()
 
     def publishRobots (self):
@@ -307,7 +303,7 @@ class Viewer (object):
         for j, prefix, o in self.robotBodies:
             pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
-            self.client.gui.applyConfiguration (objectName, hppToViewerTransform(pos))
+            self.client.gui.applyConfiguration (objectName, pos)
         self.client.gui.refresh ()
 
     def __call__ (self, args):
@@ -334,7 +330,7 @@ class Viewer (object):
         if self.client.gui.nodeExists(n):
             self.client.gui.deleteNode(n, True)
         self.client.gui.addBox(n, (aabb[3]-aabb[0])/2, (aabb[4]-aabb[1])/2, (aabb[5]-aabb[2])/2, self.color.black)
-        self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,1,0,0,0])
+        self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,0,0,0,1])
         self.client.gui.setWireFrameMode(n, "WIREFRAME")
         self.client.gui.refresh()
 
