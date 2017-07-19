@@ -26,8 +26,9 @@ class Viewer (Parent):
     def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False) :
         Parent.__init__ (self, problemSolver, viewerClient, collisionURDF)
         self.compositeRobotName = self.robot.client.basic.robot.getRobotName()
-        self.client.gui.createGroup (self.compositeRobotName)
-        self.client.gui.addToGroup (self.displayName, self.compositeRobotName)
+        if not self.client.gui.nodeExists(self.compositeRobotName):
+            self.client.gui.createGroup (self.compositeRobotName)
+            self.client.gui.addToGroup (self.displayName, self.compositeRobotName)
 
     def buildRobotBodies (self):
         self.robotBodies = list ()

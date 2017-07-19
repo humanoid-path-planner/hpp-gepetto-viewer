@@ -22,11 +22,7 @@ from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 
 def hppToViewerTransform(input):
-    output = list()
-    output[0:3] = input[0:3]
-    output[3:4] = input[6:7]
-    output[4:6] = input[3:6]
-    return output
+    return input
 
 ## Simultaneous control of hppcorbaserver and gepetto-viewer-server
 #
@@ -60,18 +56,15 @@ class Viewer (object):
         self.client = viewerClient
         if displayName is not None:
             self.displayName = displayName
-        elif collisionURDF:
-            self.displayName =  "collision_" + self.robot.displayName
         else:
             self.displayName = self.robot.displayName
         # Load robot in viewer
         self.buildRobotBodies ()
         dataRootDir = "" # Ignored for now. Will soon disappear
         path = "package://" + self.robot.packageName + '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix + '.urdf'
+        self.client.gui.addURDF (self.displayName, path, dataRootDir)
         if collisionURDF:
-            self.client.gui.addUrdfCollision (self.displayName, path, dataRootDir)
-        else:
-            self.client.gui.addURDF (self.displayName, path, dataRootDir)
+            self.toggleVisual(False)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
@@ -302,7 +295,7 @@ class Viewer (object):
         objects = self.problemSolver.getObstacleNames (True, False)
         for o in objects:
             pos = self.problemSolver.getObstaclePosition (o)
-            self.client.gui.applyConfiguration (o, hppToViewerTransform(pos))
+            self.client.gui.applyConfiguration (o, pos)
         self.client.gui.refresh ()
 
     def publishRobots (self):
@@ -310,7 +303,7 @@ class Viewer (object):
         for j, prefix, o in self.robotBodies:
             pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
-            self.client.gui.applyConfiguration (objectName, hppToViewerTransform(pos))
+            self.client.gui.applyConfiguration (objectName, pos)
         self.client.gui.refresh ()
 
     def __call__ (self, args):
@@ -326,6 +319,20 @@ class Viewer (object):
     # \sa gepetto::corbaserver::GraphicalInterface::stopCapture
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
+
+    def toggleVisual(self, visual):
+        for n in self.client.gui.getGroupNodeList(self.displayName):
+            self.client.gui.setBoolProperty(n, "ShowVisual", visual)
+
+    def drawRobotAABB(self):
+        aabb = self.robot.getRobotAABB()
+        n = self.sceneName + "/robotAABB"
+        if self.client.gui.nodeExists(n):
+            self.client.gui.deleteNode(n, True)
+        self.client.gui.addBox(n, (aabb[3]-aabb[0])/2, (aabb[4]-aabb[1])/2, (aabb[5]-aabb[2])/2, self.color.black)
+        self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,0,0,0,1])
+        self.client.gui.setWireFrameMode(n, "WIREFRAME")
+        self.client.gui.refresh()
 
 ## Helper class 
 class Color(object):

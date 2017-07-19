@@ -56,6 +56,7 @@ class PathPlayerGui (object):
       "on_StopButton_clicked": self.on_stop_clicked,
       "on_PathScale_value_changed": self.on_pathscale_changed,
       "on_ButtonPlotRefresh_clicked": self.refreshPlot,
+      "on_ButtonRefreshPaths_clicked": self.refresh,
       "on_PathScale_value_changed": self.on_pathscale_changed,
       "on_Record_button_toggled": self.on_record_toggled
       }
@@ -63,7 +64,7 @@ class PathPlayerGui (object):
     self.refresh ()
     self.adjust_increments ()
 
-  def refresh (self):
+  def refresh (self, w=None):
     nbPaths = self.client.problem.numberPaths ()
     if nbPaths > 0:
       self ["PathIndex"].set_range (0, nbPaths - 1)
