@@ -41,7 +41,7 @@ class ViewerFactory (Parent):
     def loadRobotModel (self, RobotType, robotName, guiOnly = False):
         self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                    RobotType.packageName,
-                                   RobotType.modelName, RobotType.urdfSuffix,
+                                   RobotType.urdfName, RobotType.urdfSuffix,
                                    RobotType.srdfSuffix)
         l = locals ();
         l ['guiOnly'] = True
@@ -50,7 +50,7 @@ class ViewerFactory (Parent):
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
                                       RobotType.packageName,
-                                      RobotType.modelName, RobotType.urdfSuffix,
+                                      RobotType.urdfName, RobotType.urdfSuffix,
                                       RobotType.srdfSuffix)
         l = locals ();
         l ['guiOnly'] = True
