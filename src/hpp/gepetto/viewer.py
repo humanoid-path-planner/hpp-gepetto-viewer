@@ -48,7 +48,7 @@ class Viewer (object):
     #         gepetto-viewer-server is created.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayArrows = False):
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayArrows = False, displayCoM = False):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
@@ -388,6 +388,13 @@ class Viewer (object):
                 self.client.gui.setVisibility("Vec_Acceleration","OFF")
                 self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,0)
                 self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
+            if self.displayCoM :
+                name = 'sphere_CoM'
+                if not name in self.client.gui.getNodeList():
+                    self.client.gui.addSphere(name,0.01,self.color.red)
+                    self.client.gui.setVisibility(name,"ALWAYS_ON_TOP")
+                    self.client.gui.addToGroup(name,self.sceneName)
+                self.client.gui.applyConfiguration(name,self.robot.getCenterOfMass()+[0,0,-1,0])
         self.client.gui.refresh ()
 
     def __call__ (self, args):
