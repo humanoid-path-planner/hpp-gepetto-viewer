@@ -166,8 +166,8 @@ class Viewer (object):
       v = (math.sqrt(conf[-6] * conf[-6] + conf[-5] * conf[-5] + conf[-4] * conf[-4]))/self.vmax
       length = 0.02+ v*0.2
       self.client.gui.addArrow(name,radius,length,self.color.black)
-      self.client.gui.addToGroup(name,self.sceneName)
       self.client.gui.applyConfiguration(name,pos+quat)
+      self.client.gui.addToGroup(name,nameRoadmap+"_group")
       self.client.gui.refresh()
       return index+1
 
@@ -195,13 +195,15 @@ class Viewer (object):
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
+      gui.createGroup(nameRoadmap+"_group")
+      gui.addToGroup(nameRoadmap,nameRoadmap+"_group")
       # set the start in green and the goal in red :
       gui.addSphere(nameRoadmap+"start",radiusSphere*1.5,self.color.green)
       gui.applyConfiguration(nameRoadmap+"start",ps.node(0)[0:7])
-      gui.addToGroup(nameRoadmap+"start",self.sceneName)
+      gui.addToGroup(nameRoadmap+"start",nameRoadmap+"_group")
       gui.addSphere(nameRoadmap+"goal",radiusSphere*1.5,self.color.red)
       gui.applyConfiguration(nameRoadmap+"goal",ps.node(1)[0:7])
-      gui.addToGroup(nameRoadmap+"goal",self.sceneName)
+      gui.addToGroup(nameRoadmap+"goal",nameRoadmap+"_group")
       # add all the nodes :
       for i in range(0,ps.numberNodes()) :	
         if joint == 0 :
@@ -220,7 +222,7 @@ class Viewer (object):
           robot.setCurrentConfig(ps.edge(i)[1])
           e1 = robot.getLinkPosition(joint)[0:3]
           gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
-      gui.addToGroup(nameRoadmap,self.sceneName)
+      gui.addToGroup(nameRoadmap+"_group",self.sceneName)
       gui.refresh()
       return True
 
