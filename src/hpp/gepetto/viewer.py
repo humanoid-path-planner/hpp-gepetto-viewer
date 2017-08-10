@@ -160,7 +160,7 @@ class Viewer (object):
       return True
 
     def addVectorToRoadmap(self,nameRoadmap,radius,index,conf):
-      name = "vecRM"+str(index)
+      name = nameRoadmap+"vecRM"+str(index)
       pos = conf[0:3]
       quat = self.robot.quaternionFromVector(conf[-6:-3])
       v = (math.sqrt(conf[-6] * conf[-6] + conf[-5] * conf[-5] + conf[-4] * conf[-4]))/self.vmax
