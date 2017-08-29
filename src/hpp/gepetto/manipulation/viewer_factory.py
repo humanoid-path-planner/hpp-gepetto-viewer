@@ -85,9 +85,5 @@ class ViewerFactory (Parent):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, collisionURDF = False):
-        if host is not None and viewerClient is None:
-            from gepetto.corbaserver import Client as GuiClient
-            viewerClient = GuiClient (host = host)
-        v = Parent.createViewer (self, ViewerClass, viewerClient, host, collisionURDF)
-        return v
+    def createViewer (self, ViewerClass = Viewer, **kwargs):
+        return Parent.createViewer (self, ViewerClass, **kwargs)
