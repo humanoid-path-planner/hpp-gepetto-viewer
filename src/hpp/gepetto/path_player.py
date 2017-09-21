@@ -72,7 +72,58 @@ class PathPlayer (object):
       self.publisher.client.gui.addToGroup(nameCurve,self.publisher.sceneName)
       self.publisher.client.gui.refresh()
 
+    def generatePlot (self, pathId, play = False, jointNames = None, cursor = False, filename = None):
+        # First generate the datas
+        length = self.end*self.client.problem.pathLength (pathId)
+        t = self.start*self.client.problem.pathLength (pathId)
+        ts = list()
+        qs = list()
+        while t < length :
+            start = time.time()
+            ts.append (t)
+            try:
+                qs.append(self.client.problem.configAtParam (pathId, t))
+                if play:
+                    self.publisher.robotConfig = qs[-1]
+                    self.publisher.publishRobots ()
+            except:
+                qs.append([np.nan] * self.client.robot.getConfigSize())
+                if play:
+                    self.publisher.publishRobots ()
+            t += (self.dt * self.speed)
+            elapsed = time.time() - start
+            if elapsed < self.dt :
+              time.sleep(self.dt-elapsed)
 
+        # Filter the datas
+        filter = list()
+        labels = list()
+        if jointNames is None: jointNames = self.publisher.robot.jointNames
+        for jn in jointNames:
+            rk = self.publisher.robot.rankInConfiguration[jn]
+            sz = self.publisher.robot.getJointConfigSize(jn)
+            filter.extend(range(rk,rk+sz))
+            if sz > 1: labels.extend(map(lambda x: jn + str(x), xrange(0,sz)))
+            else:      labels.append(jn)
+
+        data = (np.array(qs)[:,filter]).transpose()
+        
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for d, l in zip (data, labels):
+            ax.plot(ts, d, label = l)
+        if cursor:
+            for i in xrange(len(ts)):
+                c = ax.axvline(x=ts[i], color='r', linestyle='--')
+                fn = filename.format(i)
+                fig.savefig(fn, dpi = 150)
+                c.remove()
+        else:
+            if filename is not None:
+                fig.savefig(filename, dpi = 150)
+            else:
+                plt.show()
 
     def toFile(self, pathId, fname):
         length = self.client.problem.pathLength (pathId)

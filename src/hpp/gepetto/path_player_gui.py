@@ -125,6 +125,8 @@ class PathPlayerGui (object):
     self.l = w.get_value ()
     self.publisher.robotConfig = self.client.problem.configAtParam (self.pathId, self.l)
     self.publisher.publishRobots ()
+    # TODO This is too slow to be done here...
+    # self.plotRefresher.moveCursor(self.l)
 
   def path_pulse (self):
     if self.pauseRequest or self.l > self.pathLength:
@@ -202,6 +204,7 @@ class _Matplotlib:
     self.mpltlib_backends = importlib.import_module ("matplotlib.backends.backend_gtkagg")
     self.pp = pp
     self.pb = progressbar
+    self.cursor = None
     self.figure = pylab.figure ()
     self.canvas = self.mpltlib_backends.FigureCanvasGTKAgg (self.figure)
     self.toolbar = self.mpltlib_backends.NavigationToolbar2GTKAgg (self.canvas, pp ["MainWindow"])
@@ -230,7 +233,19 @@ class _Matplotlib:
       return False
     l = self.get_x_cursor_position(event)
     self.pp ["PathScale"].set_value (l)
+    self.moveCursor(l)
     return True
+
+  def moveCursor (self, t):
+    if self.cursor is None: return
+    gca = self.figure.gca ()
+    self.canvas.restore_region (self.background)
+    self.cursor.set_xdata(t)
+    self.cursor.axes.draw_artist(self.cursor)
+    t = time.time()
+    self.canvas.blit(gca.bbox)
+    # self.canvas.update()
+    print time.time() - t
 
   def selectData (self, x, ys):
     self.x = x
@@ -258,7 +273,11 @@ class _Matplotlib:
 
   def getData_pulse (self):
     d = [ self.l, ]
-    d.extend (self.pp.client.problem.configAtParam (self.pathId, self.l))
+    try:
+        q = self.pp.client.problem.configAtParam (self.pathId, self.l)
+    except:
+        q = [np.nan] * self.pp.client.robot.getConfigSize()
+    d.extend (q)
     self.datas.append (d)
     self.l += self.dl
     if self.l < self.pathLength:
@@ -273,11 +292,14 @@ class _Matplotlib:
     self.pb.set_text ("Generating plots...")
     self.npdatas = np.matrix (self.datas)
     self.figure.clf ()
-    gca = pylab.gca ()
+    gca = self.figure.gca ()
     for elt in self.ys:
       pylab.plot (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]], label=elt[0])
     gca.set_xlabel (self.x[0])
     pylab.legend (loc='best')
     self.canvas.draw ()
+    self.background = self.canvas.copy_from_bbox (gca.bbox)
+    self.cursor = gca.axvline(x=0, color='r', linestyle='--', animated=True)
+    self.canvas.blit (gca.bbox)
     self.pb.set_text ("Idle")
     return False
