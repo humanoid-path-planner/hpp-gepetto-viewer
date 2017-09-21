@@ -19,10 +19,12 @@ import time
 import numpy as np
 import pickle as pk
 
+import hpp.corbaserver.client
+
 ## displays a path by sampling configurations along the path.
 #
 class PathPlayer (object):
-    def __init__ (self, client, publisher, dt = 0.01, speed = 1) :
+    def __init__ (self, publisher, client = hpp.corbaserver.Client(), dt = 0.01, speed = 1) :
         self.client = client
         self.publisher = publisher
         self.dt = dt

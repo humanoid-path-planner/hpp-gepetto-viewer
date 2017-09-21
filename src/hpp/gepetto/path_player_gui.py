@@ -19,6 +19,8 @@ import pygtk
 pygtk.require("2.0")
 import os, sys, time, gtk, glib, importlib
 
+from hpp.corbaserver import Client
+
 import numpy as np
 import pylab
 # uncomment to select /GTK/GTKAgg/GTKCairo
@@ -32,13 +34,13 @@ import pylab
 
 class PathPlayerGui (object):
 
-  def __init__(self, client, publisher):
+  def __init__(self, hppClient = Client(), publisher = None):
     self.gladefile = "@PATH_PLAYER_GLADE_FILENAME@"
     self.glade = gtk.Builder ()
     self.glade.add_from_file (self.gladefile)
     self ["MainWindow"].connect("destroy", self.quit)
     self.publisher = publisher
-    self.client = client
+    self.client = hppClient
     self.l = 0.
     self.dt = 1. / 25.
     self.total_time = 1
@@ -107,6 +109,7 @@ class PathPlayerGui (object):
     self["PathScale"].set_value (0)
 
   def on_record_toggled (self, w):
+    if self.publisher is None: raise Exception ("No viewer provided")
     if self.isRecording:
       self.publisher.stopCapture ()
       self.isRecording = False;
@@ -118,6 +121,7 @@ class PathPlayerGui (object):
       self.isRecording = True;
 
   def on_pathscale_changed (self, w):
+    if self.publisher is None: raise Exception ("No viewer provided")
     self.l = w.get_value ()
     self.publisher.robotConfig = self.client.problem.configAtParam (self.pathId, self.l)
     self.publisher.publishRobots ()
