@@ -72,6 +72,18 @@ class PathPlayer (object):
       self.publisher.client.gui.addToGroup(nameCurve,self.publisher.sceneName)
       self.publisher.client.gui.refresh()
 
+    ## Generate a plot with the following datas:
+    # - abscissa: time.
+    # - ordinate: parameter values of the joint names.
+    #
+    # If play is True, the path is played when the data to be plotted are generated.
+    #
+    # If cursor is True, filename must be a string which will be formatted with one integer (frame index).
+    # For each frame, a cursor is drawn at the current time and the plot is written to the formatted filename.
+    #
+    # If cursor is False, only one plot is generated. Then,
+    # - If filename is None, the plot is shown in a new window;
+    # - If filename is a string, the plot is written to filename.
     def generatePlot (self, pathId, play = False, jointNames = None, cursor = False, filename = None):
         # First generate the datas
         length = self.end*self.client.problem.pathLength (pathId)
