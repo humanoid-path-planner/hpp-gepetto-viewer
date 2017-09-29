@@ -45,14 +45,14 @@ class Viewer (object):
     #         gepetto-viewer-server is created.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None):
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, postContextId=""):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
         self.color=Color()
         if not viewerClient:
-            viewerClient = GuiClient ()
-        self.createWindowAndScene (viewerClient, "hpp_")
+            viewerClient = GuiClient (postContextId=postContextId)
+            self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
         if displayName is not None:
             self.displayName = displayName
