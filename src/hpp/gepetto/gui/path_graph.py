@@ -122,6 +122,87 @@ class JointAction(Qt.QAction):
     def trigger (self):
         self.velocities.toggleJoint (self.joint)
 
+class Data:
+    def __init__ (self, plugin):
+        self.plugin = plugin
+        self.mpl = self.plugin.mplWidget
+        self.pb = plugin.progressBar
+        self.timer = Qt.QTimer()
+        self.timer.setSingleShot(True)
+
+        self.pathLength = -1
+        self.dl = -1
+        self.pathId = -1
+
+    def selectData (self, pid, dl, x, ys):
+        if dl < 1e-8:
+            print dl
+            return
+        self.x = x
+        self.ys = ys
+        pl = self.plugin.client.problem.pathLength(pid)
+        if   not self.pathLength == pl \
+            or not self.pathId     == pid \
+            or not self.dl         == dl:
+            self.dataAreOld = True
+            self.pathId = pid
+            self.pathLength = pl
+            self.dl = dl
+            self.l = 0
+            self.datas = list ()
+        else:
+            self.dataAreOld = False
+
+    def acquireData (self):
+        if self.dataAreOld:
+            self.pb.reset()
+            self._setNextCall (self._getNextData)
+        else:
+            self.pb.setValue(99)
+            self._setNextCall (self._genPlot)
+        self.timer.start(0)
+
+    def _setNextCall (self, f):
+        self.timer.disconnect(QtCore.SIGNAL("timeout()"))
+        self.timer.connect(QtCore.SIGNAL("timeout()"), f)
+
+    def _getNextData (self):
+        # print "_getNextData", self.l
+        d = [ self.l, ]
+        try:
+            q = self.plugin.client.problem.configAtParam (self.pathId, self.l)
+        except:
+            q = [np.nan] * self.plugin.client.robot.getConfigSize()
+        d.extend (q)
+        self.datas.append (d)
+        self.l += self.dl
+        self.pb.setValue (int(100 * self.l / self.pathLength))
+        if self.l < self.pathLength:
+            self._setNextCall (self._getNextData)
+        else:
+            self._setNextCall (self._genPlot)
+        self.timer.start(0)
+
+    def _genPlot (self):
+        self.npdatas = np.matrix (self.datas)
+        # print "_genPlot", self.npdatas.shape
+
+        fig = self.mpl.figure
+        fig.clf()
+        gca = fig.gca ()
+        for elt in self.ys:
+            gca.plot (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]], label=elt[0])
+        gca.set_xlabel (self.x[0])
+        self.plugin.rightPane.repaint()
+        # pylab.legend (loc='best')
+        self.mpl.canvas.draw ()
+        # self.background = self.canvas.copy_from_bbox (gca.bbox)
+        # self.cursor = gca.axvline(x=0, color='r', linestyle='--', animated=True)
+        # self.canvas.blit (gca.bbox)
+
+        self.pb.setValue(100)
+        return False
+
 class Plugin (QtGui.QDockWidget):
     def __init__ (self, mainWindow, flags = None):
         if flags is None:
@@ -132,6 +213,7 @@ class Plugin (QtGui.QDockWidget):
 
         self.main = mainWindow
         self.hppPlugin = self.main.getFromSlot("getHppIIOPurl")
+        self.pathPlayer = self.main.getFromSlot("getCurrentPath")
         self.velocities = Velocities(self)
         self.jointActions = dict()
         self.resetConnection()
@@ -159,15 +241,30 @@ class Plugin (QtGui.QDockWidget):
         # self.leftPane.setVerticalScrollBarPolicy(Qt.Qt.ScrollBarAsNeeded)
         self.topWidget.addWidget (self.leftPaneSA)
 
-        self.mplWidget = MatplotlibWidget(self)
-        self.topWidget.addWidget (self.mplWidget)
+        self.rightPane = QtGui.QWidget (self)
+        l = QtGui.QVBoxLayout ()
+        self.makeRightPane (l)
+        self.rightPane.setLayout (l)
+        self.topWidget.addWidget (self.rightPane)
+
+        self.data = Data(self)
 
     def refreshPlot (self):
-        # Plot something
-        print "refreshPlot"
-        x = np.linspace (0, 10, num=100)
-        y = np.sin(x)
-        self.mplWidget.figure.gca().plot (x, y)
+        pid = self.pathPlayer.getCurrentPath()
+        if pid < 0: return
+        dl = self.pathPlayer.lengthBetweenRefresh()
+        idxX = self.xselect.currentIndex
+        x = (self.xselect.itemText(idxX),
+             int(self.xselect.itemData(idxX)) + 1)
+
+        ys = list ()
+        for elt in self.yselectcb:
+            cb = elt[0]
+            if cb.checked:
+                ys.append ((str(cb.text), elt[1]+1))
+
+        self.data.selectData(pid, dl, x, ys)
+        self.data.acquireData()
 
     def makeLeftPane (self, layout):
         layout.addWidget (QtGui.QLabel ("Select Y data"))
@@ -189,6 +286,42 @@ class Plugin (QtGui.QDockWidget):
                     self.yselectcb.append ((cb, rank + i))
                     layout.addWidget (cb)
             rank = rank + size
+
+    def makeRightPane (self, layout):
+        self.mplWidget = MatplotlibWidget(self, True)
+        layout.addWidget (self.mplWidget)
+        self.mplWidget.canvas.mpl_connect ("button_release_event", self._canvasReleased)
+
+        self.xselect = QtGui.QComboBox(self)
+        layout.addWidget (self.xselect)
+        # time index is 0 and is value is -1
+        self.xselect.addItem ("time", -1)
+
+        self.progressBar = QtGui.QProgressBar(self)
+        self.progressBar.setRange(0,100)
+        layout.addWidget (self.progressBar)
+
+        rank = 0
+        for n in self.client.robot.getJointNames ():
+            size = self.client.robot.getJointConfigSize (n)
+            if size == 1:
+                self.xselect.addItem (n, rank)
+            else:
+                for i in xrange (size):
+                    self.xselect.addItem ("%s (%i)" % (n, i), rank + i)
+            rank = rank + size
+
+    def _canvasReleased (self, event):
+        if self.mplWidget.toolbar._active is not None:
+            return
+        self.last_event = event
+        print "_canvasReleased", event
+        if not event.button == 1:
+          return False
+        l = event.xdata
+        print l
+        self.pathPlayer.setCurrentTime(l)
+        return True
 
     ### If present, this function is called when a new OSG Widget is created.
     def osgWidget(self, osgWindow):
