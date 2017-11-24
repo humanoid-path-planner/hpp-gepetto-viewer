@@ -136,7 +136,6 @@ class Data:
 
     def selectData (self, pid, dl, x, ys):
         if dl < 1e-8:
-            print dl
             return
         self.x = x
         self.ys = ys
@@ -167,7 +166,6 @@ class Data:
         self.timer.connect(QtCore.SIGNAL("timeout()"), f)
 
     def _getNextData (self):
-        # print "_getNextData", self.l
         d = [ self.l, ]
         try:
             q = self.plugin.client.problem.configAtParam (self.pathId, self.l)
@@ -185,7 +183,6 @@ class Data:
 
     def _genPlot (self):
         self.npdatas = np.matrix (self.datas)
-        # print "_genPlot", self.npdatas.shape
 
         fig = self.mpl.figure
         fig.clf()
@@ -315,17 +312,11 @@ class Plugin (QtGui.QDockWidget):
         if self.mplWidget.toolbar._active is not None:
             return
         self.last_event = event
-        print "_canvasReleased", event
         if not event.button == 1:
           return False
         l = event.xdata
-        print l
         self.pathPlayer.setCurrentTime(l)
         return True
-
-    ### If present, this function is called when a new OSG Widget is created.
-    def osgWidget(self, osgWindow):
-        pass
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
@@ -335,7 +326,6 @@ class Plugin (QtGui.QDockWidget):
         self.velocities.applyAll()
 
     def getJointActions(self, name):
-        print "getJointActions", name
         if not self.jointActions.has_key(name):
             self.jointActions[name] = (JointAction ("Show/Hide joint &velocity", name, self.velocities, self),)
         return self.jointActions[name]
