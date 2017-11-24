@@ -44,25 +44,11 @@ configure_file (
     )
 
 install(FILES
-  src/hpp/gepetto/path_player.py
   ${CMAKE_BINARY_DIR}/src/hpp/gepetto/path_player_gui.py
   src/hpp/gepetto/path_player_gui.glade
-  src/hpp/gepetto/viewer.py
-  src/hpp/gepetto/viewer_factory.py
-  src/hpp/gepetto/__init__.py
   DESTINATION ${PYTHON_SITELIB}/hpp/gepetto
   )
 
-install(FILES
-  src/hpp/gepetto/manipulation/viewer.py
-  src/hpp/gepetto/manipulation/viewer_factory.py
-  src/hpp/gepetto/manipulation/__init__.py
-  DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/manipulation
-  )
+ADD_SUBDIRECTORY(src)
 
-install(FILES
-  src/hpp/gepetto/blender/exportmotion.py
-  src/hpp/gepetto/blender/__init__.py
-  DESTINATION ${PYTHON_SITELIB}/hpp/gepetto/blender
-  )
 setup_project_finalize()
