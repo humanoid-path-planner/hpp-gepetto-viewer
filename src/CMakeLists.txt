@@ -18,3 +18,7 @@ INSTALL_PYTHON_FILES("hpp/gepetto/manipulation"
     viewer.py
     viewer_factory.py
     __init__.py)
+
+INSTALL_PYTHON_FILES("hpp/gepetto/gui"
+    path_graph.py
+    __init__.py)
