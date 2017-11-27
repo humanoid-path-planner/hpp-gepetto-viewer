@@ -31,6 +31,7 @@ class Velocities:
         self.suffixLin = "linear"
         self.colorAng = Color.lightBlue
         self.suffixAng = "angular"
+        self.connected = False
 
         self.jointgroupcreator = self.plugin.main.getFromSlot("requestCreateJointGroup")
         self.comgroupcreator = self.plugin.main.getFromSlot("requestCreateComGroup")
@@ -39,6 +40,18 @@ class Velocities:
         # - a node
         # - a getter
         self.getters = dict()
+
+    def connect(self):
+        if not connected:
+            self.plugin.main.connect(QtCore.SIGNAL('applyCurrentConfiguration()'),
+                    self.applyAll)
+            connected = True
+
+    def disconnect(self):
+        if connected:
+            self.plugin.main.disconnect(QtCore.SIGNAL('applyCurrentConfiguration()'),
+                    self.applyAll)
+            connected = False
 
     def add (self, node, getter, color):
         self.getters[node] = getter
@@ -50,12 +63,15 @@ class Velocities:
         # node will be automaticcally added to the good group
         # because of its name
         # self.plugin.gui.gui.addToGroup (node, group)
+        self.connect()
 
     def remove (self, node):
         self.getters.pop(node)
         if not isinstance(node, tuple): node = (node,)
         for n in node:
             self.plugin.gui.gui.deleteNode (n, True)
+        if len(self.getter) == 0:
+            self.disconnect()
 
     def toggleJoint (self, joint):
         group = str(self.jointgroupcreator.requestCreateJointGroup(joint))
@@ -215,9 +231,6 @@ class Plugin (QtGui.QDockWidget):
         self.jointActions = dict()
         self.resetConnection()
 
-        self.main.connect(QtCore.SIGNAL('applyCurrentConfiguration()'),
-                self.applyCurrentConfig)
-
         obj = self.main.getFromSlot("setRobotVelocity")
         obj.setRobotVelocity(True)
 
@@ -321,9 +334,6 @@ class Plugin (QtGui.QDockWidget):
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
         self.gui = GuiClient()
-
-    def applyCurrentConfig(self):
-        self.velocities.applyAll()
 
     def getJointActions(self, name):
         if not self.jointActions.has_key(name):
