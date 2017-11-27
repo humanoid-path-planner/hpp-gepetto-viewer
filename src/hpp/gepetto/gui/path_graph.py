@@ -43,6 +43,7 @@ class Velocities:
 
     def connect(self):
         if not connected:
+            self.plugin.pathPlayer.setRobotVelocity(True)
             self.plugin.main.connect(QtCore.SIGNAL('applyCurrentConfiguration()'),
                     self.applyAll)
             connected = True
@@ -230,9 +231,6 @@ class Plugin (QtGui.QDockWidget):
         self.velocities = Velocities(self)
         self.jointActions = dict()
         self.resetConnection()
-
-        obj = self.main.getFromSlot("setRobotVelocity")
-        obj.setRobotVelocity(True)
 
         # This avoids having a widget bigger than what it needs. It avoids having
         # a big dock widget and a small osg widget when creating the main osg widget.
