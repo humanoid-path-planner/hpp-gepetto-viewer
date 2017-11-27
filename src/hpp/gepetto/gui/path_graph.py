@@ -246,10 +246,7 @@ class Plugin (QtGui.QDockWidget):
         self.makeLeftPane (l)
         self.leftPane.setLayout (l)
 
-        self.leftPaneSA = QtGui.QScrollArea (self)
-        self.leftPaneSA.setWidget (self.leftPane)
-        # self.leftPane.setVerticalScrollBarPolicy(Qt.Qt.ScrollBarAsNeeded)
-        self.topWidget.addWidget (self.leftPaneSA)
+        self.topWidget.addWidget (self.leftPane)
 
         self.rightPane = QtGui.QWidget (self)
         l = QtGui.QVBoxLayout ()
@@ -282,6 +279,8 @@ class Plugin (QtGui.QDockWidget):
         refresh.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
         layout.addWidget (refresh)
 
+        saLayout = QtGui.QVBoxLayout ()
+
         self.yselectcb = list ()
         rank = 0
         for n in self.client.robot.getJointNames ():
@@ -289,13 +288,19 @@ class Plugin (QtGui.QDockWidget):
             if size == 1:
                 cb = QtGui.QCheckBox (n)
                 self.yselectcb.append ((cb, rank))
-                layout.addWidget (cb)
+                saLayout.addWidget (cb)
             else:
                 for i in xrange (size):
                     cb = QtGui.QCheckBox ("%s (%i)" % (n, i))
                     self.yselectcb.append ((cb, rank + i))
-                    layout.addWidget (cb)
+                    saLayout.addWidget (cb)
             rank = rank + size
+
+        saContent = QtGui.QWidget (self)
+        saContent.setLayout (saLayout)
+        scrollArea = QtGui.QScrollArea (self)
+        scrollArea.setWidget (saContent)
+        layout.addWidget (scrollArea)
 
     def makeRightPane (self, layout):
         self.mplWidget = MatplotlibWidget(self, True)
