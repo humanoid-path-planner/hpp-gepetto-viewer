@@ -328,17 +328,14 @@ class Plugin (QtGui.QDockWidget):
         self.data.selectData(pid, dl, x, ys)
         self.data.acquireData()
 
-    def makeLeftPane (self, layout):
-        layout.addWidget (QtGui.QLabel ("Select Y data"))
-        refresh = QtGui.QPushButton ("Refresh", self)
-        refresh.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
-        layout.addWidget (refresh)
-
+    def refreshJointList (self):
+        jointNames = self.client.robot.getJointNames ()
+        # Left pane
         saLayout = QtGui.QVBoxLayout ()
 
         self.yselectcb = list ()
         rank = 0
-        for n in self.client.robot.getJointNames ():
+        for n in jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
                 cb = QtGui.QCheckBox (n)
@@ -353,24 +350,12 @@ class Plugin (QtGui.QDockWidget):
 
         saContent = QtGui.QWidget (self)
         saContent.setLayout (saLayout)
-        scrollArea = QtGui.QScrollArea (self)
-        scrollArea.setWidget (saContent)
-        layout.addWidget (scrollArea)
+        self.scrollArea.setWidget (saContent)
 
-    def makeRightPane (self, layout):
-        self.mplWidget = MatplotlibWidget(self, True)
-        layout.addWidget (self.mplWidget)
-        self.mplWidget.canvas.mpl_connect ("button_release_event", self._canvasReleased)
-
-        self.xselect = QtGui.QComboBox(self)
-        layout.addWidget (self.xselect)
+        # Right pane
+        self.xselect.clear()
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
-
-        self.progressBar = QtGui.QProgressBar(self)
-        self.progressBar.setRange(0,100)
-        layout.addWidget (self.progressBar)
-
         rank = 0
         for n in self.client.robot.getJointNames ():
             size = self.client.robot.getJointConfigSize (n)
@@ -380,6 +365,33 @@ class Plugin (QtGui.QDockWidget):
                 for i in xrange (size):
                     self.xselect.addItem ("%s (%i)" % (n, i), rank + i)
             rank = rank + size
+
+    def refreshInterface (self):
+        self.refreshJointList()
+
+    def makeLeftPane (self, layout):
+        layout.addWidget (QtGui.QLabel ("Select Y data"))
+        refresh = QtGui.QPushButton ("Refresh", self)
+        refresh.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
+        layout.addWidget (refresh)
+
+        self.scrollArea = QtGui.QScrollArea (self)
+        layout.addWidget (self.scrollArea)
+
+    def makeRightPane (self, layout):
+        self.mplWidget = MatplotlibWidget(self, True)
+        layout.addWidget (self.mplWidget)
+        self.mplWidget.canvas.mpl_connect ("button_release_event", self._canvasReleased)
+
+        self.xselect = QtGui.QComboBox(self)
+        layout.addWidget (self.xselect)
+
+        self.progressBar = QtGui.QProgressBar(self)
+        self.progressBar.setRange(0,100)
+        layout.addWidget (self.progressBar)
+
+        # time index is 0 and is value is -1
+        self.xselect.addItem ("time", -1)
 
     def _canvasReleased (self, event):
         if self.mplWidget.toolbar._active is not None:
