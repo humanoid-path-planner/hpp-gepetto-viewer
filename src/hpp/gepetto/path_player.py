@@ -46,6 +46,7 @@ class PathPlayer (object):
             q = self.client.problem.configAtParam (pathId, t)
             self.publisher.robotConfig = q
             self.publisher.publishRobots ()
+            self.publisher.client.gui.refresh ()
             t += (self.dt * self.speed)
             elapsed = time.time() - start
             if elapsed < self.dt :
@@ -98,10 +99,12 @@ class PathPlayer (object):
                 if play:
                     self.publisher.robotConfig = qs[-1]
                     self.publisher.publishRobots ()
+                    self.publisher.client.gui.refresh ()
             except:
                 qs.append([np.nan] * self.client.robot.getConfigSize())
                 if play:
                     self.publisher.publishRobots ()
+                    self.publisher.client.gui.refresh ()
             t += (self.dt * self.speed)
             elapsed = time.time() - start
             if elapsed < self.dt :
@@ -179,6 +182,7 @@ class PathPlayer (object):
                 start = time.time()
                 self.publisher.robotConfig = q
                 self.publisher.publishRobots ()
+                self.publisher.client.gui.refresh ()
                 elapsed = time.time() - start
                 if elapsed < self.dt :
                   time.sleep(self.dt-elapsed)

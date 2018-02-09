@@ -304,11 +304,11 @@ class Viewer (object):
             pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
             self.client.gui.applyConfiguration (objectName, pos)
-        self.client.gui.refresh ()
 
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
+        self.client.gui.refresh ()
 
     ## Start a screen capture
     # \sa gepetto::corbaserver::GraphicalInterface::startCapture
