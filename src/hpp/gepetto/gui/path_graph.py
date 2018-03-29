@@ -1,4 +1,3 @@
-from gepetto.gui.matplotlibwidget import MatplotlibWidget
 from PythonQt import QtGui, QtCore, Qt
 
 from hpp import Quaternion
@@ -8,6 +7,26 @@ from gepetto.color import Color
 
 import numpy as np
 from math import pi, sqrt, cos, sin
+
+pens = (
+        # Qt.QPen (Qt.Qt.white),
+        Qt.QPen (Qt.Qt.black),
+        Qt.QPen (Qt.Qt.red),
+        Qt.QPen (Qt.Qt.green),
+        Qt.QPen (Qt.Qt.blue),
+        Qt.QPen (Qt.Qt.cyan),
+        Qt.QPen (Qt.Qt.magenta),
+        Qt.QPen (Qt.Qt.yellow),
+        Qt.QPen (Qt.Qt.gray),
+        Qt.QPen (Qt.Qt.darkRed),
+        Qt.QPen (Qt.Qt.darkGreen),
+        Qt.QPen (Qt.Qt.darkBlue),
+        Qt.QPen (Qt.Qt.darkCyan),
+        Qt.QPen (Qt.Qt.darkMagenta),
+        Qt.QPen (Qt.Qt.darkYellow),
+        Qt.QPen (Qt.Qt.darkGray),
+        Qt.QPen (Qt.Qt.lightGray),
+        )
 
 def _pointsTorus(R, r, nR, nr):
     pts = []
@@ -52,7 +71,7 @@ def _tranformFromXvector (v):
     # x = (1, 0, 0)
     u = v / norm_v
     if u[0] < -1 + 1e-6: # Nearly opposite vectors
-        m = np.Array ( ( (1, 0, 0), u ) )
+        m = np.array ( ( (1, 0, 0), u ) )
         U, S, V = np.linalg.svd (m)
         c = max (u[0], -1)
         w2 = (1 + c) / 2
@@ -194,10 +213,10 @@ class JointAction(Qt.QAction):
     def trigger (self):
         self.velocities.toggleJoint (self.joint)
 
-class Data:
+class DataQCP:
     def __init__ (self, plugin):
         self.plugin = plugin
-        self.mpl = self.plugin.mplWidget
+        self.qcp = self.plugin.qcpWidget
         self.pb = plugin.progressBar
         self.timer = Qt.QTimer()
         self.timer.setSingleShot(True)
@@ -234,8 +253,8 @@ class Data:
         self.timer.start(0)
 
     def _setNextCall (self, f):
-        self.timer.disconnect(QtCore.SIGNAL("timeout()"))
-        self.timer.connect(QtCore.SIGNAL("timeout()"), f)
+        self.timer.disconnect(Qt.SIGNAL("timeout()"))
+        self.timer.connect(Qt.SIGNAL("timeout()"), f)
 
     def _getNextData (self):
         d = [ self.l, ]
@@ -256,18 +275,16 @@ class Data:
     def _genPlot (self):
         self.npdatas = np.matrix (self.datas)
 
-        fig = self.mpl.figure
-        fig.clf()
-        gca = fig.gca ()
-        for elt in self.ys:
-            gca.plot (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]], label=elt[0])
-        gca.set_xlabel (self.x[0])
-        self.plugin.rightPane.repaint()
-        # pylab.legend (loc='best')
-        self.mpl.canvas.draw ()
-        # self.background = self.canvas.copy_from_bbox (gca.bbox)
-        # self.cursor = gca.axvline(x=0, color='r', linestyle='--', animated=True)
-        # self.canvas.blit (gca.bbox)
+        self.qcp.clearGraphs()
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.addGraph ()
+            graph.setData (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]])
+            graph.setName (elt[0])
+            graph.setPen(pens[i])
+        self.qcp.xAxis_setLabel(self.x[0])
+        self.qcp.rescaleAxes()
+        self.qcp.replot()
+        # TODO Add a vertical bar at current param along the path.
 
         self.pb.setValue(100)
         return False
@@ -309,7 +326,7 @@ class Plugin (QtGui.QDockWidget):
         self.rightPane.setLayout (l)
         self.topWidget.addWidget (self.rightPane)
 
-        self.data = Data(self)
+        self.data = DataQCP(self)
 
     def refreshPlot (self):
         pid = self.pathPlayer.getCurrentPath()
@@ -379,9 +396,14 @@ class Plugin (QtGui.QDockWidget):
         layout.addWidget (self.scrollArea)
 
     def makeRightPane (self, layout):
-        self.mplWidget = MatplotlibWidget(self, True)
-        layout.addWidget (self.mplWidget)
-        self.mplWidget.canvas.mpl_connect ("button_release_event", self._canvasReleased)
+        from PythonQt.QCustomPlot import QCustomPlot
+        self.qcpWidget = QCustomPlot()
+        self.qcpWidget.setAutoAddPlottableToLegend (True)
+        self.qcpWidget.setInteraction (1, True) # iRangeDrap
+        self.qcpWidget.setInteraction (2, True) # iRangeZoom
+        self.qcpWidget.legend().setVisible(True)
+        layout.addWidget (self.qcpWidget)
+        self.qcpWidget.connect (Qt.SIGNAL("mouseRelease()"), self._mouseReleased)
 
         self.xselect = QtGui.QComboBox(self)
         layout.addWidget (self.xselect)
@@ -393,15 +415,19 @@ class Plugin (QtGui.QDockWidget):
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
 
-    def _canvasReleased (self, event):
-        if self.mplWidget.toolbar._active is not None:
-            return
-        self.last_event = event
-        if not event.button == 1:
-          return False
-        l = event.xdata
-        self.pathPlayer.setCurrentTime(l)
-        return True
+    def _mouseReleased (self, event):
+        # TODO
+        # I do not know how to get the abscissa from event.x
+        print ("Not implemented yet")
+        pass
+        # if self.mplWidget.toolbar._active is not None:from event.x
+            # return
+        # self.last_event = event
+        # if not event.button == 1:
+          # return False
+        # l = event.xdata
+        # self.pathPlayer.setCurrentTime(l)
+        # return True
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
