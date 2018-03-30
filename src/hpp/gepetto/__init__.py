@@ -20,7 +20,3 @@
 from viewer import Viewer, Color
 from viewer_factory import ViewerFactory
 from path_player import PathPlayer
-try:
-  from path_player_gui import PathPlayerGui
-except:
-  print ("Failed to load PathPlayerGui")
