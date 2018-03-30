@@ -281,7 +281,7 @@ class DataQCP:
             graph.setData (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]])
             graph.setName (elt[0])
             graph.setPen(pens[i])
-        self.qcp.xAxis_setLabel(self.x[0])
+        self.qcp.xAxis().setLabel(self.x[0])
         self.qcp.rescaleAxes()
         self.qcp.replot()
         # TODO Add a vertical bar at current param along the path.
@@ -403,7 +403,7 @@ class Plugin (QtGui.QDockWidget):
         self.qcpWidget.setInteraction (2, True) # iRangeZoom
         self.qcpWidget.legend().setVisible(True)
         layout.addWidget (self.qcpWidget)
-        self.qcpWidget.connect (Qt.SIGNAL("mouseRelease()"), self._mouseReleased)
+        self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
 
         self.xselect = QtGui.QComboBox(self)
         layout.addWidget (self.xselect)
@@ -415,19 +415,17 @@ class Plugin (QtGui.QDockWidget):
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
 
-    def _mouseReleased (self, event):
-        # TODO
-        # I do not know how to get the abscissa from event.x
-        print ("Not implemented yet")
-        pass
-        # if self.mplWidget.toolbar._active is not None:from event.x
-            # return
-        # self.last_event = event
-        # if not event.button == 1:
-          # return False
-        # l = event.xdata
-        # self.pathPlayer.setCurrentTime(l)
-        # return True
+    def _mouseDoubleClick (self, event):
+        try:
+            if self.data.x[1] > 0: return
+        except:
+            return
+        try: # Qt 5
+            x = event.localPos().x()
+        except: # Qt 4
+            x = event.posF().x()
+        t = self.qcpWidget.xAxis().pixelToCoord (x)
+        self.pathPlayer.setCurrentTime(t)
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
