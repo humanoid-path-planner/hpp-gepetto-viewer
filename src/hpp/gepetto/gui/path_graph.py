@@ -3,6 +3,7 @@ from PythonQt import QtGui, QtCore, Qt
 from hpp import Quaternion
 from hpp.corbaserver import Client
 from gepetto.corbaserver import Client as GuiClient
+from gepetto.corbaserver.tools import Linear, Vector6
 from gepetto.color import Color
 
 import numpy as np
@@ -28,127 +29,47 @@ pens = (
         Qt.QPen (Qt.Qt.lightGray),
         )
 
-def _pointsTorus(R, r, nR, nr):
-    pts = []
-    twopi = 2 * pi
-    for j in range(nR):
-        for i in range(nr + 1):
-            s = i % nr
-            phi = s* twopi /nr
-            for k in (1, 0):
-                t = (j + k) % nR
-
-                theta = t* twopi /nR
-                y =  (R+r*cos(phi))*cos(theta);
-                z = -(R+r*cos(phi))*sin(theta);
-                x = r * sin(phi);
-                pts.append ((x, y, z))
-    return pts
-
-def _pointsCone(r, L, nr, R):
-    pts = []
-    twopi = 2 * pi
-    for j in range(nr+1):
-        t = j % nr
-        theta = t* twopi /nr
-        pts.append ((0., R, L))
-        pts.append ((r*cos(theta), R + r*sin(theta), 0.))
-    return pts
-
-def _pointsCircularArrow (R, r, nR, nr):
-    ptsCone =  _pointsCone (1.5*r, 3*r, nr, R)
-    ptsTorus = _pointsTorus (R, r, nR, nr)
-    return ptsCone + ptsTorus, len(ptsCone)
-
-# Compute a transformation which rotates (1, 0, 0) to v
-# Return (norm_v, T)
-# When norm_v == 0, T is None
-def _tranformFromXvector (v):
-    norm_v = np.linalg.norm(v)
-    if norm_v == 0:
-        # self.plugin.gui.gui.resizeArrow (n, self.radius, norm_v)
-        return 0, None
-    # x = (1, 0, 0)
-    u = v / norm_v
-    if u[0] < -1 + 1e-6: # Nearly opposite vectors
-        m = np.array ( ( (1, 0, 0), u ) )
-        U, S, V = np.linalg.svd (m)
-        c = max (u[0], -1)
-        w2 = (1 + c) / 2
-        s = sqrt(1 - w2)
-        t = (0,0,0, V[0,2]/s, V[1,2]/s, V[2,2]/s, w2)
-    else:
-        s = sqrt(2 * (1 + u[0]))
-        # axis = (0, -u[2]/s, u[1]/s) # x ^ u
-        t = (0,0,0, 0, -u[2]/s, u[1]/s, s/2)
-    return norm_v, t
-
 class VelGetter:
-    suffixLin = "linear"
-    suffixAng = "angular"
-    radius = 0.005
-    torusR = 0.1
-
     def __init__(self, plugin, name):
         self.plugin = plugin
         self.name = str(name)
+        self.vector6 = Vector6 (self.name)
 
     def getV(self):
         return self.plugin.client.robot.getJointVelocityInLocalFrame (self.name)
 
     def createNodes(self, color):
         self.group = str(self.plugin.jointgroupcreator.requestCreateJointGroup(self.name))
-        self.lin = self.group + '/' + VelGetter.suffixLin
-        self.ang = self.group + '/' + VelGetter.suffixAng
-        self.plugin.gui.gui.addArrow (self.lin, VelGetter.radius, 1, color)
-        pts, self.minC = _pointsCircularArrow (VelGetter.torusR, VelGetter.radius, 100, 20)
-        self.plugin.gui.gui.addCurve (self.ang, pts, color)
-        self.plugin.gui.gui.setCurveMode (self.ang, "quad_strip")
-        self.maxC = len(pts)
+        self.vector6.color = color
+        self.vector6.create(self.plugin.gui.gui)
 
     def removeNodes(self):
-        self.plugin.gui.gui.deleteNode (self.lin, False)
-        self.plugin.gui.gui.deleteNode (self.ang, False)
+        self.vector6.remove(self.plugin.gui.gui)
 
     def apply(self):
-        gui = self.plugin.gui.gui
         v = self.getV()
-        norm_vl, tl = _tranformFromXvector (v[:3])
-        norm_va, ta = _tranformFromXvector (v[3:])
-
-        count = min (self.minC + int (norm_va * (self.maxC-self.minC) / (pi)), self.maxC)
-
-        gui.resizeArrow (self.lin, VelGetter.radius, norm_vl)
-        gui.setCurvePointsSubset (self.ang, 0, count)
-
-        if tl is not None: gui.applyConfiguration (self.lin, tl)
-        if ta is not None: gui.applyConfiguration (self.ang, ta)
+        self.vector6.set (self.plugin.gui.gui, v)
 
 class ComGetter:
-    suffixLin = "linear"
-    radius = 0.005
     def __init__(self, plugin, com):
         self.plugin = plugin
         self.name = str(com)
+        self.linear = Linear (self.name)
 
     def getV(self):
         return self.plugin.client.robot.getVelocityPartialCom (self.name)
 
     def createNodes(self, color):
         self.group = str(self.plugin.comgroupcreator.requestCreateComGroup(self.name))
-        self.lin = self.group + '/' + ComGetter.suffixLin
-        self.plugin.gui.gui.addArrow (self.lin, ComGetter.radius, 1, color)
+        self.linear.color = color
+        self.linear.create (self.plugin.gui.gui)
 
     def removeNodes(self):
-        self.plugin.gui.gui.deleteNode (self.lin, False)
+        self.linear.remove (self.plugin.gui.gui)
 
     def apply(self):
-        gui = self.plugin.gui.gui
         v = self.getV()
-        norm_v, t = _tranformFromXvector (v)
-
-        gui.resizeArrow (self.lin, ComGetter.radius, norm_v)
-        if t is not None: gui.applyConfiguration (self.lin, t)
+        self.linear.set(self.plugin.gui.gui, v)
 
 class Velocities:
     color = Color.red
