@@ -9,25 +9,41 @@ from gepetto.color import Color
 import numpy as np
 from math import pi, sqrt, cos, sin
 
-pens = (
-        # Qt.QPen (Qt.Qt.white),
-        Qt.QPen (Qt.Qt.black),
-        Qt.QPen (Qt.Qt.red),
-        Qt.QPen (Qt.Qt.green),
-        Qt.QPen (Qt.Qt.blue),
-        Qt.QPen (Qt.Qt.cyan),
-        Qt.QPen (Qt.Qt.magenta),
-        Qt.QPen (Qt.Qt.yellow),
-        Qt.QPen (Qt.Qt.gray),
-        Qt.QPen (Qt.Qt.darkRed),
-        Qt.QPen (Qt.Qt.darkGreen),
-        Qt.QPen (Qt.Qt.darkBlue),
-        Qt.QPen (Qt.Qt.darkCyan),
-        Qt.QPen (Qt.Qt.darkMagenta),
-        Qt.QPen (Qt.Qt.darkYellow),
-        Qt.QPen (Qt.Qt.darkGray),
-        Qt.QPen (Qt.Qt.lightGray),
+colors = (
+        # Qt.Qt.white,
+        Qt.Qt.black,
+        Qt.Qt.red,
+        Qt.Qt.green,
+        Qt.Qt.blue,
+        Qt.Qt.cyan,
+        Qt.Qt.magenta,
+        Qt.Qt.yellow,
+        Qt.Qt.gray,
+        Qt.Qt.darkRed,
+        Qt.Qt.darkGreen,
+        Qt.Qt.darkBlue,
+        Qt.Qt.darkCyan,
+        Qt.Qt.darkMagenta,
+        Qt.Qt.darkYellow,
+        Qt.Qt.darkGray,
+        Qt.Qt.lightGray,
         )
+lineStyles = (
+        Qt.Qt.SolidLine,
+        Qt.Qt.DashLine,
+        Qt.Qt.DotLine,
+        Qt.Qt.DashDotLine,
+        Qt.Qt.DashDotDotLine,
+        )
+
+pens = []
+for ls in lineStyles:
+    for c in colors:
+        qpen = Qt.QPen(c)
+        qpen.setStyle (ls)
+        pens.append (qpen)
+
+pens = tuple(pens)
 
 class VelGetter:
     def __init__(self, plugin, name):
@@ -138,7 +154,6 @@ class DataQCP:
     def __init__ (self, plugin):
         self.plugin = plugin
         self.qcp = self.plugin.qcpWidget
-        self.pb = plugin.progressBar
         self.timer = Qt.QTimer()
         self.timer.setSingleShot(True)
 
@@ -163,13 +178,17 @@ class DataQCP:
             self.datas = list ()
         else:
             self.dataAreOld = False
+        self.qcp.clearGraphs()
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.addGraph ()
+            graph.setName(elt[0])
+            graph.setPen(pens[i])
+        self.qcp.xAxis().setLabel(self.x[0])
 
     def acquireData (self):
         if self.dataAreOld:
-            self.pb.reset()
             self._setNextCall (self._getNextData)
         else:
-            self.pb.setValue(99)
             self._setNextCall (self._genPlot)
         self.timer.start(0)
 
@@ -177,37 +196,55 @@ class DataQCP:
         self.timer.disconnect(Qt.SIGNAL("timeout()"))
         self.timer.connect(Qt.SIGNAL("timeout()"), f)
 
+    def _getDerivative (self, order):
+        try:
+            if order == 0:
+                return self.plugin.client.problem.configAtParam (self.pathId, self.l)
+            else:
+                return self.plugin.client.problem.derivativeAtParam (self.pathId, order, self.l)
+        except hpp.Error as e:
+            if order == 0:
+                return [np.nan] * self.plugin.client.robot.getConfigSize()
+            else:
+                return [np.nan] * self.plugin.client.robot.getNumberDof()
+            print(str(e))
+
     def _getNextData (self):
         d = [ self.l, ]
-        try:
-            q = self.plugin.client.problem.configAtParam (self.pathId, self.l)
-        except:
-            q = [np.nan] * self.plugin.client.robot.getConfigSize()
-        d.extend (q)
+        d.extend (self._getDerivative(0))
+        d.extend (self._getDerivative(1))
+        d.extend (self._getDerivative(2))
         self.datas.append (d)
+
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.graph (i)
+            graph.addData (self.l, d[elt[1]])
+        self.qcp.replot()
+
         self.l += self.dl
-        self.pb.setValue (int(100 * self.l / self.pathLength))
         if self.l < self.pathLength:
             self._setNextCall (self._getNextData)
         else:
-            self._setNextCall (self._genPlot)
+            self._setNextCall (self._finishDataAcquisition)
         self.timer.start(0)
 
-    def _genPlot (self):
+    def _finishDataAcquisition (self):
         self.npdatas = np.matrix (self.datas)
+        self.qcp.rescaleAxes()
+        self.qcp.replot()
 
+    def _genPlot (self):
         self.qcp.clearGraphs()
         for i, elt in enumerate(self.ys):
             graph = self.qcp.addGraph ()
             graph.setData (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]])
             graph.setName (elt[0])
-            graph.setPen(pens[i])
+            graph.setPen(pens[i%len(pens)])
         self.qcp.xAxis().setLabel(self.x[0])
         self.qcp.rescaleAxes()
         self.qcp.replot()
         # TODO Add a vertical bar at current param along the path.
 
-        self.pb.setValue(100)
         return False
 
 class Plugin (QtGui.QDockWidget):
@@ -270,21 +307,36 @@ class Plugin (QtGui.QDockWidget):
         jointNames = self.client.robot.getJointNames ()
         # Left pane
         saLayout = QtGui.QVBoxLayout ()
+        formats = ( "%s (%s)", "%s (%s, %i)")
 
         self.yselectcb = list ()
         rank = 0
         for n in jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
-                cb = QtGui.QCheckBox (n)
+                cb = QtGui.QCheckBox (formats[0] % (n,"q") )
                 self.yselectcb.append ((cb, rank))
                 saLayout.addWidget (cb)
             else:
                 for i in xrange (size):
-                    cb = QtGui.QCheckBox ("%s (%i)" % (n, i))
+                    cb = QtGui.QCheckBox (formats[1] % (n, "q", i))
                     self.yselectcb.append ((cb, rank + i))
                     saLayout.addWidget (cb)
             rank = rank + size
+        for type in ("v", "a"):
+            saLayout.addSpacing(5)
+            for n in jointNames:
+                size = self.client.robot.getJointNumberDof (n)
+                if size == 1:
+                    cb = QtGui.QCheckBox (formats[0] % (n,type) )
+                    self.yselectcb.append ((cb, rank))
+                    saLayout.addWidget (cb)
+                else:
+                    for i in xrange (size):
+                        cb = QtGui.QCheckBox (formats[1] % (n,type,i))
+                        self.yselectcb.append ((cb, rank + i))
+                        saLayout.addWidget (cb)
+                rank = rank + size
 
         saContent = QtGui.QWidget (self)
         saContent.setLayout (saLayout)
@@ -295,14 +347,23 @@ class Plugin (QtGui.QDockWidget):
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
         rank = 0
-        for n in self.client.robot.getJointNames ():
+        for n in jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
-                self.xselect.addItem (n, rank)
+                self.xselect.addItem (formats[0] % (n,"q"), rank)
             else:
                 for i in xrange (size):
-                    self.xselect.addItem ("%s (%i)" % (n, i), rank + i)
+                    self.xselect.addItem (formats[1] % (n,"q",i), rank + i)
             rank = rank + size
+        for type in ("v", "a"):
+            for n in jointNames:
+                size = self.client.robot.getJointNumberDof (n)
+                if size == 1:
+                    self.xselect.addItem (formats[0] % (n,type), rank)
+                else:
+                    for i in xrange (size):
+                        self.xselect.addItem (formats[1] % (n,type,i), rank + i)
+                rank = rank + size
 
     def refreshInterface (self):
         self.refreshJointList()
@@ -328,10 +389,6 @@ class Plugin (QtGui.QDockWidget):
 
         self.xselect = QtGui.QComboBox(self)
         layout.addWidget (self.xselect)
-
-        self.progressBar = QtGui.QProgressBar(self)
-        self.progressBar.setRange(0,100)
-        layout.addWidget (self.progressBar)
 
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
