@@ -17,6 +17,6 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from viewer import Viewer, Color
-from viewer_factory import ViewerFactory
-from path_player import PathPlayer
+from .viewer import Viewer, Color
+from .viewer_factory import ViewerFactory
+from .path_player import PathPlayer
