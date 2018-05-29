@@ -23,17 +23,19 @@ MACRO(INSTALL_PYTHON_FILES MODULE FILES)
     ENDFOREACH()
 ENDMACRO()
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto" path_player.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto" viewer.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto" viewer_factory.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto" __init__.py)
+INSTALL_PYTHON_FILES ("hpp/gepetto"
+  path_player.py
+  viewer.py
+  viewer_factory.py
+  __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/blender" exportmotion.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/blender" __init__.py)
+PYTHON_INSTALL_ON_SITE ("hpp/gepetto/blender"
+  exportmotion.py
+  __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/manipulation" viewer.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/manipulation" viewer_factory.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/manipulation" __init__.py)
+PYTHON_INSTALL_ON_SITE ("hpp/gepetto/manipulation" viewer.py
+  viewer_factory.py
+  __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/gui" path_graph.py)
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/gui" __init__.py)
+PYTHON_INSTALL_ON_SITE ("hpp/gepetto/gui" path_graph.py
+  __init__.py)

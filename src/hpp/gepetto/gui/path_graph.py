@@ -1,135 +1,91 @@
-from gepetto.gui.matplotlibwidget import MatplotlibWidget
 from PythonQt import QtGui, QtCore, Qt
 
 from hpp import Quaternion
 from hpp.corbaserver import Client
 from gepetto.corbaserver import Client as GuiClient
+from gepetto.corbaserver.tools import Linear, Vector6
 from gepetto.color import Color
 
 import numpy as np
 from math import pi, sqrt, cos, sin
 
-def _pointsTorus(R, r, nR, nr):
-    pts = []
-    twopi = 2 * pi
-    for j in range(nR):
-        for i in range(nr + 1):
-            s = i % nr
-            phi = s* twopi /nr
-            for k in (1, 0):
-                t = (j + k) % nR
+colors = (
+        # Qt.Qt.white,
+        Qt.Qt.black,
+        Qt.Qt.red,
+        Qt.Qt.green,
+        Qt.Qt.blue,
+        Qt.Qt.cyan,
+        Qt.Qt.magenta,
+        Qt.Qt.yellow,
+        Qt.Qt.gray,
+        Qt.Qt.darkRed,
+        Qt.Qt.darkGreen,
+        Qt.Qt.darkBlue,
+        Qt.Qt.darkCyan,
+        Qt.Qt.darkMagenta,
+        Qt.Qt.darkYellow,
+        Qt.Qt.darkGray,
+        Qt.Qt.lightGray,
+        )
+lineStyles = (
+        Qt.Qt.SolidLine,
+        Qt.Qt.DashLine,
+        Qt.Qt.DotLine,
+        Qt.Qt.DashDotLine,
+        Qt.Qt.DashDotDotLine,
+        )
 
-                theta = t* twopi /nR
-                y =  (R+r*cos(phi))*cos(theta);
-                z = -(R+r*cos(phi))*sin(theta);
-                x = r * sin(phi);
-                pts.append ((x, y, z))
-    return pts
+pens = []
+for ls in lineStyles:
+    for c in colors:
+        qpen = Qt.QPen(c)
+        qpen.setStyle (ls)
+        pens.append (qpen)
 
-def _pointsCone(r, L, nr, R):
-    pts = []
-    twopi = 2 * pi
-    for j in range(nr+1):
-        t = j % nr
-        theta = t* twopi /nr
-        pts.append ((0., R, L))
-        pts.append ((r*cos(theta), R + r*sin(theta), 0.))
-    return pts
-
-def _pointsCircularArrow (R, r, nR, nr):
-    ptsCone =  _pointsCone (1.5*r, 3*r, nr, R)
-    ptsTorus = _pointsTorus (R, r, nR, nr)
-    return ptsCone + ptsTorus, len(ptsCone)
-
-# Compute a transformation which rotates (1, 0, 0) to v
-# Return (norm_v, T)
-# When norm_v == 0, T is None
-def _tranformFromXvector (v):
-    norm_v = np.linalg.norm(v)
-    if norm_v == 0:
-        # self.plugin.gui.gui.resizeArrow (n, self.radius, norm_v)
-        return 0, None
-    # x = (1, 0, 0)
-    u = v / norm_v
-    if u[0] < -1 + 1e-6: # Nearly opposite vectors
-        m = np.Array ( ( (1, 0, 0), u ) )
-        U, S, V = np.linalg.svd (m)
-        c = max (u[0], -1)
-        w2 = (1 + c) / 2
-        s = sqrt(1 - w2)
-        t = (0,0,0, V[0,2]/s, V[1,2]/s, V[2,2]/s, w2)
-    else:
-        s = sqrt(2 * (1 + u[0]))
-        # axis = (0, -u[2]/s, u[1]/s) # x ^ u
-        t = (0,0,0, 0, -u[2]/s, u[1]/s, s/2)
-    return norm_v, t
+pens = tuple(pens)
 
 class VelGetter:
-    suffixLin = "linear"
-    suffixAng = "angular"
-    radius = 0.005
-    torusR = 0.1
-
     def __init__(self, plugin, name):
         self.plugin = plugin
         self.name = str(name)
+        self.vector6 = Vector6 (self.name)
 
     def getV(self):
         return self.plugin.client.robot.getJointVelocityInLocalFrame (self.name)
 
     def createNodes(self, color):
         self.group = str(self.plugin.jointgroupcreator.requestCreateJointGroup(self.name))
-        self.lin = self.group + '/' + VelGetter.suffixLin
-        self.ang = self.group + '/' + VelGetter.suffixAng
-        self.plugin.gui.gui.addArrow (self.lin, VelGetter.radius, 1, color)
-        pts, self.minC = _pointsCircularArrow (VelGetter.torusR, VelGetter.radius, 100, 20)
-        self.plugin.gui.gui.addCurve (self.ang, pts, color)
-        self.plugin.gui.gui.setCurveMode (self.ang, "quad_strip")
-        self.maxC = len(pts)
+        self.vector6.color = color
+        self.vector6.create(self.plugin.gui.gui)
 
     def removeNodes(self):
-        self.plugin.gui.gui.deleteNode (self.lin, False)
-        self.plugin.gui.gui.deleteNode (self.ang, False)
+        self.vector6.remove(self.plugin.gui.gui)
 
     def apply(self):
-        gui = self.plugin.gui.gui
         v = self.getV()
-        norm_vl, tl = _tranformFromXvector (v[:3])
-        norm_va, ta = _tranformFromXvector (v[3:])
-
-        count = min (self.minC + int (norm_va * (self.maxC-self.minC) / (pi)), self.maxC)
-
-        gui.resizeArrow (self.lin, VelGetter.radius, norm_vl)
-        gui.setCurvePointsSubset (self.ang, 0, count)
-
-        if tl is not None: gui.applyConfiguration (self.lin, tl)
-        if ta is not None: gui.applyConfiguration (self.ang, ta)
+        self.vector6.set (self.plugin.gui.gui, v)
 
 class ComGetter:
-    suffixLin = "linear"
-    radius = 0.005
     def __init__(self, plugin, com):
         self.plugin = plugin
         self.name = str(com)
+        self.linear = Linear (self.name)
 
     def getV(self):
         return self.plugin.client.robot.getVelocityPartialCom (self.name)
 
     def createNodes(self, color):
         self.group = str(self.plugin.comgroupcreator.requestCreateComGroup(self.name))
-        self.lin = self.group + '/' + ComGetter.suffixLin
-        self.plugin.gui.gui.addArrow (self.lin, ComGetter.radius, 1, color)
+        self.linear.color = color
+        self.linear.create (self.plugin.gui.gui)
 
     def removeNodes(self):
-        self.plugin.gui.gui.deleteNode (self.lin, False)
+        self.linear.remove (self.plugin.gui.gui)
 
     def apply(self):
-        gui = self.plugin.gui.gui
         v = self.getV()
-        norm_v, t = _tranformFromXvector (v)
-
-        gui.resizeArrow (self.lin, ComGetter.radius, norm_v)
-        if t is not None: gui.applyConfiguration (self.lin, t)
+        self.linear.set(self.plugin.gui.gui, v)
 
 class Velocities:
     color = Color.red
@@ -194,11 +150,10 @@ class JointAction(Qt.QAction):
     def trigger (self):
         self.velocities.toggleJoint (self.joint)
 
-class Data:
+class DataQCP:
     def __init__ (self, plugin):
         self.plugin = plugin
-        self.mpl = self.plugin.mplWidget
-        self.pb = plugin.progressBar
+        self.qcp = self.plugin.qcpWidget
         self.timer = Qt.QTimer()
         self.timer.setSingleShot(True)
 
@@ -223,53 +178,73 @@ class Data:
             self.datas = list ()
         else:
             self.dataAreOld = False
+        self.qcp.clearGraphs()
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.addGraph ()
+            graph.setName(elt[0])
+            graph.setPen(pens[i])
+        self.qcp.xAxis().setLabel(self.x[0])
 
     def acquireData (self):
         if self.dataAreOld:
-            self.pb.reset()
             self._setNextCall (self._getNextData)
         else:
-            self.pb.setValue(99)
             self._setNextCall (self._genPlot)
         self.timer.start(0)
 
     def _setNextCall (self, f):
-        self.timer.disconnect(QtCore.SIGNAL("timeout()"))
-        self.timer.connect(QtCore.SIGNAL("timeout()"), f)
+        self.timer.disconnect(Qt.SIGNAL("timeout()"))
+        self.timer.connect(Qt.SIGNAL("timeout()"), f)
+
+    def _getDerivative (self, order):
+        try:
+            if order == 0:
+                return self.plugin.client.problem.configAtParam (self.pathId, self.l)
+            else:
+                return self.plugin.client.problem.derivativeAtParam (self.pathId, order, self.l)
+        except hpp.Error as e:
+            if order == 0:
+                return [np.nan] * self.plugin.client.robot.getConfigSize()
+            else:
+                return [np.nan] * self.plugin.client.robot.getNumberDof()
+            print(str(e))
 
     def _getNextData (self):
         d = [ self.l, ]
-        try:
-            q = self.plugin.client.problem.configAtParam (self.pathId, self.l)
-        except:
-            q = [np.nan] * self.plugin.client.robot.getConfigSize()
-        d.extend (q)
+        d.extend (self._getDerivative(0))
+        d.extend (self._getDerivative(1))
+        d.extend (self._getDerivative(2))
         self.datas.append (d)
+
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.graph (i)
+            graph.addData (self.l, d[elt[1]])
+        self.qcp.replot()
+
         self.l += self.dl
-        self.pb.setValue (int(100 * self.l / self.pathLength))
         if self.l < self.pathLength:
             self._setNextCall (self._getNextData)
         else:
-            self._setNextCall (self._genPlot)
+            self._setNextCall (self._finishDataAcquisition)
         self.timer.start(0)
 
-    def _genPlot (self):
+    def _finishDataAcquisition (self):
         self.npdatas = np.matrix (self.datas)
+        self.qcp.rescaleAxes()
+        self.qcp.replot()
 
-        fig = self.mpl.figure
-        fig.clf()
-        gca = fig.gca ()
-        for elt in self.ys:
-            gca.plot (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]], label=elt[0])
-        gca.set_xlabel (self.x[0])
-        self.plugin.rightPane.repaint()
-        # pylab.legend (loc='best')
-        self.mpl.canvas.draw ()
-        # self.background = self.canvas.copy_from_bbox (gca.bbox)
-        # self.cursor = gca.axvline(x=0, color='r', linestyle='--', animated=True)
-        # self.canvas.blit (gca.bbox)
+    def _genPlot (self):
+        self.qcp.clearGraphs()
+        for i, elt in enumerate(self.ys):
+            graph = self.qcp.addGraph ()
+            graph.setData (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]])
+            graph.setName (elt[0])
+            graph.setPen(pens[i%len(pens)])
+        self.qcp.xAxis().setLabel(self.x[0])
+        self.qcp.rescaleAxes()
+        self.qcp.replot()
+        # TODO Add a vertical bar at current param along the path.
 
-        self.pb.setValue(100)
         return False
 
 class Plugin (QtGui.QDockWidget):
@@ -309,7 +284,7 @@ class Plugin (QtGui.QDockWidget):
         self.rightPane.setLayout (l)
         self.topWidget.addWidget (self.rightPane)
 
-        self.data = Data(self)
+        self.data = DataQCP(self)
 
     def refreshPlot (self):
         pid = self.pathPlayer.getCurrentPath()
@@ -332,21 +307,36 @@ class Plugin (QtGui.QDockWidget):
         jointNames = self.client.robot.getJointNames ()
         # Left pane
         saLayout = QtGui.QVBoxLayout ()
+        formats = ( "%s (%s)", "%s (%s, %i)")
 
         self.yselectcb = list ()
         rank = 0
         for n in jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
-                cb = QtGui.QCheckBox (n)
+                cb = QtGui.QCheckBox (formats[0] % (n,"q") )
                 self.yselectcb.append ((cb, rank))
                 saLayout.addWidget (cb)
             else:
                 for i in xrange (size):
-                    cb = QtGui.QCheckBox ("%s (%i)" % (n, i))
+                    cb = QtGui.QCheckBox (formats[1] % (n, "q", i))
                     self.yselectcb.append ((cb, rank + i))
                     saLayout.addWidget (cb)
             rank = rank + size
+        for type in ("v", "a"):
+            saLayout.addSpacing(5)
+            for n in jointNames:
+                size = self.client.robot.getJointNumberDof (n)
+                if size == 1:
+                    cb = QtGui.QCheckBox (formats[0] % (n,type) )
+                    self.yselectcb.append ((cb, rank))
+                    saLayout.addWidget (cb)
+                else:
+                    for i in xrange (size):
+                        cb = QtGui.QCheckBox (formats[1] % (n,type,i))
+                        self.yselectcb.append ((cb, rank + i))
+                        saLayout.addWidget (cb)
+                rank = rank + size
 
         saContent = QtGui.QWidget (self)
         saContent.setLayout (saLayout)
@@ -357,14 +347,23 @@ class Plugin (QtGui.QDockWidget):
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
         rank = 0
-        for n in self.client.robot.getJointNames ():
+        for n in jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
-                self.xselect.addItem (n, rank)
+                self.xselect.addItem (formats[0] % (n,"q"), rank)
             else:
                 for i in xrange (size):
-                    self.xselect.addItem ("%s (%i)" % (n, i), rank + i)
+                    self.xselect.addItem (formats[1] % (n,"q",i), rank + i)
             rank = rank + size
+        for type in ("v", "a"):
+            for n in jointNames:
+                size = self.client.robot.getJointNumberDof (n)
+                if size == 1:
+                    self.xselect.addItem (formats[0] % (n,type), rank)
+                else:
+                    for i in xrange (size):
+                        self.xselect.addItem (formats[1] % (n,type,i), rank + i)
+                rank = rank + size
 
     def refreshInterface (self):
         self.refreshJointList()
@@ -379,29 +378,32 @@ class Plugin (QtGui.QDockWidget):
         layout.addWidget (self.scrollArea)
 
     def makeRightPane (self, layout):
-        self.mplWidget = MatplotlibWidget(self, True)
-        layout.addWidget (self.mplWidget)
-        self.mplWidget.canvas.mpl_connect ("button_release_event", self._canvasReleased)
+        from PythonQt.QCustomPlot import QCustomPlot
+        self.qcpWidget = QCustomPlot()
+        self.qcpWidget.setAutoAddPlottableToLegend (True)
+        self.qcpWidget.setInteraction (1, True) # iRangeDrap
+        self.qcpWidget.setInteraction (2, True) # iRangeZoom
+        self.qcpWidget.legend().setVisible(True)
+        layout.addWidget (self.qcpWidget)
+        self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
 
         self.xselect = QtGui.QComboBox(self)
         layout.addWidget (self.xselect)
 
-        self.progressBar = QtGui.QProgressBar(self)
-        self.progressBar.setRange(0,100)
-        layout.addWidget (self.progressBar)
-
         # time index is 0 and is value is -1
         self.xselect.addItem ("time", -1)
 
-    def _canvasReleased (self, event):
-        if self.mplWidget.toolbar._active is not None:
+    def _mouseDoubleClick (self, event):
+        try:
+            if self.data.x[1] > 0: return
+        except:
             return
-        self.last_event = event
-        if not event.button == 1:
-          return False
-        l = event.xdata
-        self.pathPlayer.setCurrentTime(l)
-        return True
+        try: # Qt 5
+            x = event.localPos().x()
+        except: # Qt 4
+            x = event.posF().x()
+        t = self.qcpWidget.xAxis().pixelToCoord (x)
+        self.pathPlayer.setCurrentTime(t)
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
