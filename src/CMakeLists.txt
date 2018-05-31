@@ -34,13 +34,13 @@ INSTALL_PYTHON_FILES ("hpp/gepetto"
   viewer_factory.py
   __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/blender"
+INSTALL_PYTHON_FILES ("hpp/gepetto/blender"
   exportmotion.py
   __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/manipulation" viewer.py
+INSTALL_PYTHON_FILES ("hpp/gepetto/manipulation" viewer.py
   viewer_factory.py
   __init__.py)
 
-PYTHON_INSTALL_ON_SITE ("hpp/gepetto/gui" path_graph.py
+INSTALL_PYTHON_FILES ("hpp/gepetto/gui" path_graph.py
   __init__.py)
