@@ -17,9 +17,14 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-MACRO(INSTALL_PYTHON_FILES MODULE FILES)
-    FOREACH(PYFILE ${FILES})
-        PYTHON_INSTALL_ON_SITE(${MODULE} ${PYFILE})
+MACRO(INSTALL_PYTHON_FILES MODULE)
+    SET(FIRST TRUE)
+    FOREACH(PYFILE ${ARGV})
+        IF(${FIRST})
+          SET(FIRST FALSE)
+        ELSE()
+          PYTHON_INSTALL_ON_SITE(${MODULE} ${PYFILE})
+        ENDIF()
     ENDFOREACH()
 ENDMACRO()
 
