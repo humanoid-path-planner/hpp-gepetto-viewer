@@ -24,7 +24,8 @@ import hpp.corbaserver.client
 ## displays a path by sampling configurations along the path.
 #
 class PathPlayer (object):
-    def __init__ (self, publisher, client = hpp.corbaserver.Client(), dt = 0.01, speed = 1) :
+    def __init__ (self, publisher, client = None, dt = 0.01, speed = 1) :
+	if client is None: client = hpp.corbaserver.Client()
         self.client = client
         self.publisher = publisher
         self.dt = dt
