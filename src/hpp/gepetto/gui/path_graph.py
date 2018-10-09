@@ -383,9 +383,12 @@ class Plugin (QtGui.QDockWidget):
         self.qcpWidget.setAutoAddPlottableToLegend (True)
         self.qcpWidget.setInteraction (1, True) # iRangeDrap
         self.qcpWidget.setInteraction (2, True) # iRangeZoom
+        self.qcpWidget.setInteraction (16, True) # iSelectAxes
         self.qcpWidget.legend().setVisible(True)
         layout.addWidget (self.qcpWidget)
         self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
+        self.qcpWidget.xAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
+        self.qcpWidget.yAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
 
         self.xselect = QtGui.QComboBox(self)
         layout.addWidget (self.xselect)
@@ -404,6 +407,18 @@ class Plugin (QtGui.QDockWidget):
             x = event.posF().x()
         t = self.qcpWidget.xAxis().pixelToCoord (x)
         self.pathPlayer.setCurrentTime(t)
+
+    def _axesSelectionChanged (self, unused_parts):
+        xAxis = self.qcpWidget.xAxis()
+        yAxis = self.qcpWidget.yAxis()
+        x = (xAxis.selectedParts() != 0)
+        y = (yAxis.selectedParts() != 0)
+        if not x and not y:
+          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, yAxis)
+        elif x:
+          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, None)
+        elif y:
+          self.qcpWidget.axisRect().setRangeZoomAxes(None, yAxis)
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
