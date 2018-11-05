@@ -18,6 +18,9 @@
 # <http://www.gnu.org/licenses/>.
 
 import os.path
+import math
+from hpp import quaternion as Quaternion
+import omniORB.any
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
 
@@ -45,7 +48,7 @@ class Viewer (object):
     #         gepetto-viewer-server is created.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None):
+    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
@@ -66,6 +69,24 @@ class Viewer (object):
         if collisionURDF:
             self.toggleVisual(False)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
+        # create velocity and acceleration arrows :
+        self.displayArrows = displayArrows
+        if displayArrows :
+          self.colorVelocity=[0.2,1,0,0.6]
+          self.colorAcceleration = [1,0,0,0.6]
+          self.arrowRadius = 0.01
+          self.arrowMinSize = 0.05
+          self.arrowMaxSize = 1. - self.arrowMinSize
+          if (not ("Vec_Velocity" in self.client.gui.getNodeList())):
+            self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
+            self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
+            self.client.gui.setVisibility("Vec_Velocity","OFF")
+            self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
+            self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
+            self.client.gui.setVisibility("Vec_Acceleration","OFF")
+            self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
+            self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
+        self.displayCoM = displayCoM
 
     def createWindowAndScene (self, viewerClient, name):
         self.windowName = "window_" + name
@@ -310,6 +331,38 @@ class Viewer (object):
             pos = self.robot.getLinkPosition (o)
             objectName = prefix + o
             self.client.gui.applyConfiguration (objectName, pos)
+        # display velocity and acceleration arrows :
+        if self.displayArrows :
+            if self.robot.getDimensionExtraConfigSpace() >= 6 :
+              configSize = self.robot.getConfigSize() - self.robot.getDimensionExtraConfigSpace()
+              q=self.robotConfig[::]
+              qV=q[0:3]+self.robot.quaternionFromVector(q[configSize:configSize+3])
+              qA=q[0:3]+self.robot.quaternionFromVector(q[configSize+3:configSize+6])
+              v = (math.sqrt(q[configSize] * q[configSize] + q[configSize+1] * q[configSize+1] + q[configSize+2] * q[configSize+2]))/self.vmax
+              a = (math.sqrt(q[configSize+3] * q[configSize+3] + q[configSize+1+3] * q[configSize+1+3] + q[configSize+2+3] * q[configSize+2+3]))/self.amax
+              if v > 0 :
+                self.client.gui.resizeArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize+ v*self.arrowMaxSize)
+                self.client.gui.applyConfiguration("Vec_Velocity",qV[0:7])
+                self.client.gui.setVisibility("Vec_Velocity","ALWAYS_ON_TOP")
+              else :
+                self.client.gui.setVisibility("Vec_Velocity","OFF")
+                self.client.gui.resizeArrow("Vec_Velocity",self.arrowRadius,0)
+                self.client.gui.applyConfiguration("Vec_Velocity",qV[0:7])
+              if a > 0 :
+                self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize+ a*self.arrowMaxSize)
+                self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
+                self.client.gui.setVisibility("Vec_Acceleration","ALWAYS_ON_TOP")
+              else :
+                self.client.gui.setVisibility("Vec_Acceleration","OFF")
+                self.client.gui.resizeArrow("Vec_Acceleration",self.arrowRadius,0)
+                self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
+        if self.displayCoM :
+            name = 'sphere_CoM'
+            if not name in self.client.gui.getNodeList():
+                self.client.gui.addSphere(name,0.01,self.color.red)
+                self.client.gui.setVisibility(name,"ALWAYS_ON_TOP")
+                self.client.gui.addToGroup(name,self.sceneName)
+            self.client.gui.applyConfiguration(name,self.robot.getCenterOfMass()+[0,0,0,1])
 
     def __call__ (self, args):
         self.robotConfig = args
