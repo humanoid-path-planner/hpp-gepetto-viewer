@@ -181,9 +181,9 @@ class DataQCP:
         self.qcp.clearGraphs()
         for i, elt in enumerate(self.ys):
             graph = self.qcp.addGraph ()
-            graph.setName(elt[0])
-            graph.setPen(pens[i])
-        self.qcp.xAxis().setLabel(self.x[0])
+            graph.name = elt[0]
+            graph.pen = pens[i]
+        self.qcp.xAxis().label = self.x[0]
 
     def acquireData (self):
         if self.dataAreOld:
@@ -238,9 +238,9 @@ class DataQCP:
         for i, elt in enumerate(self.ys):
             graph = self.qcp.addGraph ()
             graph.setData (self.npdatas [:,self.x[1]], self.npdatas [:,elt[1]])
-            graph.setName (elt[0])
-            graph.setPen(pens[i%len(pens)])
-        self.qcp.xAxis().setLabel(self.x[0])
+            graph.name = elt[0]
+            graph.pen = pens[i%len(pens)]
+        self.qcp.xAxis().label = self.x[0]
         self.qcp.rescaleAxes()
         self.qcp.replot()
         # TODO Add a vertical bar at current param along the path.
@@ -378,13 +378,13 @@ class Plugin (QtGui.QDockWidget):
         layout.addWidget (self.scrollArea)
 
     def makeRightPane (self, layout):
-        from PythonQt.QCustomPlot import QCustomPlot
+        from PythonQt.QCustomPlot import QCustomPlot, QCP
         self.qcpWidget = QCustomPlot()
-        self.qcpWidget.setAutoAddPlottableToLegend (True)
-        self.qcpWidget.setInteraction (1, True) # iRangeDrap
-        self.qcpWidget.setInteraction (2, True) # iRangeZoom
-        self.qcpWidget.setInteraction (16, True) # iSelectAxes
-        self.qcpWidget.legend().setVisible(True)
+        self.qcpWidget.autoAddPlottableToLegend = True
+        self.qcpWidget.setInteraction (QCP.iRangeDrag , True) # iRangeDrap
+        self.qcpWidget.setInteraction (QCP.iRangeZoom , True) # iRangeZoom
+        self.qcpWidget.setInteraction (QCP.iSelectAxes, True) # iSelectAxes
+        self.qcpWidget.legend().visible = True
         layout.addWidget (self.qcpWidget)
         self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
         self.qcpWidget.xAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
@@ -411,8 +411,8 @@ class Plugin (QtGui.QDockWidget):
     def _axesSelectionChanged (self, unused_parts):
         xAxis = self.qcpWidget.xAxis()
         yAxis = self.qcpWidget.yAxis()
-        x = (xAxis.selectedParts() != 0)
-        y = (yAxis.selectedParts() != 0)
+        x = (xAxis.selectedParts != 0)
+        y = (yAxis.selectedParts != 0)
         if not x and not y:
           self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, yAxis)
         elif x:
