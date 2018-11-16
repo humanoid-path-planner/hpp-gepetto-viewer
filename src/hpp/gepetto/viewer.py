@@ -19,7 +19,7 @@
 
 import os.path
 import math
-from hpp import quaternion as Quaternion
+from hpp.quaternion import Quaternion
 import omniORB.any
 from gepetto.corbaserver import Client as GuiClient
 from gepetto import Error as GepettoError
@@ -336,8 +336,8 @@ class Viewer (object):
             if self.robot.client.robot.getDimensionExtraConfigSpace() >= 6 :
               configSize = self.robot.getConfigSize() - self.robot.client.robot.getDimensionExtraConfigSpace()
               q=self.robotConfig[::]
-              qV=q[0:3]+self.robot.quaternionFromVector(q[configSize:configSize+3])
-              qA=q[0:3]+self.robot.quaternionFromVector(q[configSize+3:configSize+6])
+              qV=q[0:3]+Quaternion().fromTwoVector([1,0,0],q[configSize:configSize+3]).array.tolist()
+              qA=q[0:3]+Quaternion().fromTwoVector([1,0,0],q[configSize+3:configSize+6]).array.tolist()
               v = (math.sqrt(q[configSize] * q[configSize] + q[configSize+1] * q[configSize+1] + q[configSize+2] * q[configSize+2]))/self.vmax
               a = (math.sqrt(q[configSize+3] * q[configSize+3] + q[configSize+1+3] * q[configSize+1+3] + q[configSize+2+3] * q[configSize+2+3]))/self.amax
               if v > 0 :
