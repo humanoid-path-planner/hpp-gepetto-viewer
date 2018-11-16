@@ -94,7 +94,6 @@ class PathPlayer (object):
       else:
         nameCurve = "path_"+str(pathId)+"_"+jointName
       self.publisher.client.gui.createGroup(nameCurve)
-      self.publisher.client.gui.addToGroup(nameCurve,self.publisher.sceneName)
       t = self.start*self.client.problem.pathLength (pathId)
       while t < length :
         q = self.client.problem.configAtParam (pathId, t)
@@ -102,7 +101,7 @@ class PathPlayer (object):
           self.publisher.robot.setCurrentConfig(q)
           q = self.publisher.robot.getLinkPosition(jointName)
         if last_q != 0 :
-          name = nameCurve+"_line_"+str(t)
+          name = nameCurve+"/line_"+str(t)
           v = (math.sqrt(q[configSize] * q[configSize] + q[configSize+1] * q[configSize+1] + q[configSize+2] * q[configSize+2]))/vmax
           if v<0.5:
             color=[v*2.,1,0,1]
@@ -112,6 +111,7 @@ class PathPlayer (object):
           self.publisher.client.gui.addToGroup(name,nameCurve)
         last_q = q[0:3]
         t += self.dt
+      self.publisher.client.gui.addToGroup(nameCurve,self.publisher.sceneName)
       self.publisher.client.gui.refresh()
 
     ## Generate a plot with the following datas:
