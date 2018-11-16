@@ -333,8 +333,8 @@ class Viewer (object):
             self.client.gui.applyConfiguration (objectName, pos)
         # display velocity and acceleration arrows :
         if self.displayArrows :
-            if self.robot.getDimensionExtraConfigSpace() >= 6 :
-              configSize = self.robot.getConfigSize() - self.robot.getDimensionExtraConfigSpace()
+            if self.robot.client.robot.getDimensionExtraConfigSpace() >= 6 :
+              configSize = self.robot.getConfigSize() - self.robot.client.robot.getDimensionExtraConfigSpace()
               q=self.robotConfig[::]
               qV=q[0:3]+self.robot.quaternionFromVector(q[configSize:configSize+3])
               qA=q[0:3]+self.robot.quaternionFromVector(q[configSize+3:configSize+6])
