@@ -82,6 +82,8 @@ class PathPlayer (object):
     # green for velocity close to 0, red for velocity close to the velocity bound.
     # This method assume that the path is represented by instances of the KinodynamicPath class
     def displayVelocityPath(self,pathId,jointName=0) :
+      if self.client.robot.getDimensionExtraConfigSpace() < 6:
+        raise RuntimeError ("DisplayVelocityPath can only be used if the robot have at least 6 extraDof storing velocity and acceleration of the root.")
       if jointName == 0 :
         if self.publisher.robot.rootJointType == 'planar' :
           jointName = self.publisher.robot.tf_root+'_joint'

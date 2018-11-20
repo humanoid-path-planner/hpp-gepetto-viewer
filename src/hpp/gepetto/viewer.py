@@ -72,6 +72,8 @@ class Viewer (object):
         # create velocity and acceleration arrows :
         self.displayArrows = displayArrows
         if displayArrows :
+          if self.robot.client.robot.getDimensionExtraConfigSpace() < 6:
+            raise RuntimeError ("displayArrows can only be True if the robot have at least 6 extraDof storing velocity and acceleration of the root.")
           self.colorVelocity=[0.2,1,0,0.6]
           self.colorAcceleration = [1,0,0,0.6]
           self.arrowRadius = 0.01
