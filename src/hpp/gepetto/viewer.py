@@ -139,12 +139,13 @@ class Viewer (object):
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
-      for i in range(0,len(ps.getWaypoints(pathID))) :	
+      waypoints = ps.getWaypoints(pathID)[0]
+      for i in range(0,len(waypoints)) :
         if joint == 0 :
-          currentPos = ps.getWaypoints(pathID)[i][0:7]
+          currentPos = waypoints[i][0:7]
           gui.addNodeToRoadmap(nameRoadmap,currentPos) 
         else : 
-          robot.setCurrentConfig(ps.getWaypoints(pathID)[i])
+          robot.setCurrentConfig(waypoints[i])
           currentPos = robot.getLinkPosition(joint)
           gui.addNodeToRoadmap(nameRoadmap,currentPos)
         if i > 0 :
