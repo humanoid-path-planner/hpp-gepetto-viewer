@@ -46,6 +46,9 @@ class Viewer (object):
     #  \param problemSolver object of type ProblemSolver
     #  \param viewerClient if not provided, a new client to
     #         gepetto-viewer-server is created.
+    #  \param displayArrow if True, the publish method will display 2 arrows representing the velocity (green) and acceleration (red) of the root.
+    #             This parameter can only be used if the robot have at least 6 extraDOF storing the velocity and acceleration of the root.
+    #  \param displayCoM if True, the publish method will also display a small red sphere representing the position of the CoM for the published configuration.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
     def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
