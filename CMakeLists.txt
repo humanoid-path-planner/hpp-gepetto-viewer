@@ -20,19 +20,20 @@
 #dependency: python-rospkg
 
 cmake_minimum_required(VERSION 2.8.3)
-project(hpp-gepetto-viewer)
 include(cmake/base.cmake)
+include(cmake/hpp.cmake)
 include(cmake/python.cmake)
 
+SET(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
-set(PROJECT_URL "")
+SET(PROJECT_URL "https://github.com/humanoid-path-planner/hpp-gepetto-viewer")
 
 findpython(2.7 EXACT)
-setup_project()
+SETUP_HPP_PROJECT()
 
 add_required_dependency("hpp-corbaserver >= 4")
 add_optional_dependency("gepetto-viewer-corba")
 
 ADD_SUBDIRECTORY(src)
 
-setup_project_finalize()
+SETUP_HPP_PROJECT_FINALIZE()
