@@ -385,6 +385,11 @@ class Viewer (object):
     def stopCapture (self):
         return self.client.gui.stopCapture (self.windowId)
 
+    ## Save current scene to image.
+    # \sa gepetto::corbaserver::GraphicalInterface::captureFrame
+    def captureFrame (self, filename):
+        return self.client.gui.captureFrame (self.windowId, filename)
+
     def toggleVisual(self, visual):
         for n in self.client.gui.getGroupNodeList(self.displayName):
             self.client.gui.setBoolProperty(n, "ShowVisual", visual)
