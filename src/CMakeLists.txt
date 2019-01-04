@@ -44,3 +44,7 @@ INSTALL_PYTHON_FILES ("hpp/gepetto/manipulation" viewer.py
 
 INSTALL_PYTHON_FILES ("hpp/gepetto/gui" path_graph.py
   __init__.py)
+
+IF(GEPETTO_VIEWER_CORBA_FOUND)
+  GEPETTO_GUI_PYPLUGIN ("hpp/gepetto/gui/path_graph.py")
+ENDIF()

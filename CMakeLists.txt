@@ -28,11 +28,17 @@ SET(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 SET(PROJECT_URL "https://github.com/humanoid-path-planner/hpp-gepetto-viewer")
 
+# Tells pkg-config to read cmake_plugin from pkg config file.
+LIST(APPEND PKG_CONFIG_ADDITIONAL_VARIABLES cmake_plugin)
+
 findpython(2.7 EXACT)
 SETUP_HPP_PROJECT()
 
 add_required_dependency("hpp-corbaserver >= 4")
 add_optional_dependency("gepetto-viewer-corba")
+IF(GEPETTO_VIEWER_CORBA_FOUND)
+  INCLUDE(${GEPETTO_VIEWER_CORBA_CMAKE_PLUGIN})
+ENDIF()
 
 ADD_SUBDIRECTORY(src)
 
