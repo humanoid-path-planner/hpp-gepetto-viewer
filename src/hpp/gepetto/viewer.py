@@ -67,7 +67,7 @@ class Viewer (object):
         # Load robot in viewer
         self.buildRobotBodies ()
         dataRootDir = "" # Ignored for now. Will soon disappear
-        path = "package://" + self.robot.packageName + '/urdf/' + self.robot.urdfName + self.robot.urdfSuffix + '.urdf'
+        path = self.robot.urdfPath()
         self.client.gui.addURDF (self.displayName, path, dataRootDir)
         if collisionURDF:
             self.toggleVisual(False)
