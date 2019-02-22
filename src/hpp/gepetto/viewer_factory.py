@@ -73,7 +73,7 @@ class ViewerFactory (object):
 
     def displayRoadmap (self, nameRoadmap, radiusSphere=0.01, sizeAxis=0.03,
                         colorNode=[1.0,1.0,1.0,1.0],
-                        colorEdge=[0.85,0.75,0.15,0.7], joint=0):
+                        colorEdge=[0.85,0.75,0.15,0.7], joint=None):
         l = locals ()
         self.guiRequest.append ((Viewer.displayRoadmap, l))
 

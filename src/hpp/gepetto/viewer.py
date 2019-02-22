@@ -130,29 +130,25 @@ class Viewer (object):
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayPathMap (self,nameRoadmap,pathID,radiusSphere=0.03,sizeAxis=0.09,colorNode=[1,0.0,0.0,1.0],colorEdge=[1,0.0,0.0,0.5],joint=0):
+    def displayPathMap (self,nameRoadmap,pathID,radiusSphere=0.03,sizeAxis=0.09,colorNode=[1,0.0,0.0,1.0],colorEdge=[1,0.0,0.0,0.5],joint=None):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
+      rootJoint = robot.getJointNames () [0]
       lastPos=0;
       currentPos=0;
       # find the link : 
-      if joint == 0 :
-        if robot.rootJointType == 'planar' :
-          joint = robot.tf_root+'_joint'
+      if joint is None :
+          joint = rootJoint
       if ps.numberNodes() == 0 :
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
       waypoints = ps.getWaypoints(pathID)[0]
       for i in range(0,len(waypoints)) :
-        if joint == 0 :
-          currentPos = waypoints[i][0:7]
-          gui.addNodeToRoadmap(nameRoadmap,currentPos) 
-        else : 
-          robot.setCurrentConfig(waypoints[i])
-          currentPos = robot.getLinkPosition(joint)
-          gui.addNodeToRoadmap(nameRoadmap,currentPos)
+        robot.setCurrentConfig(waypoints[i])
+        currentPos = robot.getJointPosition(joint)
+        gui.addNodeToRoadmap(nameRoadmap,currentPos)
         if i > 0 :
           gui.addEdgeToRoadmap(nameRoadmap,lastPos[0:3],currentPos[0:3])
         lastPos = currentPos
@@ -170,41 +166,41 @@ class Viewer (object):
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
     # BE CAREFULL : in the .py file wich init the robot, you must define a valid tf_root (this is the displayed joint by default)
     # notes : the edges are always straight lines and doesn't represent the real path beetwen the configurations of the nodes
-    def displayRoadmap (self,nameRoadmap,radiusSphere=0.01,sizeAxis=0.03,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=0):
+    def displayRoadmap (self,nameRoadmap,radiusSphere=0.01,sizeAxis=0.03,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=None):
       ps = self.problemSolver
       gui = self.client.gui
       robot = self.robot
+      rootJoint = robot.getJointNames () [0]
       # find the link : 
-      if joint == 0 :
-        if robot.rootJointType == 'planar' :
-          joint = robot.tf_root+'_joint'
+      if joint is None :
+          joint = rootJoint
       if ps.numberNodes() == 0 :
         return False
       if not gui.createRoadmap(nameRoadmap,colorNode,radiusSphere,sizeAxis,colorEdge):
         return False
       # set the start in green and the goal in red :
-      gui.addSphere(nameRoadmap+"start",radiusSphere*1.5,self.color.green)
-      gui.applyConfiguration(nameRoadmap+"start",ps.node(0)[0:7])
-      gui.addToGroup(nameRoadmap+"start",self.sceneName)
-      gui.addSphere(nameRoadmap+"goal",radiusSphere*1.5,self.color.red)
-      gui.applyConfiguration(nameRoadmap+"goal",ps.node(1)[0:7])
-      gui.addToGroup(nameRoadmap+"goal",self.sceneName)
+      gui.addSphere(nameRoadmap+"/start",radiusSphere*1.5,self.color.green)
+      robot.setCurrentConfig(ps.node(0))
+      gui.applyConfiguration(nameRoadmap+"start",
+                             robot.getJointPosition (joint))
+      gui.addToGroup(nameRoadmap+"/start",self.sceneName)
+      if ps.numberNodes () == 1:
+        return True
+      gui.addSphere(nameRoadmap+"/goal",radiusSphere*1.5,self.color.red)
+      robot.setCurrentConfig(ps.node(1))
+      gui.applyConfiguration(nameRoadmap+"/goal",
+                             robot.getJointPosition(joint))
+      gui.addToGroup(nameRoadmap+"/goal",self.sceneName)
       # add all the nodes :
       for i in range(0,ps.numberNodes()) :	
-        if joint == 0 :
-          gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
-        else : 
-          robot.setCurrentConfig(ps.node(i))
-          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint))
+        robot.setCurrentConfig(ps.node(i))
+        gui.addNodeToRoadmap(nameRoadmap,robot.getJointPosition(joint))
       for i in range(0,ps.numberEdges()) : 
-        if joint == 0 :
-          gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
-        else :
-          robot.setCurrentConfig(ps.edge(i)[0])
-          e0 = robot.getLinkPosition(joint)[0:3]
-          robot.setCurrentConfig(ps.edge(i)[1])
-          e1 = robot.getLinkPosition(joint)[0:3]
-          gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
+        robot.setCurrentConfig(ps.edge(i)[0])
+        e0 = robot.getJointPosition(joint)[0:3]
+        robot.setCurrentConfig(ps.edge(i)[1])
+        e1 = robot.getJointPosition(joint)[0:3]
+        gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
       gui.addToGroup(nameRoadmap,self.sceneName)
       gui.refresh()
       return True
@@ -221,16 +217,16 @@ class Viewer (object):
     # \param colorNode : the color of the sphere for the nodes (default value : white)
     # \param colorEdge : the color of the edges (default value : yellow)
     # \param joint : the link we want to display the configuration (by defaut, root link of the robot)
-    def solveAndDisplay (self,nameRoadmap,numberIt,radiusSphere=0.01,sizeAxis=0.03,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint = 0):
+    def solveAndDisplay (self,nameRoadmap,numberIt,radiusSphere=0.01,sizeAxis=0.03,colorNode=[1.0,1.0,1.0,1.0],colorEdge=[0.85,0.75,0.15,0.7],joint=None):
       import time
       ps = self.problemSolver
       problem = self.problemSolver.client.problem
       gui = self.client.gui
       robot = self.robot
+      rootJoint = robot.getJointNames () [0]
       # find the link : 
-      if joint == 0 :
-        if robot.rootJointType == 'planar' :
-          joint = robot.tf_root+'_joint'
+      if joint is None :
+          joint = rootJoint
       if ps.numberNodes() > 0 : 
         ps.clearRoadmap()
       tStart = time.time()
@@ -250,15 +246,15 @@ class Viewer (object):
               gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7])
             else : 
               robot.setCurrentConfig(ps.node(i))
-              gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+              gui.addNodeToRoadmap(nameRoadmap,robot.getJointPosition(joint)) 
           for i in range(beginEdge,ps.numberEdges()) : 
             if joint == 0 :
               gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
             else :
               robot.setCurrentConfig(ps.edge(i)[0])
-              e0 = robot.getLinkPosition(joint)[0:3]
+              e0 = robot.getJointPosition(joint)[0:3]
               robot.setCurrentConfig(ps.edge(i)[1])
-              e1 = robot.getLinkPosition(joint)[0:3]
+              e1 = robot.getJointPosition(joint)[0:3]
               gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
           beginNode = ps.numberNodes() 
           beginEdge = ps.numberEdges() 
@@ -272,15 +268,15 @@ class Viewer (object):
           gui.addNodeToRoadmap(nameRoadmap,ps.node(i)[0:7]) 
         else : 
           robot.setCurrentConfig(ps.node(i))
-          gui.addNodeToRoadmap(nameRoadmap,robot.getLinkPosition(joint)) 
+          gui.addNodeToRoadmap(nameRoadmap,robot.getJointPosition(joint)) 
       for i in range(beginEdge,ps.numberEdges()) : 
         if joint == 0 :
           gui.addEdgeToRoadmap(nameRoadmap,ps.edge(i)[0][0:3],ps.edge(i)[1][0:3])
         else :
           robot.setCurrentConfig(ps.edge(i)[0])
-          e0 = robot.getLinkPosition(joint)[0:3]
+          e0 = robot.getJointPosition(joint)[0:3]
           robot.setCurrentConfig(ps.edge(i)[1])
-          e1 = robot.getLinkPosition(joint)[0:3]
+          e1 = robot.getJointPosition(joint)[0:3]
           gui.addEdgeToRoadmap(nameRoadmap,e0,e1)
       problem.optimizePath(problem.numberPaths()-1)
       tStop = time.time()
