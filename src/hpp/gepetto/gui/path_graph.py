@@ -262,7 +262,6 @@ class Plugin (QtGui.QDockWidget):
         self.comgroupcreator = self.main.getFromSlot("requestCreateComGroup")
         self.velocities = Velocities(self)
         self.jointActions = dict()
-        self.resetConnection()
 
         # This avoids having a widget bigger than what it needs. It avoids having
         # a big dock widget and a small osg widget when creating the main osg widget.

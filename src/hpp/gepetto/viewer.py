@@ -60,6 +60,7 @@ class Viewer (object):
             viewerClient = GuiClient ()
         self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
+        self.callbacks = []
         if displayName is not None:
             self.displayName = displayName
         else:
@@ -106,6 +107,9 @@ class Viewer (object):
                 raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
                                 (self.sceneName, self.windowId, self.windowName))
 
+    ## \param cb Callable object, whose argument is a robot configuration.
+    def addCallback (self, cb):
+        self.callbacks.append(cb)
 
     def buildRobotBodies (self):
         self.robotBodies = list ()
@@ -369,6 +373,7 @@ class Viewer (object):
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
+        for cb in self.callbacks: cb (args)
         self.client.gui.refresh ()
 
     ## Start a screen capture
