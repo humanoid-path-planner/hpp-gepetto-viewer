@@ -95,12 +95,12 @@ class Viewer (object):
         self.displayCoM = displayCoM
 
     def createWindowAndScene (self, viewerClient, name):
-        self.windowName = "window_" + name
+        self.windowName = "scene_" + name
         try:
             self.windowId = viewerClient.gui.getWindowID (self.windowName)
         except GepettoError:
             self.windowId = viewerClient.gui.createWindow (self.windowName)
-        self.sceneName = "%i_scene_%s" % (self.windowId, name)
+        self.sceneName = self.windowName
         if not viewerClient.gui.nodeExists (self.sceneName):
             viewerClient.gui.createGroup (self.sceneName)
             if not viewerClient.gui.addSceneToWindow (self.sceneName, self.windowId):
