@@ -39,12 +39,18 @@ class Viewer (Parent):
             self.toggleVisual(False)
         #self.client.gui.addToGroup (name, self.compositeRobotName)
 
-    def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False):
+    def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False, frame = None):
         if not guiOnly:
-            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                         RobotType.packageName,
-                                         RobotType.modelName, RobotType.urdfSuffix,
-                                         RobotType.srdfSuffix)
+            if frame is None:
+                self.robot.insertRobotModel (robotName, RobotType.rootJointType,
+                                           RobotType.packageName,
+                                           RobotType.urdfName, RobotType.urdfSuffix,
+                                           RobotType.srdfSuffix)
+            else:
+                self.robot.insertRobotModelOnFrame (robotName, frame, RobotType.rootJointType,
+                                           RobotType.packageName,
+                                           RobotType.urdfName, RobotType.urdfSuffix,
+                                           RobotType.srdfSuffix)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
