@@ -1,6 +1,7 @@
 from PythonQt import QtGui, QtCore, Qt
 
 from hpp import Quaternion
+import hpp_idl
 from hpp.corbaserver import Client
 from gepetto.corbaserver import Client as GuiClient
 from gepetto.corbaserver.tools import Linear, Vector6
@@ -202,7 +203,7 @@ class DataQCP:
                 return self.plugin.client.problem.configAtParam (self.pathId, self.l)
             else:
                 return self.plugin.client.problem.derivativeAtParam (self.pathId, order, self.l)
-        except hpp.Error as e:
+        except hpp_idl.hpp.Error as e:
             if order == 0:
                 return [np.nan] * self.plugin.client.robot.getConfigSize()
             else:

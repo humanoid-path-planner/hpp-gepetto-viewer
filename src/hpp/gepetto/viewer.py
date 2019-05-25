@@ -67,12 +67,7 @@ class Viewer (object):
             self.displayName = self.robot.displayName
         # Load robot in viewer
         self.buildRobotBodies ()
-        dataRootDir = "" # Ignored for now. Will soon disappear
-        path = self.robot.urdfPath()
-        self.client.gui.addURDF (self.displayName, path, dataRootDir)
-        if collisionURDF:
-            self.toggleVisual(False)
-        self.client.gui.addToGroup (self.displayName, self.sceneName)
+        self._initDisplay ()
         # create velocity and acceleration arrows :
         self.displayArrows = displayArrows
         if displayArrows :
@@ -94,18 +89,21 @@ class Viewer (object):
             self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
         self.displayCoM = displayCoM
 
+    def _initDisplay (self):
+        dataRootDir = "" # Ignored for now. Will soon disappear
+        path = self.robot.urdfPath()
+        self.client.gui.addURDF (self.displayName, path, dataRootDir)
+        if self.collisionURDF:
+            self.toggleVisual(False)
+        self.client.gui.addToGroup (self.displayName, self.sceneName)
+
     def createWindowAndScene (self, viewerClient, name):
-        self.windowName = "window_" + name
+        self.windowName = "scene_" + name
         try:
             self.windowId = viewerClient.gui.getWindowID (self.windowName)
         except GepettoError:
             self.windowId = viewerClient.gui.createWindow (self.windowName)
-        self.sceneName = "%i_scene_%s" % (self.windowId, name)
-        if not viewerClient.gui.nodeExists (self.sceneName):
-            viewerClient.gui.createGroup (self.sceneName)
-            if not viewerClient.gui.addSceneToWindow (self.sceneName, self.windowId):
-                raise RuntimeError ('Failed to add scene "%s" to window %i ("%s")'%
-                                (self.sceneName, self.windowId, self.windowName))
+        self.sceneName = self.windowName
 
     ## \param cb Callable object, whose argument is a robot configuration.
     def addCallback (self, cb):
