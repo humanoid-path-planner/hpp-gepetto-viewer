@@ -1,0 +1,5 @@
+                                                                -*- outline -*-
+New in v4.6.0
+* Use same name for windows and scene.
+* Decrease differences between Viewer and manipulation.Viewer
+* Enable loading of robots onto a specific frame.
