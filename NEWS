@@ -1,4 +1,5 @@
                                                                 -*- outline -*-
+* Remove call to deprecated methods
 New in v4.6.0
 * Use same name for windows and scene.
 * Decrease differences between Viewer and manipulation.Viewer

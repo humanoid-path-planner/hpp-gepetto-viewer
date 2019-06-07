@@ -72,7 +72,7 @@ class ViewerFactory (Parent):
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
-            self.robot.insertObjectModel (robotName, RobotType.rootJointType,
+            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
                                     RobotType.packageName, RobotType.urdfName,
                                     RobotType.urdfSuffix, RobotType.srdfSuffix)
         l = locals ();
