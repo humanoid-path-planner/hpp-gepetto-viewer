@@ -1,4 +1,5 @@
                                                                 -*- outline -*-
+New in v4.6.1
 * Remove call to deprecated methods
 New in v4.6.0
 * Use same name for windows and scene.
