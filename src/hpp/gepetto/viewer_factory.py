@@ -18,11 +18,8 @@
 # <http://www.gnu.org/licenses/>.
 
 import os.path
-import rospkg
 import warnings
 from hpp.gepetto import Viewer
-
-rospack = rospkg.RosPack()
 
 ## Viewer factory
 #

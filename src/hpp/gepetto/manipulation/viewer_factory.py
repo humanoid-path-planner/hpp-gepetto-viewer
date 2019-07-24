@@ -18,7 +18,6 @@
 # <http://www.gnu.org/licenses/>.
 
 import os
-import rospkg
 import warnings
 from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer

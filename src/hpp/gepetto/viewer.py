@@ -21,8 +21,6 @@ import os.path
 import math
 from hpp.quaternion import Quaternion
 import omniORB.any
-from gepetto.corbaserver import Client as GuiClient
-from gepetto import Error as GepettoError
 
 def hppToViewerTransform(input):
     return input
@@ -52,6 +50,8 @@ class Viewer (object):
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
     def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
+        from gepetto.corbaserver import Client as GuiClient
+
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
@@ -98,6 +98,7 @@ class Viewer (object):
         self.client.gui.addToGroup (self.displayName, self.sceneName)
 
     def createWindowAndScene (self, viewerClient, name):
+        from gepetto import Error as GepettoError
         self.windowName = "scene_" + name
         try:
             self.windowId = viewerClient.gui.getWindowID (self.windowName)
