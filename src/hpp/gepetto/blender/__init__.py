@@ -17,4 +17,4 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import exportmotion
+from . import exportmotion

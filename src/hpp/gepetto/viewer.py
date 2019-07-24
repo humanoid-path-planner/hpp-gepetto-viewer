@@ -113,9 +113,9 @@ class Viewer (object):
         self.robotBodies = list ()
         # build list of pairs (robotName, objectName)
         for j in self.robot.getAllJointNames ():
-            self.robotBodies.extend (map (lambda n:
-                                              (j, self.displayName + "/", n),
-                                          self.robot.getLinkNames (j)))
+            self.robotBodies.extend ([
+                (j, self.displayName + "/", n) for n in self.robot.getLinkNames (j)
+                ])
 
     ## Add a landmark
     # \sa gepetto::corbaserver::GraphicalInterface::addLandmark

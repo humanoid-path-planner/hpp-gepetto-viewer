@@ -27,7 +27,7 @@ import hpp.corbaserver.client
 #
 class PathPlayer (object):
     def __init__ (self, publisher, client = None, dt = 0.01, speed = 1) :
-	if client is None: client = hpp.corbaserver.Client()
+        if client is None: client = hpp.corbaserver.Client()
         self.client = client
         self.publisher = publisher
         self.dt = dt
@@ -160,8 +160,8 @@ class PathPlayer (object):
         for jn in jointNames:
             rk = self.publisher.robot.rankInConfiguration[jn]
             sz = self.publisher.robot.getJointConfigSize(jn)
-            filter.extend(range(rk,rk+sz))
-            if sz > 1: labels.extend(map(lambda x: jn + str(x), xrange(0,sz)))
+            filter.extend(list(range(rk,rk+sz)))
+            if sz > 1: labels.extend([jn + str(x) for x in range(0,sz)])
             else:      labels.append(jn)
 
         data = (np.array(qs)[:,filter]).transpose()
@@ -172,7 +172,7 @@ class PathPlayer (object):
         for d, l in zip (data, labels):
             ax.plot(ts, d, label = l)
         if cursor:
-            for i in xrange(len(ts)):
+            for i in range(len(ts)):
                 c = ax.axvline(x=ts[i], color='r', linestyle='--')
                 fn = filename.format(i)
                 fig.savefig(fn, dpi = 150)
