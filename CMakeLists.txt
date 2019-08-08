@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 include(cmake/base.cmake)
 include(cmake/hpp.cmake)
-include(cmake/python.cmake)
+include(cmake/hpp/python.cmake)
 
 SET(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
@@ -33,10 +33,7 @@ LIST(APPEND PKG_CONFIG_ADDITIONAL_VARIABLES cmake_plugin)
 
 SETUP_HPP_PROJECT()
 
-IF(NOT DEFINED PYTHON_DESIRED_VERSION)
-  SET(PYTHON_DESIRED_VERSION 2.7)
-ENDIF()
-FINDPYTHON(${PYTHON_DESIRED_VERSION} EXACT)
+HPP_FINDPYTHON()
 
 ADD_REQUIRED_DEPENDENCY("hpp-corbaserver >= 4")
 ADD_OPTIONAL_DEPENDENCY("gepetto-viewer-corba")
