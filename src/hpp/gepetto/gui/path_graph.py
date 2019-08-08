@@ -1,3 +1,4 @@
+from __future__ import print_function
 from PythonQt import QtGui, QtCore, Qt
 
 from hpp import Quaternion
@@ -124,21 +125,21 @@ class Velocities:
             self.disconnect()
 
     def toggleJoint (self, joint):
-        if self.getters.has_key(joint): self.remove(joint)
+        if joint in self.getters: self.remove(joint)
         else:
             g = VelGetter(self.plugin, joint)
             g.createNodes (Velocities.color)
             self.add (g)
 
     def toggleCom (self, com):
-        if self.getters.has_key(com): self.remove (com)
+        if com in self.getters: self.remove (com)
         else:
             g = ComGetter (self.plugin, com)
             g.createNodes (Velocities.color)
             self.add (g)
 
     def applyAll (self):
-        for n, getV in self.getters.items():
+        for n, getV in list(self.getters.items()):
             getV.apply()
 
 class JointAction(Qt.QAction):
@@ -318,7 +319,7 @@ class Plugin (QtGui.QDockWidget):
                 self.yselectcb.append ((cb, rank))
                 saLayout.addWidget (cb)
             else:
-                for i in xrange (size):
+                for i in range (size):
                     cb = QtGui.QCheckBox (formats[1] % (n, "q", i))
                     self.yselectcb.append ((cb, rank + i))
                     saLayout.addWidget (cb)
@@ -332,7 +333,7 @@ class Plugin (QtGui.QDockWidget):
                     self.yselectcb.append ((cb, rank))
                     saLayout.addWidget (cb)
                 else:
-                    for i in xrange (size):
+                    for i in range (size):
                         cb = QtGui.QCheckBox (formats[1] % (n,type,i))
                         self.yselectcb.append ((cb, rank + i))
                         saLayout.addWidget (cb)
@@ -352,7 +353,7 @@ class Plugin (QtGui.QDockWidget):
             if size == 1:
                 self.xselect.addItem (formats[0] % (n,"q"), rank)
             else:
-                for i in xrange (size):
+                for i in range (size):
                     self.xselect.addItem (formats[1] % (n,"q",i), rank + i)
             rank = rank + size
         for type in ("v", "a"):
@@ -361,7 +362,7 @@ class Plugin (QtGui.QDockWidget):
                 if size == 1:
                     self.xselect.addItem (formats[0] % (n,type), rank)
                 else:
-                    for i in xrange (size):
+                    for i in range (size):
                         self.xselect.addItem (formats[1] % (n,type,i), rank + i)
                 rank = rank + size
 
@@ -425,6 +426,6 @@ class Plugin (QtGui.QDockWidget):
         self.gui = GuiClient()
 
     def getJointActions(self, name):
-        if not self.jointActions.has_key(name):
+        if name not in self.jointActions:
             self.jointActions[name] = (JointAction ("Show/Hide joint &velocity", name, self.velocities, self),)
         return self.jointActions[name]
