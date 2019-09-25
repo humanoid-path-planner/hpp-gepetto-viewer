@@ -22,18 +22,17 @@
 cmake_minimum_required(VERSION 2.8.3)
 include(cmake/base.cmake)
 include(cmake/hpp.cmake)
-include(cmake/hpp/python.cmake)
+include(cmake/python.cmake)
 
 SET(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
-SET(PROJECT_URL "https://github.com/humanoid-path-planner/hpp-gepetto-viewer")
 
 # Tells pkg-config to read cmake_plugin from pkg config file.
 LIST(APPEND PKG_CONFIG_ADDITIONAL_VARIABLES cmake_plugin)
 
 SETUP_HPP_PROJECT()
 
-HPP_FINDPYTHON()
+FINDPYTHON()
 
 ADD_REQUIRED_DEPENDENCY("hpp-corbaserver >= 4")
 ADD_OPTIONAL_DEPENDENCY("gepetto-viewer-corba")
