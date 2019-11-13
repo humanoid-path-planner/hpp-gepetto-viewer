@@ -87,11 +87,11 @@ class ViewerFactory (object):
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
     # The arguments of Viewer.__init__ can be passed through kwargs
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, **kwargs):
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, *args, **kwargs):
         if host is not None and viewerClient is None:
             from gepetto.corbaserver import Client as GuiClient
             viewerClient = GuiClient (host = host)
-        v = ViewerClass (self.problemSolver, viewerClient, **kwargs)
+        v = ViewerClass (self.problemSolver, viewerClient, *args, **kwargs)
         for call in self.guiRequest:
             kwargs = call[1].copy ();
             s = kwargs.pop ('self')

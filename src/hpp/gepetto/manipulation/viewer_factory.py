@@ -91,5 +91,5 @@ class ViewerFactory (Parent):
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
-    def createViewer (self, ViewerClass = Viewer, **kwargs):
-        return Parent.createViewer (self, ViewerClass, **kwargs)
+    def createViewer (self, ViewerClass = Viewer, *args, **kwargs):
+        return Parent.createViewer (self, ViewerClass, *args, **kwargs)

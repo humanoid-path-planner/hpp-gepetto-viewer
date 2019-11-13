@@ -144,6 +144,8 @@ class Viewer (object):
             self.robotBodies.extend ([
                 (j, self.displayName + "/", n) for n in self.robot.getLinkNames (j)
                 ])
+        self.guiObjectNames = [ prefix + o for j, prefix, o in self.robotBodies ]
+        self.hppObjectNames = [          o for j, prefix, o in self.robotBodies ]
 
     ## Add a landmark
     # \sa gepetto::corbaserver::GraphicalInterface::addLandmark
@@ -354,10 +356,8 @@ class Viewer (object):
 
     def publishRobots (self):
         self.robot.setCurrentConfig (self.robotConfig)
-        for j, prefix, o in self.robotBodies:
-            pos = self.robot.getLinkPosition (o)
-            objectName = prefix + o
-            self.client.gui.applyConfiguration (objectName, pos)
+        self.client.gui.applyConfigurations (self.guiObjectNames,
+                [ self.robot.getLinkPosition(o) for o in self.hppObjectNames ])
         # display velocity and acceleration arrows :
         if self.displayArrows :
             if self.robot.client.robot.getDimensionExtraConfigSpace() >= 6 :
