@@ -20,17 +20,19 @@
 #dependency: python-rospkg
 
 cmake_minimum_required(VERSION 2.8.3)
-include(cmake/base.cmake)
-include(cmake/hpp.cmake)
-include(cmake/python.cmake)
 
 SET(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 
+include(cmake/hpp.cmake)
+include(cmake/python.cmake)
+
+
 # Tells pkg-config to read cmake_plugin from pkg config file.
 LIST(APPEND PKG_CONFIG_ADDITIONAL_VARIABLES cmake_plugin)
 
-SETUP_HPP_PROJECT()
+COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
+PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 
 FINDPYTHON()
 
@@ -41,5 +43,3 @@ IF(GEPETTO_VIEWER_CORBA_FOUND AND EXISTS GEPETTO_VIEWER_CORBA_CMAKE_PLUGIN)
 ENDIF()
 
 ADD_SUBDIRECTORY(src)
-
-SETUP_HPP_PROJECT_FINALIZE()
