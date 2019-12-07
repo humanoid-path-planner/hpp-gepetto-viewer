@@ -21,6 +21,7 @@ import os
 import warnings
 from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer
+from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
 
 ## Viewer factory for manipulation.Viewer
 #
@@ -38,43 +39,43 @@ class ViewerFactory (Parent):
         self.guiRequest.append ((Viewer.buildRobotBodies, l));
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, frame = None):
-        if frame is None:
-            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                       RobotType.packageName,
-                                       RobotType.urdfName, RobotType.urdfSuffix,
-                                       RobotType.srdfSuffix)
-        else:
-            self.robot.insertRobotModelOnFrame (robotName, frame, RobotType.rootJointType,
-                                       RobotType.packageName,
-                                       RobotType.urdfName, RobotType.urdfSuffix,
-                                       RobotType.srdfSuffix)
-        l = locals ();
+        l = locals ().copy ();
+        if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+            if frame is None:
+                self.robot.insertRobotModel (robotName, RobotType.rootJointType,
+                                             urdfFilename, srdfFilename)
+            else:
+                self.robot.insertRobotModelOnFrame (robotName, frame,
+                                                    RobotType.rootJointType,
+                                                    urdfFilename, srdfFilename)
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadRobotModel, l));
 
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
-        self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                      RobotType.packageName,
-                                      RobotType.urdfName, RobotType.urdfSuffix,
-                                      RobotType.srdfSuffix)
-        l = locals ();
+        l = locals ().copy ();
+        if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+            self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
+                                          urdfFilename, srdfFilename)
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadHumanoidModel, l));
 
     def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
+        l = locals ().copy ();
         if not guiOnly:
-            self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
-                EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
-        l = locals ();
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
+            self.robot.loadEnvironmentModel (urdfFilename, srdfFilename,
+                                             envName + "/")
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
+        l = locals ().copy ()
         if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
             self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                    RobotType.packageName, RobotType.urdfName,
-                                    RobotType.urdfSuffix, RobotType.srdfSuffix)
-        l = locals ();
+                                         urdfFilename, srdfFilename)
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadObjectModel, l));
 

@@ -19,6 +19,7 @@
 
 import os
 from hpp.gepetto import Viewer as Parent
+from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
 
 ## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
 #
@@ -31,50 +32,47 @@ class Viewer (Parent):
         if not self.client.gui.nodeExists(self.compositeRobotName):
             self.client.gui.createGroup (self.compositeRobotName)
             self.client.gui.addToGroup (self.compositeRobotName, self.sceneName)
-        dataRootDir = "" # Ignored for now. Will soon disappear
-        path = self.robot.urdfPath()
+        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames ()
         name = self.compositeRobotName + '/' + self.robot.robotNames[0]
-        self.client.gui.addURDF (name, path, dataRootDir)
+        self.client.gui.addURDF (name, urdfFilename)
         if self.collisionURDF:
             self.toggleVisual(False)
         #self.client.gui.addToGroup (name, self.compositeRobotName)
 
     def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False, frame = None):
         if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
             if frame is None:
                 self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                           RobotType.packageName,
-                                           RobotType.urdfName, RobotType.urdfSuffix,
-                                           RobotType.srdfSuffix)
+                                             urdfFilename, srdfFilename)
             else:
-                self.robot.insertRobotModelOnFrame (robotName, frame, RobotType.rootJointType,
-                                           RobotType.packageName,
-                                           RobotType.urdfName, RobotType.urdfSuffix,
-                                           RobotType.srdfSuffix)
+                self.robot.insertRobotModelOnFrame (robotName, frame,
+                                                    RobotType.rootJointType,
+                                                    urdfFilename, srdfFilename)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
             self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                          RobotType.packageName,
-                                          RobotType.modelName, RobotType.urdfSuffix,
-                                          RobotType.srdfSuffix)
+                                          urdfFilename, srdfFilename)
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
     def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
         if not guiOnly:
-            self.robot.loadEnvironmentModel (EnvType.packageName, EnvType.urdfName,
-                EnvType.urdfSuffix, EnvType.srdfSuffix, envName + "/")
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
+            self.robot.loadEnvironmentModel (urdfFilename, srdfFilename,
+                                             envName + "/")
         self.loadUrdfObjectsInGUI (EnvType, envName)
         self.computeObjectPosition ()
 
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
             self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                    RobotType.packageName, RobotType.urdfName,
-                                    RobotType.urdfSuffix, RobotType.srdfSuffix)
+                                         urdfFilename, srdfFilename)
         self.buildRobotBodies ()
         base = "collision_" if self.collisionURDF else ""
         self.loadUrdfInGUI (RobotType, base + robotName)
@@ -86,17 +84,15 @@ class Viewer (Parent):
 
     def loadUrdfInGUI (self, RobotType, robotName):
         # Load robot in viewer
-        dataRootDir = "" # Ignored for now. Will soon disappear
-        path = "package://" + RobotType.packageName + '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + '.urdf'
+        urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
         nodeName = self.compositeRobotName + "/" + robotName
         if self.collisionURDF:
-            self.client.gui.addUrdfCollision (nodeName, path, dataRootDir)
+            self.client.gui.addUrdfCollision (nodeName, urdfFilename)
         else:
-            self.client.gui.addURDF (nodeName, path, dataRootDir)
+            self.client.gui.addURDF (nodeName, urdfFilename)
 
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
-        dataRootDir = "" # Ignored for now. Will soon disappear
-        path = "package://" + RobotType.packageName + '/urdf/' + RobotType.urdfName + RobotType.urdfSuffix + '.urdf'
-        self.client.gui.addUrdfObjects (robotName, path, dataRootDir,
+        urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+        self.client.gui.addUrdfObjects (robotName, urdfFilename,
                                         not self.collisionURDF)
         self.client.gui.addToGroup (robotName, self.sceneName)
