@@ -22,6 +22,33 @@ import math
 from hpp.quaternion import Quaternion
 import omniORB.any
 
+def _urdfPath (Type) :
+    return "package://" + Type.packageName + '/urdf/' + Type.urdfName + \
+        Type.urdfSuffix + '.urdf'
+
+def _srdfPath (Type) :
+    return "package://" + Type.packageName + '/srdf/' + Type.urdfName + \
+        Type.srdfSuffix + '.srdf'
+
+## Return urdf and srdf filenames
+#
+def _urdfSrdfFilenames (Type):
+    # if packageName, urdfName, urdfSuffix, srdfSuffix are members of the
+    # class, build urdf and srdf filenames
+    if hasattr (Type, 'packageName') and hasattr (Type,  'urdfName') and \
+       hasattr (Type, 'urdfSuffix') and hasattr (Type,  'srdfSuffix') :
+        urdfFilename = _urdfPath (Type)
+        srdfFilename = _srdfPath (Type)
+    elif hasattr (Type, 'urdfFilename') and hasattr (Type, 'srdfFilename') :
+        urdfFilename = Type.urdfFilename
+        srdfFilename = Type.srdfFilename
+    else :
+        raise RuntimeError (\
+         """instance should have one of the following sets of members
+         - (packageName, urdfName, urdfSuffix, srdfSuffix),
+         - (urdfFilename, srdfFilename)""")
+    return urdfFilename, srdfFilename
+
 def hppToViewerTransform(input):
     return input
 
@@ -91,8 +118,8 @@ class Viewer (object):
 
     def _initDisplay (self):
         dataRootDir = "" # Ignored for now. Will soon disappear
-        path = self.robot.urdfPath()
-        self.client.gui.addURDF (self.displayName, path, dataRootDir)
+        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames ()
+        self.client.gui.addURDF (self.displayName, urdfFilename)
         if self.collisionURDF:
             self.toggleVisual(False)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
@@ -289,20 +316,15 @@ class Viewer (object):
 
     ## Load obstacles from a urdf file
     #
-    #  \param package ros package containing the urdf file,
-    #  \param filename name of the urdf file without extension,
+    #  \param filename name of the urdf file, may contain "package://"
     #  \param prefix prefix added to object names in case the same file
     #         is loaded several times,
-    #  \param meshPackageName ros package containing the geometry files
-    #         (collada, stl,...) if different from package
     #  \param guiOnly whether to control only gepetto-viewer-server
-    def loadObstacleModel (self, package, filename, prefix,
-                           meshPackageName = None, guiOnly = False):
+    def loadObstacleModel (self, filename, prefix, guiOnly = False):
         if not guiOnly:
-            self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
+            self.problemSolver.loadObstacleFromUrdf (filename, prefix+'/')
         dataRootDir = "" # Ignored for now. Will soon disappear
-        path = "package://" + package + '/urdf/' + filename + '.urdf'
-        self.client.gui.addUrdfObjects (prefix, path, dataRootDir,
+        self.client.gui.addUrdfObjects (prefix, filename,
                                         not self.collisionURDF)
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()

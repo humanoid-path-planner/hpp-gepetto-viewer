@@ -20,6 +20,7 @@
 import os.path
 import warnings
 from hpp.gepetto import Viewer
+from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
 
 ## Viewer factory
 #
@@ -42,11 +43,16 @@ class ViewerFactory (object):
         l = locals ();
         self.guiRequest.append ((Viewer.addLandmark, l));
 
-    def loadObstacleModel (self, package, filename, prefix,
-                           meshPackageName = None, guiOnly = False):
+    ## Load obstacles from a urdf file
+    #
+    #  \param filename name of the urdf file, may contain "package://"
+    #  \param prefix prefix added to object names in case the same file
+    #         is loaded several times,
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def loadObstacleModel (self, filename, prefix, guiOnly = False):
+        l = locals ().copy ()
         if not guiOnly:
-            self.problemSolver.loadObstacleFromUrdf (package, filename, prefix+'/')
-        l = locals ();
+            self.problemSolver.loadObstacleFromUrdf (filename, prefix+'/')
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
