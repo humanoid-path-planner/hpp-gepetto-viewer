@@ -27,6 +27,9 @@ from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
 #  Store commands to be sent to \c gepetto-viewer-server, create
 #  clients on demand and send stored commands.
 class ViewerFactory (object):
+    ## Whether light sources in collada files should be removed at loading.
+    removeLightSources = True
+
     ## Constructor
     #  \param problemSolver instance of
     #         hpp.corbaserver.problem_solver.ProblemSolver,
@@ -92,6 +95,7 @@ class ViewerFactory (object):
             from gepetto.corbaserver import Client as GuiClient
             viewerClient = GuiClient (host = host)
         v = ViewerClass (self.problemSolver, viewerClient, *args, **kwargs)
+        v.removeLightSources = self.removeLightSources
         for call in self.guiRequest:
             kwargs = call[1].copy ();
             s = kwargs.pop ('self')

@@ -67,6 +67,9 @@ class Viewer (object):
     #  existing server.
     sceneName = '0_scene_hpp_'
 
+    ## Whether light sources in collada files should be removed at loading.
+    removeLightSources = True
+
     ## Constructor
     #  \param problemSolver object of type ProblemSolver
     #  \param viewerClient if not provided, a new client to
@@ -116,10 +119,27 @@ class Viewer (object):
             self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
         self.displayCoM = displayCoM
 
+    # Set lighting mode OFF for a group of nodes
+    #
+    # Some robot models have light produced by their links. This produces a
+    # undesired effect in gepetto-gui.
+    def _removeLightSources (self, nodes):
+        if not self.removeLightSources:
+            return
+        for n in nodes:
+            properties = self.client.gui.getPropertyNames (n)
+            if 'RemoveLightSources' in properties:
+                self.client.gui.removeLightSources (n)
+            # Recursively explore child nodes
+            children = self.client.gui.getGroupNodeList (n)
+            self._removeLightSources (children)
+
+
     def _initDisplay (self):
-        dataRootDir = "" # Ignored for now. Will soon disappear
         urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames ()
         self.client.gui.addURDF (self.displayName, urdfFilename)
+        # Remove lighting from meshes
+        self._removeLightSources (self.client.gui.getGroupNodeList (self.displayName))
         if self.collisionURDF:
             self.toggleVisual(False)
         self.client.gui.addToGroup (self.displayName, self.sceneName)
@@ -325,9 +345,10 @@ class Viewer (object):
     def loadObstacleModel (self, filename, prefix, guiOnly = False):
         if not guiOnly:
             self.problemSolver.loadObstacleFromUrdf (filename, prefix+'/')
-        dataRootDir = "" # Ignored for now. Will soon disappear
         self.client.gui.addUrdfObjects (prefix, filename,
                                         not self.collisionURDF)
+        # Remove lighting from meshes
+        self._removeLightSources (self.client.gui.getGroupNodeList (prefix))
         self.client.gui.addToGroup (prefix, self.sceneName)
         self.computeObjectPosition ()
 
