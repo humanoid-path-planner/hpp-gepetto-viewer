@@ -35,6 +35,8 @@ class Viewer (Parent):
         urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames ()
         name = self.compositeRobotName + '/' + self.robot.robotNames[0]
         self.client.gui.addURDF (name, urdfFilename)
+        # Remove lighting from meshes
+        self._removeLightSources (self.client.gui.getGroupNodeList (name))
         if self.collisionURDF:
             self.toggleVisual(False)
         #self.client.gui.addToGroup (name, self.compositeRobotName)
@@ -90,9 +92,12 @@ class Viewer (Parent):
             self.client.gui.addUrdfCollision (nodeName, urdfFilename)
         else:
             self.client.gui.addURDF (nodeName, urdfFilename)
+        # Remove lighting from meshes
+        self._removeLightSources (self.client.gui.getGroupNodeList (nodeName))
 
     def loadUrdfObjectsInGUI (self, RobotType, robotName):
         urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
         self.client.gui.addUrdfObjects (robotName, urdfFilename,
                                         not self.collisionURDF)
+        self._removeLightSources (self.client.gui.getGroupNodeList (robotName))
         self.client.gui.addToGroup (robotName, self.sceneName)
