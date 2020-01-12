@@ -59,6 +59,18 @@ class ViewerFactory (object):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadObstacleModel, l));
 
+    ## Load polyhedron from a 3D mesh file
+    #
+    #  \param filename name of the 3D mesh file, may contain "package://"
+    #  \param name name of the object,
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def loadPolyhedronObstacleModel (self, name, filename, guiOnly = False):
+        l = locals ().copy ()
+        if not guiOnly:
+            self.problemSolver.hppcorba.obstacle.loadPolyhedron(name, filename)
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadPolyhedronObstacleModel, l));
+
     ## Move Obstacle
     #
     #  \param name Name of the object
