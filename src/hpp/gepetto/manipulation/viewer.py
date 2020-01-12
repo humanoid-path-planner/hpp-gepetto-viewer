@@ -54,6 +54,19 @@ class Viewer (Parent):
         self.buildRobotBodies ()
         self.loadUrdfInGUI (RobotType, robotName)
 
+    def loadRobotModelFromString (self, robotName, rootJointType,
+            urdfString, srdfString = "<robot/>", guiOnly = False):
+        if not guiOnly:
+            self.robot.insertRobotModelFromString (robotName, rootJointType,
+                    urdfString, srdfString)
+        nodeName = self.compositeRobotName + "/" + robotName
+        if self.collisionURDF:
+            self.client.gui.addUrdfCollision (nodeName, urdfString)
+        else:
+            self.client.gui.addURDF (nodeName, urdfString)
+        # Remove lighting from meshes
+        self._removeLightSources (self.client.gui.getGroupNodeList (nodeName))
+
     def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
         if not guiOnly:
             urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
