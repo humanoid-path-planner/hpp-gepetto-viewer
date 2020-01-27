@@ -334,8 +334,6 @@ class Viewer (object):
       tStop = time.time()
       return tStop-tStart
 
-
-
     ## Load obstacles from a urdf file
     #
     #  \param filename name of the urdf file, may contain "package://"
@@ -350,6 +348,20 @@ class Viewer (object):
         # Remove lighting from meshes
         self._removeLightSources (self.client.gui.getGroupNodeList (prefix))
         self.client.gui.addToGroup (prefix, self.sceneName)
+        self.computeObjectPosition ()
+
+    ## Load polyhedron from a 3D mesh file
+    #
+    #  \param filename name of the 3D mesh file, may contain "package://"
+    #  \param name name of the object,
+    #  \param guiOnly whether to control only gepetto-viewer-server
+    def loadPolyhedronObstacleModel (self, name, filename, guiOnly = False):
+        if not guiOnly:
+            self.problemSolver.hppcorba.obstacle.loadPolyhedron(name, filename)
+        self.client.gui.addMesh (name, filename)
+        # Remove lighting from meshes
+        self._removeLightSources ([name,])
+        self.client.gui.addToGroup (name, self.sceneName)
         self.computeObjectPosition ()
 
     ## Move Obstacle
