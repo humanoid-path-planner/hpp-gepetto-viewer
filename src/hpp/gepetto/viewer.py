@@ -35,6 +35,8 @@ def _srdfPath (Type) :
 def _urdfSrdfFilenames (Type):
     # if packageName, urdfName, urdfSuffix, srdfSuffix are members of the
     # class, build urdf and srdf filenames
+    if _urdfSrdfString(Type):
+        return Type.urdfString, Type.srdfString
     if hasattr (Type, 'packageName') and hasattr (Type,  'urdfName') and \
        hasattr (Type, 'urdfSuffix') and hasattr (Type,  'srdfSuffix') :
         urdfFilename = _urdfPath (Type)
@@ -48,6 +50,9 @@ def _urdfSrdfFilenames (Type):
          - (packageName, urdfName, urdfSuffix, srdfSuffix),
          - (urdfFilename, srdfFilename)""")
     return urdfFilename, srdfFilename
+
+def _urdfSrdfString (Type):
+    return hasattr (Type, 'urdfString') and hasattr (Type, 'srdfString')
 
 def hppToViewerTransform(input):
     return input
