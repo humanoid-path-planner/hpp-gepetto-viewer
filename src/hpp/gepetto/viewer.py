@@ -114,15 +114,15 @@ class Viewer (object):
           self.arrowRadius = 0.01
           self.arrowMinSize = 0.05
           self.arrowMaxSize = 1. - self.arrowMinSize
-          if (not ("Vec_Velocity" in self.client.gui.getNodeList())):
+          if self.client.gui.getNodeList() is not None and not ("Vec_Velocity" in self.client.gui.getNodeList()):
             self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
             self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
             self.client.gui.setVisibility("Vec_Velocity","OFF")
             self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
             self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
             self.client.gui.setVisibility("Vec_Acceleration","OFF")
-            self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
-            self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
+        self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
+        self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
         self.displayCoM = displayCoM
 
     # Set lighting mode OFF for a group of nodes
@@ -130,7 +130,7 @@ class Viewer (object):
     # Some robot models have light produced by their links. This produces a
     # undesired effect in gepetto-gui.
     def _removeLightSources (self, nodes):
-        if not self.removeLightSources:
+        if not self.removeLightSources or nodes is None:
             return
         for n in nodes:
             properties = self.client.gui.getPropertyNames (n)
@@ -424,7 +424,7 @@ class Viewer (object):
                 self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
         if self.displayCoM :
             name = 'sphere_CoM'
-            if not name in self.client.gui.getNodeList():
+            if self.client.gui.getNodeList() is not None and not name in self.client.gui.getNodeList():
                 self.client.gui.addSphere(name,0.01,self.color.red)
                 self.client.gui.setVisibility(name,"ALWAYS_ON_TOP")
                 self.client.gui.addToGroup(name,self.sceneName)
