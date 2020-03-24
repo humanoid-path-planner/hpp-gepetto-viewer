@@ -20,6 +20,7 @@
 import os.path
 import math
 from hpp.quaternion import Quaternion
+from gepetto.color import Color
 import omniORB.any
 
 def _urdfPath (Type) :
@@ -463,46 +464,3 @@ class Viewer (object):
         self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,0,0,0,1])
         self.client.gui.setWireFrameMode(n, "WIREFRAME")
         self.client.gui.refresh()
-
-## Helper class 
-class Color(object):
-    # Define some RGBA-normalized color (osg convention)
-    white=[1.0,1.0,1.0,1.0]
-    lightWhite=[1.0,1.0,1.0,0.5]
-    green=[0,1,0,1]
-    lightGreen=[0,1,0,0.5]
-    yellow=[1,1,0,1]
-    lightYellow=[1,1,0,0.5]
-    blue = [0.0, 0.0, 1, 1.0]
-    lightBlue = [0.0, 0.0, 1, 0.5]
-    grey = [0.7,0.7,0.7,1.0]
-    lightGrey= [0.7,0.7,0.7,0.7]
-    red = [1,0.0,0.0,1.0]
-    lightRed = [1,0.0,0.0,0.5]
-    black=[0,0,0,1.0]
-    lightBlack=[0,0,0,0.5]
-    brown = [0.85,0.75,0.15,1.0]
-    lightBrown = [0.85,0.75,0.15,1.0]
-    
-    def __init__(self):
-        self.colors = (
-                [1.0,1.0,1.0,1.0],
-                [1.0,1.0,1.0,0.5],
-                [0,1,0,1],
-                [0,1,0,0.5],
-                [1,1,0,1],
-                [1,1,0,0.5],
-                [0.0, 0.0, 1, 1.0],
-                [0.0, 0.0, 1, 0.5],
-                [0.7,0.7,0.7,1.0],
-                [0.7,0.7,0.7,0.7],
-                [1,0.0,0.0,1.0],
-                [1,0.0,0.0,0.5],
-                [0,0,0,1.0],
-                [0,0,0,0.5],
-                [0.85,0.75,0.15,1.0],
-                [0.85,0.75,0.15,1.0],
-                )
-
-    def __getitem__ (self, i):
-        return self.colors[i]
