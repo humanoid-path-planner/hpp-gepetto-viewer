@@ -21,6 +21,14 @@ import os.path
 import warnings
 from hpp.gepetto import Viewer
 from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
+from gepetto.corbaserver.client import _GhostGraphicalInterface
+
+
+class _GhostViewerClient:
+
+    def __init__(self):
+        self.gui = _GhostGraphicalInterface()
+
 
 ## Viewer factory
 #
@@ -99,13 +107,23 @@ class ViewerFactory (object):
         l = locals ();
         self.guiRequest.append ((Viewer.__call__, l));
 
+
+
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
     # The arguments of Viewer.__init__ can be passed through kwargs
-    def createViewer (self, ViewerClass = Viewer, viewerClient = None, host = None, *args, **kwargs):
-        if host is not None and viewerClient is None:
+    def createViewer (self, ViewerClass = Viewer, viewerClient = None, ghost = False, host = None, *args, **kwargs):
+        if (host is not None or ghost) and viewerClient is None:
             from gepetto.corbaserver import Client as GuiClient
-            viewerClient = GuiClient (host = host)
+            try:
+                viewerClient = GuiClient (host = host)
+            except Exception as e:
+               if ghost:
+                   print("Failed to connect to the viewer.")
+                   print("Check whether gepetto-gui is properly started.")
+                   viewerClient = _GhostViewerClient()
+               else:
+                   raise e
         v = ViewerClass (self.problemSolver, viewerClient, *args, **kwargs)
         v.removeLightSources = self.removeLightSources
         for call in self.guiRequest:
