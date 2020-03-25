@@ -93,15 +93,22 @@ class Viewer (object):
     #  \param displayCoM if True, the publish method will also display a small red sphere representing the position of the CoM for the published configuration.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
+    def __init__ (self, problemSolver, viewerClient = None, ghost = False, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
         from gepetto.corbaserver import Client as GuiClient
-
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
         self.color=Color()
         if not viewerClient:
-            viewerClient = GuiClient ()
+            try:
+                viewerClient = GuiClient ()
+            except Exception as e:
+               if ghost:
+                   print("Failed to connect to the viewer.")
+                   print("Check whether gepetto-gui is properly started.")
+                   viewerClient = _GhostViewerClient()
+               else:
+                   raise e
         self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
         self.callbacks = []

@@ -106,7 +106,7 @@ class ViewerFactory (object):
     #
     # The arguments of Viewer.__init__ can be passed through kwargs
     def createViewer (self, ViewerClass = Viewer, viewerClient = None, ghost = False, host = None, *args, **kwargs):
-        if (host is not None or ghost) and viewerClient is None:
+        if host is not None and viewerClient is None:
             from gepetto.corbaserver import Client as GuiClient
             try:
                 viewerClient = GuiClient (host = host)
@@ -117,7 +117,7 @@ class ViewerFactory (object):
                    viewerClient = _GhostViewerClient()
                else:
                    raise e
-        v = ViewerClass (self.problemSolver, viewerClient, *args, **kwargs)
+        v = ViewerClass (self.problemSolver, viewerClient, ghost = ghost, *args, **kwargs)
         v.removeLightSources = self.removeLightSources
         for call in self.guiRequest:
             kwargs = call[1].copy ();
