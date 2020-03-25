@@ -20,7 +20,16 @@
 import os.path
 import math
 from hpp.quaternion import Quaternion
+from gepetto.color import Color
 import omniORB.any
+from gepetto.corbaserver.client import _GhostGraphicalInterface
+
+
+class _GhostViewerClient:
+
+    def __init__(self):
+        self.gui = _GhostGraphicalInterface()
+
 
 def _urdfPath (Type) :
     return "package://" + Type.packageName + '/urdf/' + Type.urdfName + \
@@ -84,15 +93,22 @@ class Viewer (object):
     #  \param displayCoM if True, the publish method will also display a small red sphere representing the position of the CoM for the published configuration.
     #
     #  The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
+    def __init__ (self, problemSolver, viewerClient = None, ghost = False, collisionURDF = False, displayName = None, displayArrows = False, displayCoM = False):
         from gepetto.corbaserver import Client as GuiClient
-
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
         self.collisionURDF = collisionURDF
         self.color=Color()
         if not viewerClient:
-            viewerClient = GuiClient ()
+            try:
+                viewerClient = GuiClient ()
+            except Exception as e:
+               if ghost:
+                   print("Failed to connect to the viewer.")
+                   print("Check whether gepetto-gui is properly started.")
+                   viewerClient = _GhostViewerClient()
+               else:
+                   raise e
         self.createWindowAndScene (viewerClient, "hpp_")
         self.client = viewerClient
         self.callbacks = []
@@ -113,15 +129,15 @@ class Viewer (object):
           self.arrowRadius = 0.01
           self.arrowMinSize = 0.05
           self.arrowMaxSize = 1. - self.arrowMinSize
-          if (not ("Vec_Velocity" in self.client.gui.getNodeList())):
+          if self.client.gui.getNodeList() is not None and not ("Vec_Velocity" in self.client.gui.getNodeList()):
             self.client.gui.addArrow("Vec_Velocity",self.arrowRadius,self.arrowMinSize,self.colorVelocity)
             self.client.gui.addToGroup("Vec_Velocity",self.sceneName)
             self.client.gui.setVisibility("Vec_Velocity","OFF")
             self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
             self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
             self.client.gui.setVisibility("Vec_Acceleration","OFF")
-            self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
-            self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
+        self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
+        self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
         self.displayCoM = displayCoM
 
     # Set lighting mode OFF for a group of nodes
@@ -129,7 +145,7 @@ class Viewer (object):
     # Some robot models have light produced by their links. This produces a
     # undesired effect in gepetto-gui.
     def _removeLightSources (self, nodes):
-        if not self.removeLightSources:
+        if not self.removeLightSources or nodes is None:
             return
         for n in nodes:
             properties = self.client.gui.getPropertyNames (n)
@@ -423,7 +439,7 @@ class Viewer (object):
                 self.client.gui.applyConfiguration("Vec_Acceleration",qA[0:7])
         if self.displayCoM :
             name = 'sphere_CoM'
-            if not name in self.client.gui.getNodeList():
+            if self.client.gui.getNodeList() is not None and not name in self.client.gui.getNodeList():
                 self.client.gui.addSphere(name,0.01,self.color.red)
                 self.client.gui.setVisibility(name,"ALWAYS_ON_TOP")
                 self.client.gui.addToGroup(name,self.sceneName)
@@ -463,46 +479,3 @@ class Viewer (object):
         self.client.gui.applyConfiguration(n, [ (aabb[0]+aabb[3])/2,(aabb[1]+aabb[4])/2,(aabb[2]+aabb[5])/2,0,0,0,1])
         self.client.gui.setWireFrameMode(n, "WIREFRAME")
         self.client.gui.refresh()
-
-## Helper class 
-class Color(object):
-    # Define some RGBA-normalized color (osg convention)
-    white=[1.0,1.0,1.0,1.0]
-    lightWhite=[1.0,1.0,1.0,0.5]
-    green=[0,1,0,1]
-    lightGreen=[0,1,0,0.5]
-    yellow=[1,1,0,1]
-    lightYellow=[1,1,0,0.5]
-    blue = [0.0, 0.0, 1, 1.0]
-    lightBlue = [0.0, 0.0, 1, 0.5]
-    grey = [0.7,0.7,0.7,1.0]
-    lightGrey= [0.7,0.7,0.7,0.7]
-    red = [1,0.0,0.0,1.0]
-    lightRed = [1,0.0,0.0,0.5]
-    black=[0,0,0,1.0]
-    lightBlack=[0,0,0,0.5]
-    brown = [0.85,0.75,0.15,1.0]
-    lightBrown = [0.85,0.75,0.15,1.0]
-    
-    def __init__(self):
-        self.colors = (
-                [1.0,1.0,1.0,1.0],
-                [1.0,1.0,1.0,0.5],
-                [0,1,0,1],
-                [0,1,0,0.5],
-                [1,1,0,1],
-                [1,1,0,0.5],
-                [0.0, 0.0, 1, 1.0],
-                [0.0, 0.0, 1, 0.5],
-                [0.7,0.7,0.7,1.0],
-                [0.7,0.7,0.7,0.7],
-                [1,0.0,0.0,1.0],
-                [1,0.0,0.0,0.5],
-                [0,0,0,1.0],
-                [0,0,0,0.5],
-                [0.85,0.75,0.15,1.0],
-                [0.85,0.75,0.15,1.0],
-                )
-
-    def __getitem__ (self, i):
-        return self.colors[i]
