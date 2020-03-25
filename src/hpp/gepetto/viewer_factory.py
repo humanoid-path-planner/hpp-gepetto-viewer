@@ -20,14 +20,7 @@
 import os.path
 import warnings
 from hpp.gepetto import Viewer
-from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
-from gepetto.corbaserver.client import _GhostGraphicalInterface
-
-
-class _GhostViewerClient:
-
-    def __init__(self):
-        self.gui = _GhostGraphicalInterface()
+from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames, _GhostViewerClient
 
 
 ## Viewer factory

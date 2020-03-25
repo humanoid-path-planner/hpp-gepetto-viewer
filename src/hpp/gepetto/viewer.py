@@ -22,6 +22,14 @@ import math
 from hpp.quaternion import Quaternion
 from gepetto.color import Color
 import omniORB.any
+from gepetto.corbaserver.client import _GhostGraphicalInterface
+
+
+class _GhostViewerClient:
+
+    def __init__(self):
+        self.gui = _GhostGraphicalInterface()
+
 
 def _urdfPath (Type) :
     return "package://" + Type.packageName + '/urdf/' + Type.urdfName + \
