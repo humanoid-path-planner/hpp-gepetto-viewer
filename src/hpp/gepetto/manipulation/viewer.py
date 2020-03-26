@@ -24,9 +24,11 @@ from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
 ## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
 #
 class Viewer (Parent):
-    def __init__ (self, problemSolver, viewerClient = None, collisionURDF = False, *args, **kwargs) :
+    def __init__ (self, problemSolver, viewerClient = None, ghost = False,
+                  collisionURDF = False, *args, **kwargs) :
         self.compositeRobotName = problemSolver.robot.client.basic.robot.getRobotName()
-        Parent.__init__ (self, problemSolver, viewerClient, collisionURDF, *args, **kwargs)
+        Parent.__init__ (self, problemSolver, viewerClient, ghost,
+                         collisionURDF, *args, **kwargs)
 
     def _initDisplay (self):
         if not self.client.gui.nodeExists(self.compositeRobotName):
