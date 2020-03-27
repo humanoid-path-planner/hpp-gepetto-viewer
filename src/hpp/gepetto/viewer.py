@@ -136,8 +136,12 @@ class Viewer (object):
             self.client.gui.addArrow("Vec_Acceleration",self.arrowRadius,self.arrowMinSize,self.colorAcceleration)
             self.client.gui.addToGroup("Vec_Acceleration",self.sceneName)
             self.client.gui.setVisibility("Vec_Acceleration","OFF")
-        self.amax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/accelerationBound"))
-        self.vmax = omniORB.any.from_any(self.problemSolver.client.problem.getParameter("Kinodynamic/velocityBound"))
+          self.amax = omniORB.any.from_any(self.problemSolver.hppcorba.problem.
+                                           getParameter\
+                                           ("Kinodynamic/accelerationBound"))
+          self.vmax = omniORB.any.from_any(self.problemSolver.hppcorba.problem.
+                                           getParameter\
+                                           ("Kinodynamic/velocityBound"))
         self.displayCoM = displayCoM
 
     # Set lighting mode OFF for a group of nodes
