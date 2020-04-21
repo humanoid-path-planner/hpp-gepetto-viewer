@@ -45,6 +45,6 @@ INSTALL_PYTHON_FILES ("hpp/gepetto/manipulation" viewer.py
 INSTALL_PYTHON_FILES ("hpp/gepetto/gui" path_graph.py
   __init__.py)
 
-IF(GEPETTO_VIEWER_FOUND AND EXISTS ${GEPETTO_VIEWER_CMAKE_PLUGIN})
+IF(gepetto-viewer_FOUND AND EXISTS ${GEPETTO_VIEWER_CMAKE_PLUGIN})
   GEPETTO_GUI_PYPLUGIN ("hpp/gepetto/gui/path_graph.py")
 ENDIF()

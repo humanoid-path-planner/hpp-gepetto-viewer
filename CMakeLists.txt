@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014 CNRS
-# Author: Florent Lamiraux
+# Copyright (c) 2014, 2020 CNRS
+# Author: Florent Lamiraux, Guilhem Saurel
 #
 # This file is part of hpp-gepetto-viewer.
 # hpp-gepetto-viewer is free software: you can redistribute it
@@ -19,27 +19,28 @@
 
 #dependency: python-rospkg
 
-cmake_minimum_required(VERSION 2.8.3)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1)
 
 SET(PROJECT_NAME hpp-gepetto-viewer)
-set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
+SET(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 
-include(cmake/hpp.cmake)
-include(cmake/python.cmake)
+SET(PROJECT_USE_CMAKE_EXPORT TRUE)
 
-
-# Tells pkg-config to read cmake_plugin from pkg config file.
-LIST(APPEND PKG_CONFIG_ADDITIONAL_VARIABLES cmake_plugin)
+INCLUDE(cmake/hpp.cmake)
+INCLUDE(cmake/python.cmake)
 
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 PROJECT(${PROJECT_NAME} ${PROJECT_ARGS})
 
 FINDPYTHON()
 
-ADD_REQUIRED_DEPENDENCY("hpp-corbaserver >= 4")
-ADD_OPTIONAL_DEPENDENCY("gepetto-viewer")
-IF(GEPETTO_VIEWER_FOUND AND EXISTS ${GEPETTO_VIEWER_CMAKE_PLUGIN})
+ADD_PROJECT_DEPENDENCY("hpp-corbaserver" REQUIRED)
+ADD_PROJECT_DEPENDENCY("gepetto-viewer")
+IF(gepetto-viewer_FOUND AND EXISTS ${GEPETTO_VIEWER_CMAKE_PLUGIN})
   INCLUDE(${GEPETTO_VIEWER_CMAKE_PLUGIN})
 ENDIF()
+
+ADD_LIBRARY(${PROJECT_NAME} INTERFACE)
+INSTALL(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
 ADD_SUBDIRECTORY(src)
