@@ -1,7 +1,7 @@
 <?xml version='1.0'?> 
  <package format='2'> 
  <name>hpp-gepetto-viewer</name> 
- <version>4.9.0</version> 
+ <version>4.10.0</version>
  <description>Display of hpp robots and obstacles in gepetto-viewer </description> 
  
  <maintainer email='hpp@laas.fr'>Joseph Mirabel</maintainer> 

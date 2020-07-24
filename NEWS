@@ -1,4 +1,9 @@
                                                                 -*- outline -*-
+New in v4.10.0
+* Add package.xml
+
+New in v4.9.0
+
 New in v4.6.1
 * Remove call to deprecated methods
 New in v4.6.0
