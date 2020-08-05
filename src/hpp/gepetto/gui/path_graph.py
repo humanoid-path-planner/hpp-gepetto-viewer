@@ -153,9 +153,9 @@ class JointAction(Qt.QAction):
         self.velocities.toggleJoint (self.joint)
 
 class DataQCP:
-    def __init__ (self, plugin):
+    def __init__ (self, plugin, qcpWidget):
         self.plugin = plugin
-        self.qcp = self.plugin.qcpWidget
+        self.qcp = qcpWidget
         self.timer = Qt.QTimer()
         self.timer.setSingleShot(True)
 
@@ -249,6 +249,133 @@ class DataQCP:
 
         return False
 
+formats = ( "%s (%s)", "%s (%s, %i)")
+
+def iconFromTheme(name):
+    if QtGui.QIcon.hasThemeIcon(name):
+        return QtGui.QIcon.fromTheme(name)
+    else:
+        return QtGui.QIcon()
+
+class QCPWidget(QtGui.QWidget):
+    """ A plot widget with a combo box to select the X axis. """
+    def __init__(self, plugin):
+        super(QCPWidget, self).__init__ (plugin)
+        self.plugin = plugin
+
+        layout = QtGui.QVBoxLayout (self)
+
+        from PythonQt.QCustomPlot import QCustomPlot, QCP
+        self.qcpWidget = QCustomPlot()
+        self.qcpWidget.autoAddPlottableToLegend = True
+        self.qcpWidget.setInteraction (QCP.iRangeDrag , True) # iRangeDrap
+        self.qcpWidget.setInteraction (QCP.iRangeZoom , True) # iRangeZoom
+        self.qcpWidget.setInteraction (QCP.iSelectAxes, True) # iSelectAxes
+        self.qcpWidget.legend().visible = True
+        layout.addWidget (self.qcpWidget, 1)
+        self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
+        self.qcpWidget.xAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
+        self.qcpWidget.yAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
+
+        buttonbar = QtGui.QWidget()
+        bbLayout = QtGui.QHBoxLayout(buttonbar)
+        button = QtGui.QPushButton ("Replot", buttonbar)
+        button.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
+        bbLayout.addWidget (button)
+        button = QtGui.QPushButton ("Remove", buttonbar)
+        button.connect (QtCore.SIGNAL("clicked()"), self.removePlot)
+        bbLayout.addWidget (button)
+        button = QtGui.QPushButton ("Legend", buttonbar)
+        button.checkable = True
+        button.checked = True
+        button.connect (QtCore.SIGNAL("toggled(bool)"), self.toggleLegend)
+        bbLayout.addWidget (button)
+        button = QtGui.QPushButton (QtGui.QIcon.fromTheme("zoom-fit-best"), "", buttonbar)
+        button.setToolTip("Zoom fit best")
+        button.connect (QtCore.SIGNAL("clicked()"), self.qcpWidget.rescaleAxes)
+        bbLayout.addWidget (button)
+
+        self.xselect = QtGui.QComboBox(self)
+        bbLayout.addWidget (self.xselect, 1)
+        layout.addWidget (buttonbar)
+
+        self.data = DataQCP(plugin, self.qcpWidget)
+
+    def toggleLegend(self, enable):
+        self.qcpWidget.legend().visible = enable
+        self.qcpWidget.replot()
+
+    def refreshPlot(self):
+        pid = self.plugin.pathPlayer.getCurrentPath()
+        if pid < 0: return
+        dl = self.plugin.pathPlayer.lengthBetweenRefresh()
+        idxX = self.xselect.currentIndex
+        x = (self.xselect.itemText(idxX),
+             int(self.xselect.itemData(idxX)) + 1)
+
+        ys = list ()
+        for elt in self.plugin.yselectcb:
+            cb = elt[0]
+            if cb.checked:
+                ys.append ((str(cb.text), elt[1]+1))
+
+        self.data.selectData(pid, dl, x, ys)
+        self.data.acquireData()
+
+    def removePlot(self):
+        self.hide()
+        try:
+            self.plugin.qcpWidgets.remove(self)
+        except ValueError:
+            print("Did not find QCPWidget in plugin")
+        self.plugin.rightPaneLayout.removeWidget(self)
+
+    def refreshJointList(self, jointNames, jointCfgSize, jointNbDof):
+        # Right pane
+        self.xselect.clear()
+        # time index is 0 and is value is -1
+        self.xselect.addItem ("time", -1)
+        rank = 0
+        for n, size in zip(jointNames, jointCfgSize):
+            if size == 1:
+                self.xselect.addItem (formats[0] % (n,"q"), rank)
+            else:
+                for i in range (size):
+                    self.xselect.addItem (formats[1] % (n,"q",i), rank + i)
+            rank = rank + size
+        for type in ("v", "a"):
+            for n, size in zip(jointNames, jointNbDof):
+                if size == 1:
+                    self.xselect.addItem (formats[0] % (n,type), rank)
+                else:
+                    for i in range (size):
+                        self.xselect.addItem (formats[1] % (n,type,i), rank + i)
+                rank = rank + size
+
+    def _mouseDoubleClick (self, event):
+        try:
+            if self.data.x[1] > 0: return
+        except:
+            return
+        try: # Qt 5
+            x = event.localPos().x()
+        except: # Qt 4
+            x = event.posF().x()
+        t = self.qcpWidget.xAxis().pixelToCoord (x)
+        self.plugin.pathPlayer.setCurrentTime(t)
+
+    def _axesSelectionChanged (self, unused_parts):
+        xAxis = self.qcpWidget.xAxis()
+        yAxis = self.qcpWidget.yAxis()
+        x = (xAxis.selectedParts != 0)
+        y = (yAxis.selectedParts != 0)
+        if not x and not y:
+          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, yAxis)
+        elif x:
+          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, None)
+        elif y:
+          self.qcpWidget.axisRect().setRangeZoomAxes(None, yAxis)
+
 class Plugin (QtGui.QDockWidget):
     def __init__ (self, mainWindow, flags = None):
         if flags is None:
@@ -264,6 +391,9 @@ class Plugin (QtGui.QDockWidget):
         self.comgroupcreator = self.main.getFromSlot("requestCreateComGroup")
         self.velocities = Velocities(self)
         self.jointActions = dict()
+        self.jointNames = None
+
+        self.qcpWidgets = list()
 
         # This avoids having a widget bigger than what it needs. It avoids having
         # a big dock widget and a small osg widget when creating the main osg widget.
@@ -280,39 +410,30 @@ class Plugin (QtGui.QDockWidget):
         self.topWidget.addWidget (self.leftPane)
 
         self.rightPane = QtGui.QWidget (self)
-        l = QtGui.QVBoxLayout ()
-        self.makeRightPane (l)
-        self.rightPane.setLayout (l)
+        self.rightPaneLayout = QtGui.QVBoxLayout ()
+        self.rightPane.setLayout (self.rightPaneLayout)
+        self.addPlotBelow()
         self.topWidget.addWidget (self.rightPane)
+        self.topWidget.setStretchFactor(1, 1)
 
-        self.data = DataQCP(self)
+    def addPlotBelow (self):
+        widget = QCPWidget(self)
+        self.qcpWidgets.append(widget)
+        self.rightPaneLayout.addWidget(widget)
 
-    def refreshPlot (self):
-        pid = self.pathPlayer.getCurrentPath()
-        if pid < 0: return
-        dl = self.pathPlayer.lengthBetweenRefresh()
-        idxX = self.xselect.currentIndex
-        x = (self.xselect.itemText(idxX),
-             int(self.xselect.itemData(idxX)) + 1)
-
-        ys = list ()
-        for elt in self.yselectcb:
-            cb = elt[0]
-            if cb.checked:
-                ys.append ((str(cb.text), elt[1]+1))
-
-        self.data.selectData(pid, dl, x, ys)
-        self.data.acquireData()
+        if self.jointNames is not None:
+            jointCfgSize = [ self.client.robot.getJointConfigSize (n) for n in self.jointNames ]
+            jointNbDof = [ self.client.robot.getJointNumberDof (n) for n in self.jointNames ]
+            widget.refreshJointList(self.jointNames, jointCfgSize, jointNbDof)
 
     def refreshJointList (self):
-        jointNames = self.client.robot.getJointNames ()
+        self.jointNames = self.client.robot.getJointNames ()
         # Left pane
         saLayout = QtGui.QVBoxLayout ()
-        formats = ( "%s (%s)", "%s (%s, %i)")
 
         self.yselectcb = list ()
         rank = 0
-        for n in jointNames:
+        for n in self.jointNames:
             size = self.client.robot.getJointConfigSize (n)
             if size == 1:
                 cb = QtGui.QCheckBox (formats[0] % (n,"q") )
@@ -326,7 +447,7 @@ class Plugin (QtGui.QDockWidget):
             rank = rank + size
         for type in ("v", "a"):
             saLayout.addSpacing(5)
-            for n in jointNames:
+            for n in self.jointNames:
                 size = self.client.robot.getJointNumberDof (n)
                 if size == 1:
                     cb = QtGui.QCheckBox (formats[0] % (n,type) )
@@ -344,82 +465,26 @@ class Plugin (QtGui.QDockWidget):
         self.scrollArea.setWidget (saContent)
 
         # Right pane
-        self.xselect.clear()
-        # time index is 0 and is value is -1
-        self.xselect.addItem ("time", -1)
-        rank = 0
-        for n in jointNames:
-            size = self.client.robot.getJointConfigSize (n)
-            if size == 1:
-                self.xselect.addItem (formats[0] % (n,"q"), rank)
-            else:
-                for i in range (size):
-                    self.xselect.addItem (formats[1] % (n,"q",i), rank + i)
-            rank = rank + size
-        for type in ("v", "a"):
-            for n in jointNames:
-                size = self.client.robot.getJointNumberDof (n)
-                if size == 1:
-                    self.xselect.addItem (formats[0] % (n,type), rank)
-                else:
-                    for i in range (size):
-                        self.xselect.addItem (formats[1] % (n,type,i), rank + i)
-                rank = rank + size
+        jointCfgSize = [ self.client.robot.getJointConfigSize (n) for n in self.jointNames ]
+        jointNbDof = [ self.client.robot.getJointNumberDof (n) for n in self.jointNames ]
+        for w in self.qcpWidgets:
+            w.refreshJointList(self.jointNames, jointCfgSize, jointNbDof)
 
     def refreshInterface (self):
         self.refreshJointList()
 
     def makeLeftPane (self, layout):
-        layout.addWidget (QtGui.QLabel ("Select Y data"))
-        refresh = QtGui.QPushButton ("Refresh", self)
-        refresh.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
-        layout.addWidget (refresh)
+        #button = QtGui.QPushButton ("Refresh", self)
+        #button.connect (QtCore.SIGNAL("clicked()"), self.refreshPlot)
+        #layout.addWidget (button)
 
+        button = QtGui.QPushButton ("Add plot below", self)
+        button.connect (QtCore.SIGNAL("clicked()"), self.addPlotBelow)
+        layout.addWidget (button)
+
+        layout.addWidget (QtGui.QLabel ("Select Y data"))
         self.scrollArea = QtGui.QScrollArea (self)
         layout.addWidget (self.scrollArea)
-
-    def makeRightPane (self, layout):
-        from PythonQt.QCustomPlot import QCustomPlot, QCP
-        self.qcpWidget = QCustomPlot()
-        self.qcpWidget.autoAddPlottableToLegend = True
-        self.qcpWidget.setInteraction (QCP.iRangeDrag , True) # iRangeDrap
-        self.qcpWidget.setInteraction (QCP.iRangeZoom , True) # iRangeZoom
-        self.qcpWidget.setInteraction (QCP.iSelectAxes, True) # iSelectAxes
-        self.qcpWidget.legend().visible = True
-        layout.addWidget (self.qcpWidget)
-        self.qcpWidget.connect (Qt.SIGNAL("mouseDoubleClick(QMouseEvent*)"), self._mouseDoubleClick)
-        self.qcpWidget.xAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
-        self.qcpWidget.yAxis().connect (Qt.SIGNAL("selectionChanged(QCPAxis::SelectableParts)"), self._axesSelectionChanged)
-
-        self.xselect = QtGui.QComboBox(self)
-        layout.addWidget (self.xselect)
-
-        # time index is 0 and is value is -1
-        self.xselect.addItem ("time", -1)
-
-    def _mouseDoubleClick (self, event):
-        try:
-            if self.data.x[1] > 0: return
-        except:
-            return
-        try: # Qt 5
-            x = event.localPos().x()
-        except: # Qt 4
-            x = event.posF().x()
-        t = self.qcpWidget.xAxis().pixelToCoord (x)
-        self.pathPlayer.setCurrentTime(t)
-
-    def _axesSelectionChanged (self, unused_parts):
-        xAxis = self.qcpWidget.xAxis()
-        yAxis = self.qcpWidget.yAxis()
-        x = (xAxis.selectedParts != 0)
-        y = (yAxis.selectedParts != 0)
-        if not x and not y:
-          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, yAxis)
-        elif x:
-          self.qcpWidget.axisRect().setRangeZoomAxes(xAxis, None)
-        elif y:
-          self.qcpWidget.axisRect().setRangeZoomAxes(None, yAxis)
 
     def resetConnection(self):
         self.client = Client(url= str(self.hppPlugin.getHppIIOPurl()))
