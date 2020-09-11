@@ -1,18 +1,18 @@
-<?xml version='1.0'?> 
- <package format='2'> 
- <name>hpp-gepetto-viewer</name> 
- <version>4.10.0</version>
- <description>Display of hpp robots and obstacles in gepetto-viewer </description> 
- 
- <maintainer email='hpp@laas.fr'>Joseph Mirabel</maintainer> 
- <license>LGPL</license> 
- 
- <!-- <url type='website'>https://github.com/humanoid-path-planner/hpp-gepetto-viewer </url> --> 
- 
- <author>Joseph Mirabel</author> 
- <author>Florent Lamiraux et al.</author> 
- 
- <buildtool_depend>catkin</buildtool_depend> 
- <exec_depend>hpp-corbaserver</exec_depend> 
- <exec_depend>gepetto-viewer</exec_depend> 
+<?xml version='1.0'?>
+ <package format='2'>
+ <name>hpp-gepetto-viewer</name>
+ <version>4.10.1</version>
+ <description>Display of hpp robots and obstacles in gepetto-viewer </description>
+
+ <maintainer email='hpp@laas.fr'>Joseph Mirabel</maintainer>
+ <license>LGPL</license>
+
+ <!-- <url type='website'>https://github.com/humanoid-path-planner/hpp-gepetto-viewer </url> -->
+
+ <author>Joseph Mirabel</author>
+ <author>Florent Lamiraux et al.</author>
+
+ <buildtool_depend>catkin</buildtool_depend>
+ <exec_depend>hpp-corbaserver</exec_depend>
+ <exec_depend>gepetto-viewer</exec_depend>
  </package>
