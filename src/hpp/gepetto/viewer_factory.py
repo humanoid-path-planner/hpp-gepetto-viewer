@@ -54,6 +54,10 @@ class ViewerFactory (object):
     #         is loaded several times,
     #  \param guiOnly whether to control only gepetto-viewer-server
     def loadObstacleModel (self, filename, prefix, guiOnly = False):
+        if isinstance(guiOnly, str):
+            raise ValueError("You passed 3 strings to loadObstacleModel. Likely, you use the old API.\n"
+                    +"Please replace `loadObstacleModel('my_package', 'file', 'name')`\n"
+                    +"by             `loadObstacleModel('package://my_package/urdf/file.urdf', 'name')`")
         l = locals ().copy ()
         if not guiOnly:
             self.problemSolver.loadObstacleFromUrdf (filename, prefix+'/')
