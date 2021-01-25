@@ -79,6 +79,15 @@ class ViewerFactory (Parent):
         l ['guiOnly'] = True
         self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
 
+    def loadEnvironmentModelFromString (self, EnvType, envName, guiOnly = False):
+        l = locals ().copy ();
+        if not guiOnly:
+            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
+            self.robot.loadEnvironmentModelFromString (urdfFilename,
+                    srdfFilename, envName + "/")
+        l ['guiOnly'] = True
+        self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
+
     def loadObjectModel (self, RobotType, robotName, guiOnly = False):
         l = locals ().copy ()
         if not guiOnly:
