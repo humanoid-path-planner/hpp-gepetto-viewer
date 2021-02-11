@@ -178,7 +178,7 @@ class Viewer (object):
             self.windowId = viewerClient.gui.createWindow (self.windowName)
         self.sceneName = self.windowName
 
-    ## \param cb Callable object, whose argument is a robot configuration.
+    ## \param cb Callable object, whose arguments are this object and a robot configuration.
     def addCallback (self, cb):
         self.callbacks.append(cb)
 
@@ -452,7 +452,7 @@ class Viewer (object):
     def __call__ (self, args):
         self.robotConfig = args
         self.publishRobots ()
-        for cb in self.callbacks: cb (args)
+        for cb in self.callbacks: cb (self, args)
         self.client.gui.refresh ()
 
     ## Start a screen capture

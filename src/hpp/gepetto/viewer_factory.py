@@ -104,7 +104,8 @@ class ViewerFactory (object):
         l = locals ();
         self.guiRequest.append ((Viewer.__call__, l));
 
-
+    def addCallback(self, cb):
+        self.guiRequest.append( (Viewer.addCallback, locals()) )
 
     ## Create a client to \c gepetto-viewer-server and send stored commands
     #
