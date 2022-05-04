@@ -17,97 +17,111 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import os
-import warnings
 from hpp.gepetto import ViewerFactory as Parent
 from hpp.gepetto.manipulation import Viewer
-from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
+from hpp.gepetto.viewer import _urdfSrdfFilenames
 
-## Viewer factory for manipulation.Viewer
-#
-#  Store commands to be sent to \c gepetto-viewer-server, create
-#  clients on demand and send stored commands.
-class ViewerFactory (Parent):
-    ## Constructor
-    #  \param problemSolver instance of class
-    #         manipulation.problem_solver.ProblemSolver
-    def __init__ (self, problemSolver) :
-        Parent.__init__ (self, problemSolver)
 
-    def buildRobotBodies (self):
-        l = locals ();
-        self.guiRequest.append ((Viewer.buildRobotBodies, l));
+class ViewerFactory(Parent):
+    """
+    Viewer factory for manipulation.Viewer
 
-    def loadRobotModel (self, RobotType, robotName, guiOnly = False, frame = None):
-        l = locals ().copy ();
+    Store commands to be sent to \\c gepetto-viewer-server, create
+    clients on demand and send stored commands.
+    """
+
+    def __init__(self, problemSolver):
+        """
+        Constructor
+        \\param problemSolver instance of class
+           manipulation.problem_solver.ProblemSolver
+        """
+        Parent.__init__(self, problemSolver)
+
+    def buildRobotBodies(self):
+        loc = locals()
+        self.guiRequest.append((Viewer.buildRobotBodies, loc))
+
+    def loadRobotModel(self, RobotType, robotName, guiOnly=False, frame=None):
+        loc = locals().copy()
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
             if frame is None:
-                self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                             urdfFilename, srdfFilename)
+                self.robot.insertRobotModel(
+                    robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+                )
             else:
-                self.robot.insertRobotModelOnFrame (robotName, frame,
-                                                    RobotType.rootJointType,
-                                                    urdfFilename, srdfFilename)
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadRobotModel, l));
+                self.robot.insertRobotModelOnFrame(
+                    robotName,
+                    frame,
+                    RobotType.rootJointType,
+                    urdfFilename,
+                    srdfFilename,
+                )
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadRobotModel, loc))
 
-    def loadRobotModelFromString (self, robotName, rootJointType,
-            urdfString, srdfString = "<robot/>", guiOnly = False):
+    def loadRobotModelFromString(
+        self, robotName, rootJointType, urdfString, srdfString="<robot/>", guiOnly=False
+    ):
         if not guiOnly:
-            self.robot.insertRobotModelFromString (robotName, rootJointType,
-                    urdfString, srdfString)
-        l = locals ().copy ();
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadRobotModelFromString, l));
+            self.robot.insertRobotModelFromString(
+                robotName, rootJointType, urdfString, srdfString
+            )
+        loc = locals().copy()
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadRobotModelFromString, loc))
 
-    def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
-        l = locals ().copy ();
+    def loadHumanoidModel(self, RobotType, robotName, guiOnly=False):
+        loc = locals().copy()
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
-            self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                          urdfFilename, srdfFilename)
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadHumanoidModel, l));
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+            self.robot.loadHumanoidModel(
+                robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+            )
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadHumanoidModel, loc))
 
-    def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
-        l = locals ().copy ();
+    def loadEnvironmentModel(self, EnvType, envName, guiOnly=False):
+        loc = locals().copy()
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
-            self.robot.loadEnvironmentModel (urdfFilename, srdfFilename,
-                                             envName + "/")
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(EnvType)
+            self.robot.loadEnvironmentModel(urdfFilename, srdfFilename, envName + "/")
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadEnvironmentModel, loc))
 
-    def loadEnvironmentModelFromString (self, EnvType, envName, guiOnly = False):
-        l = locals ().copy ();
+    def loadEnvironmentModelFromString(self, EnvType, envName, guiOnly=False):
+        loc = locals().copy()
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
-            self.robot.loadEnvironmentModelFromString (urdfFilename,
-                    srdfFilename, envName + "/")
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadEnvironmentModel, l));
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(EnvType)
+            self.robot.loadEnvironmentModelFromString(
+                urdfFilename, srdfFilename, envName + "/"
+            )
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadEnvironmentModel, loc))
 
-    def loadObjectModel (self, RobotType, robotName, guiOnly = False):
-        l = locals ().copy ()
+    def loadObjectModel(self, RobotType, robotName, guiOnly=False):
+        loc = locals().copy()
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
-            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                         urdfFilename, srdfFilename)
-        l ['guiOnly'] = True
-        self.guiRequest.append ((Viewer.loadObjectModel, l));
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+            self.robot.insertRobotModel(
+                robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+            )
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadObjectModel, loc))
 
-    def buildCompositeRobot (self, robotNames):
-        self.robot.buildCompositeRobot (robotNames)
-        self.buildRobotBodies ()
+    def buildCompositeRobot(self, robotNames):
+        self.robot.buildCompositeRobot(robotNames)
+        self.buildRobotBodies()
 
-    def loadUrdfInGUI (self, RobotType, robotName):
-        self.guiRequest.append ((Viewer.loadUrdfInGUI, locals ()));
+    def loadUrdfInGUI(self, RobotType, robotName):
+        self.guiRequest.append((Viewer.loadUrdfInGUI, locals()))
 
-    def loadUrdfObjectsInGUI (self, RobotType, robotName):
-        self.guiRequest.append ((Viewer.loadUrdfObjectsInGUI, locals ()));
+    def loadUrdfObjectsInGUI(self, RobotType, robotName):
+        self.guiRequest.append((Viewer.loadUrdfObjectsInGUI, locals()))
 
-    ## Create a client to \c gepetto-viewer-server and send stored commands
-    #
-    def createViewer (self, ViewerClass = Viewer, *args, **kwargs):
-        return Parent.createViewer (self, ViewerClass, *args, **kwargs)
+    def createViewer(self, ViewerClass=Viewer, *args, **kwargs):
+        """
+        Create a client to \\c gepetto-viewer-server and send stored commands
+        """
+        return Parent.createViewer(self, ViewerClass, *args, **kwargs)

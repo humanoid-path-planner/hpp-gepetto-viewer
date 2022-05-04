@@ -17,110 +17,129 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import os
 from hpp.gepetto import Viewer as Parent
-from hpp.gepetto.viewer import _urdfPath, _srdfPath, _urdfSrdfFilenames
+from hpp.gepetto.viewer import _urdfSrdfFilenames
 
-## Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
-#
-class Viewer (Parent):
-    def __init__ (self, problemSolver, viewerClient = None, ghost = False,
-                  collisionURDF = False, *args, **kwargs) :
+
+class Viewer(Parent):
+    def __init__(
+        self,
+        problemSolver,
+        viewerClient=None,
+        ghost=False,
+        collisionURDF=False,
+        *args,
+        **kwargs
+    ):
+        """
+        Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.
+        """
         self.compositeRobotName = problemSolver.robot.client.basic.robot.getRobotName()
-        Parent.__init__ (self, problemSolver, viewerClient, ghost,
-                         collisionURDF, *args, **kwargs)
+        Parent.__init__(
+            self, problemSolver, viewerClient, ghost, collisionURDF, *args, **kwargs
+        )
 
-    def _initDisplay (self):
+    def _initDisplay(self):
         if not self.client.gui.nodeExists(self.compositeRobotName):
-            self.client.gui.createGroup (self.compositeRobotName)
-            self.client.gui.addToGroup (self.compositeRobotName, self.sceneName)
-        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames ()
-        name = self.compositeRobotName + '/' + self.robot.robotNames[0]
-        self.client.gui.addURDF (name, urdfFilename)
+            self.client.gui.createGroup(self.compositeRobotName)
+            self.client.gui.addToGroup(self.compositeRobotName, self.sceneName)
+        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames()
+        name = self.compositeRobotName + "/" + self.robot.robotNames[0]
+        self.client.gui.addURDF(name, urdfFilename)
         # Remove lighting from meshes
-        self._removeLightSources (self.client.gui.getGroupNodeList (name))
+        self._removeLightSources(self.client.gui.getGroupNodeList(name))
         if self.collisionURDF:
             self.toggleVisual(False)
-        #self.client.gui.addToGroup (name, self.compositeRobotName)
+        # self.client.gui.addToGroup (name, self.compositeRobotName)
 
-    def loadRobotModel (self, RobotType, robotName, guiOnly = False, collisionURDF = False, frame = None):
+    def loadRobotModel(
+        self, RobotType, robotName, guiOnly=False, collisionURDF=False, frame=None
+    ):
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
             if frame is None:
-                self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                             urdfFilename, srdfFilename)
+                self.robot.insertRobotModel(
+                    robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+                )
             else:
-                self.robot.insertRobotModelOnFrame (robotName, frame,
-                                                    RobotType.rootJointType,
-                                                    urdfFilename, srdfFilename)
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+                self.robot.insertRobotModelOnFrame(
+                    robotName,
+                    frame,
+                    RobotType.rootJointType,
+                    urdfFilename,
+                    srdfFilename,
+                )
+        self.buildRobotBodies()
+        self.loadUrdfInGUI(RobotType, robotName)
 
-    def loadRobotModelFromString (self, robotName, rootJointType,
-            urdfString, srdfString = "<robot/>", guiOnly = False):
+    def loadRobotModelFromString(
+        self, robotName, rootJointType, urdfString, srdfString="<robot/>", guiOnly=False
+    ):
         if not guiOnly:
-            self.robot.insertRobotModelFromString (robotName, rootJointType,
-                    urdfString, srdfString)
+            self.robot.insertRobotModelFromString(
+                robotName, rootJointType, urdfString, srdfString
+            )
         nodeName = self.compositeRobotName + "/" + robotName
         if self.collisionURDF:
-            self.client.gui.addUrdfCollision (nodeName, urdfString)
+            self.client.gui.addUrdfCollision(nodeName, urdfString)
         else:
-            self.client.gui.addURDF (nodeName, urdfString)
+            self.client.gui.addURDF(nodeName, urdfString)
         # Remove lighting from meshes
-        self._removeLightSources (self.client.gui.getGroupNodeList (nodeName))
+        self._removeLightSources(self.client.gui.getGroupNodeList(nodeName))
 
-    def loadHumanoidModel (self, RobotType, robotName, guiOnly = False):
+    def loadHumanoidModel(self, RobotType, robotName, guiOnly=False):
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
-            self.robot.loadHumanoidModel (robotName, RobotType.rootJointType,
-                                          urdfFilename, srdfFilename)
-        self.buildRobotBodies ()
-        self.loadUrdfInGUI (RobotType, robotName)
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+            self.robot.loadHumanoidModel(
+                robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+            )
+        self.buildRobotBodies()
+        self.loadUrdfInGUI(RobotType, robotName)
 
-    def loadEnvironmentModel (self, EnvType, envName, guiOnly = False):
+    def loadEnvironmentModel(self, EnvType, envName, guiOnly=False):
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
-            self.robot.loadEnvironmentModel (urdfFilename, srdfFilename,
-                                             envName + "/")
-        self.loadUrdfObjectsInGUI (EnvType, envName)
-        self.computeObjectPosition ()
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(EnvType)
+            self.robot.loadEnvironmentModel(urdfFilename, srdfFilename, envName + "/")
+        self.loadUrdfObjectsInGUI(EnvType, envName)
+        self.computeObjectPosition()
 
-    def loadEnvironmentModelFromString (self, EnvType, envName, guiOnly = False):
+    def loadEnvironmentModelFromString(self, EnvType, envName, guiOnly=False):
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (EnvType)
-            self.robot.loadEnvironmentModelFromString (urdfFilename,
-                    srdfFilename, envName + "/")
-        self.loadUrdfObjectsInGUI (EnvType, envName)
-        self.computeObjectPosition ()
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(EnvType)
+            self.robot.loadEnvironmentModelFromString(
+                urdfFilename, srdfFilename, envName + "/"
+            )
+        self.loadUrdfObjectsInGUI(EnvType, envName)
+        self.computeObjectPosition()
 
-    def loadObjectModel (self, RobotType, robotName, guiOnly = False):
+    def loadObjectModel(self, RobotType, robotName, guiOnly=False):
         if not guiOnly:
-            urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
-            self.robot.insertRobotModel (robotName, RobotType.rootJointType,
-                                         urdfFilename, srdfFilename)
-        self.buildRobotBodies ()
+            urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+            self.robot.insertRobotModel(
+                robotName, RobotType.rootJointType, urdfFilename, srdfFilename
+            )
+        self.buildRobotBodies()
         base = "collision_" if self.collisionURDF else ""
-        self.loadUrdfInGUI (RobotType, base + robotName)
-        self.computeObjectPosition ()
+        self.loadUrdfInGUI(RobotType, base + robotName)
+        self.computeObjectPosition()
 
-    def buildCompositeRobot (self, robotNames):
-        self.robot.buildCompositeRobot (robotNames)
-        self.buildRobotBodies ()
+    def buildCompositeRobot(self, robotNames):
+        self.robot.buildCompositeRobot(robotNames)
+        self.buildRobotBodies()
 
-    def loadUrdfInGUI (self, RobotType, robotName):
+    def loadUrdfInGUI(self, RobotType, robotName):
         # Load robot in viewer
-        urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
+        urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
         nodeName = self.compositeRobotName + "/" + robotName
         if self.collisionURDF:
-            self.client.gui.addUrdfCollision (nodeName, urdfFilename)
+            self.client.gui.addUrdfCollision(nodeName, urdfFilename)
         else:
-            self.client.gui.addURDF (nodeName, urdfFilename)
+            self.client.gui.addURDF(nodeName, urdfFilename)
         # Remove lighting from meshes
-        self._removeLightSources (self.client.gui.getGroupNodeList (nodeName))
+        self._removeLightSources(self.client.gui.getGroupNodeList(nodeName))
 
-    def loadUrdfObjectsInGUI (self, RobotType, robotName):
-        urdfFilename, srdfFilename = _urdfSrdfFilenames (RobotType)
-        self.client.gui.addUrdfObjects (robotName, urdfFilename,
-                                        not self.collisionURDF)
-        self._removeLightSources (self.client.gui.getGroupNodeList (robotName))
-        self.client.gui.addToGroup (robotName, self.sceneName)
+    def loadUrdfObjectsInGUI(self, RobotType, robotName):
+        urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+        self.client.gui.addUrdfObjects(robotName, urdfFilename, not self.collisionURDF)
+        self._removeLightSources(self.client.gui.getGroupNodeList(robotName))
+        self.client.gui.addToGroup(robotName, self.sceneName)

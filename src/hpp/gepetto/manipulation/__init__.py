@@ -17,5 +17,5 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from .viewer import Viewer
-from .viewer_factory import ViewerFactory
+from .viewer import Viewer  # noqa: F401
+from .viewer_factory import ViewerFactory  # noqa: F401
