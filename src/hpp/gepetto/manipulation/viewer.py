@@ -73,11 +73,11 @@ class Viewer(Parent):
         self.loadUrdfInGUI(RobotType, robotName)
 
     def loadRobotModelFromString(
-        self, robotName, rootJointType, urdfString, srdfString="<robot/>", guiOnly=False
+        self, robotName, rootJointType, urdfString, srdfString="<robot/>", guiOnly=False, frame="universe"
     ):
         if not guiOnly:
             self.robot.insertRobotModelFromString(
-                robotName, rootJointType, urdfString, srdfString
+                robotName, rootJointType, urdfString, srdfString, frame=frame
             )
         nodeName = self.compositeRobotName + "/" + robotName
         if self.collisionURDF:
