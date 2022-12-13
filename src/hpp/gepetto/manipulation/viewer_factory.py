@@ -62,7 +62,13 @@ class ViewerFactory(Parent):
         self.guiRequest.append((Viewer.loadRobotModel, loc))
 
     def loadRobotModelFromString(
-        self, robotName, rootJointType, urdfString, srdfString="<robot/>", guiOnly=False, frame="universe"
+        self,
+        robotName,
+        rootJointType,
+        urdfString,
+        srdfString="<robot/>",
+        guiOnly=False,
+        frame="universe",
     ):
         if not guiOnly:
             self.robot.insertRobotModelFromString(
