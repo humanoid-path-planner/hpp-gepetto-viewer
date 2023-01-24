@@ -24,12 +24,17 @@ set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 
 include(cmake/hpp.cmake)
+include(cmake/python.cmake)
 
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 add_project_dependency("hpp-corbaserver" REQUIRED)
 add_project_dependency("gepetto-viewer")
+
+if(NOT FINDPYTHON_ALREADY_CALLED)
+  findpython()
+endif()
 
 add_library(${PROJECT_NAME} INTERFACE)
 install(
