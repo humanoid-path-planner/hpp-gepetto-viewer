@@ -202,8 +202,8 @@ class PathPlayer:
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        for d, l in zip(data, labels):
-            ax.plot(ts, d, label=l)
+        for d, label in zip(data, labels):
+            ax.plot(ts, d, label=label)
         if cursor:
             for i in range(len(ts)):
                 c = ax.axvline(x=ts[i], color="r", linestyle="--")
