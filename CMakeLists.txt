@@ -16,7 +16,7 @@
 
 # dependency: python-rospkg
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME hpp-gepetto-viewer)
 set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
