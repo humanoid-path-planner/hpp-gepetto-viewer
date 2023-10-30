@@ -18,10 +18,11 @@
 # <http://www.gnu.org/licenses/>.
 
 import math
-from hpp.quaternion import Quaternion
-from gepetto.color import Color
+
 import omniORB.any
+from gepetto.color import Color
 from gepetto.corbaserver.client import _GhostGraphicalInterface
+from hpp.quaternion import Quaternion
 
 
 class _GhostViewerClient:
@@ -172,8 +173,9 @@ class Viewer(object):
             self.arrowRadius = 0.01
             self.arrowMinSize = 0.05
             self.arrowMaxSize = 1.0 - self.arrowMinSize
-            if self.client.gui.getNodeList() is not None and not (
-                "Vec_Velocity" in self.client.gui.getNodeList()
+            if (
+                self.client.gui.getNodeList() is not None
+                and "Vec_Velocity" not in self.client.gui.getNodeList()
             ):
                 self.client.gui.addArrow(
                     "Vec_Velocity",

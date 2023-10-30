@@ -17,6 +17,6 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from .viewer import Viewer, Color  # noqa: F401
-from .viewer_factory import ViewerFactory  # noqa: F401
 from .path_player import PathPlayer  # noqa: F401
+from .viewer import Color, Viewer  # noqa: F401
+from .viewer_factory import ViewerFactory  # noqa: F401

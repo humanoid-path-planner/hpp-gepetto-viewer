@@ -15,13 +15,13 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import time
-import numpy as np
-import pickle as pk
 import math
-import omniORB.any
+import pickle as pk
+import time
 
 import hpp.corbaserver.client
+import numpy as np
+import omniORB.any
 
 
 class PathPlayer:

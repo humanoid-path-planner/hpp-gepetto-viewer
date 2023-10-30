@@ -1,13 +1,12 @@
 from __future__ import print_function
-from PythonQt import QtGui, QtCore, Qt
 
 import hpp_idl
-from hpp.corbaserver import Client
+import numpy as np
+from gepetto.color import Color
 from gepetto.corbaserver import Client as GuiClient
 from gepetto.corbaserver.tools import Linear, Vector6
-from gepetto.color import Color
-
-import numpy as np
+from hpp.corbaserver import Client
+from PythonQt import Qt, QtCore, QtGui
 
 colors = (
     # Qt.Qt.white,
@@ -281,7 +280,7 @@ class QCPWidget(QtGui.QWidget):
 
         layout = QtGui.QVBoxLayout(self)
 
-        from PythonQt.QCustomPlot import QCustomPlot, QCP
+        from PythonQt.QCustomPlot import QCP, QCustomPlot
 
         self.qcpWidget = QCustomPlot()
         self.qcpWidget.autoAddPlottableToLegend = True
