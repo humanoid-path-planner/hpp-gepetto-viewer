@@ -20,9 +20,10 @@
 import math
 
 import omniORB.any
+from hpp.quaternion import Quaternion
+
 from gepetto.color import Color
 from gepetto.corbaserver.client import _GhostGraphicalInterface
-from hpp.quaternion import Quaternion
 
 
 class _GhostViewerClient:
@@ -86,7 +87,7 @@ def hppToViewerTransform(input):
     return input
 
 
-class Viewer(object):
+class Viewer:
     """
     Simultaneous control of hppcorbaserver and gepetto-viewer-server
 

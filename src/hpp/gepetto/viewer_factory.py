@@ -21,7 +21,7 @@ from hpp.gepetto import Viewer
 from hpp.gepetto.viewer import _GhostViewerClient
 
 
-class ViewerFactory(object):
+class ViewerFactory:
     """
     Viewer factory
 

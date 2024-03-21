@@ -1,12 +1,12 @@
-from __future__ import print_function
 
 import hpp_idl
 import numpy as np
+from hpp.corbaserver import Client
+from PythonQt import Qt, QtCore, QtGui
+
 from gepetto.color import Color
 from gepetto.corbaserver import Client as GuiClient
 from gepetto.corbaserver.tools import Linear, Vector6
-from hpp.corbaserver import Client
-from PythonQt import Qt, QtCore, QtGui
 
 colors = (
     # Qt.Qt.white,
