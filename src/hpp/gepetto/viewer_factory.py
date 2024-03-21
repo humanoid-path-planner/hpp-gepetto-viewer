@@ -133,7 +133,7 @@ class ViewerFactory:
         ghost=False,
         host=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Create a client to \\c gepetto-viewer-server and send stored commands

@@ -75,7 +75,7 @@ class PathPlayer:
             if jointName != 0:
                 self.publisher.robot.setCurrentConfig(q)
                 q = self.publisher.robot.getLinkPosition(jointName)
-            pathPos = pathPos + [q[:3]]
+            pathPos = [*pathPos, q[:3]]
             t += self.dt
         if jointName == 0:
             jointName = "root"

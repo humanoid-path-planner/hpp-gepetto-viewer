@@ -29,7 +29,7 @@ class Viewer(Parent):
         ghost=False,
         collisionURDF=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Simultaneous control to hpp-manipulation-server and gepetto-viewer-server.

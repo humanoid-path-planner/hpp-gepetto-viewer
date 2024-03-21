@@ -619,7 +619,7 @@ class Viewer:
                 self.client.gui.setVisibility(name, "ALWAYS_ON_TOP")
                 self.client.gui.addToGroup(name, self.sceneName)
             self.client.gui.applyConfiguration(
-                name, self.robot.getCenterOfMass() + [0, 0, 0, 1]
+                name, [*self.robot.getCenterOfMass(), 0, 0, 0, 1]
             )
 
     def __call__(self, args):

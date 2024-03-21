@@ -1,4 +1,3 @@
-
 import hpp_idl
 import numpy as np
 from hpp.corbaserver import Client
@@ -152,7 +151,7 @@ class Velocities:
 
 class JointAction(Qt.QAction):
     def __init__(self, action, joint, velocities, parent):
-        super(JointAction, self).__init__(action, parent)
+        super().__init__(action, parent)
         self.joint = joint
         self.velocities = velocities
         self.connect(QtCore.SIGNAL("triggered(bool)"), self.trigger)
@@ -275,7 +274,7 @@ class QCPWidget(QtGui.QWidget):
     """A plot widget with a combo box to select the X axis."""
 
     def __init__(self, plugin):
-        super(QCPWidget, self).__init__(plugin)
+        super().__init__(plugin)
         self.plugin = plugin
 
         layout = QtGui.QVBoxLayout(self)
@@ -407,9 +406,9 @@ class QCPWidget(QtGui.QWidget):
 class Plugin(QtGui.QDockWidget):
     def __init__(self, mainWindow, flags=None):
         if flags is None:
-            super(Plugin, self).__init__("Path graph plugin", mainWindow)
+            super().__init__("Path graph plugin", mainWindow)
         else:
-            super(Plugin, self).__init__("Path graph plugin", mainWindow, flags)
+            super().__init__("Path graph plugin", mainWindow, flags)
         self.setObjectName("Path graph plugin")
 
         self.main = mainWindow
