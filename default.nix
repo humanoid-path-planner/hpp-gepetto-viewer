@@ -40,6 +40,8 @@ python3Packages.buildPythonPackage {
 
   doCheck = true;
 
+  #pythonImportsCheck = [ "hpp.gepetto" ];
+
   meta = {
     description = "Display of hpp robots and obstacles in gepetto-viewer";
     homepage = "https://github.com/humanoid-path-planner/hpp-gepetto-viewer";
