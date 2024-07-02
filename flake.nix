@@ -13,7 +13,7 @@
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     hpp-corbaserver = {
-      url = "github:humanoid-path-planner/hpp-corbaserver/release/5.1.0";
+      url = "github:humanoid-path-planner/hpp-corbaserver";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
     };

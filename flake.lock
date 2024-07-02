@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1717285511,
-        "narHash": "sha256-iKzJcpdXih14qYVcZ9QC9XuZYnPc6T8YImb6dX166kw=",
+        "lastModified": 1719877454,
+        "narHash": "sha256-g5N1yyOSsPNiOlFfkuI/wcUjmtah+nxdImJqrSATjOU=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "2a55567fcf15b1b1c7ed712a2c6fadaec7412ea8",
+        "rev": "4e3583423212f9303aa1a6337f8dffb415920e4f",
         "type": "github"
       },
       "original": {
@@ -58,22 +58,20 @@
         ],
         "hpp-core": "hpp-core",
         "hpp-template-corba": "hpp-template-corba",
-        "hpp-util": "hpp-util_2",
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1719670731,
-        "narHash": "sha256-1EKv+2sWT3XNrqI+YhJwxrE0Zq77D9k96vnhYJl4KX4=",
+        "lastModified": 1719772432,
+        "narHash": "sha256-qFcBT/YDTsrAzEE//JmCbk1TnVrnYcme1WCzkPaXwZ0=",
         "owner": "humanoid-path-planner",
         "repo": "hpp-corbaserver",
-        "rev": "ab24564c4165f51017bf00c84dc8c16c239ba1fe",
+        "rev": "f623d8cd51e627a12e7c6f240781dd7f4a5b7ddf",
         "type": "github"
       },
       "original": {
         "owner": "humanoid-path-planner",
-        "ref": "release/5.1.0",
         "repo": "hpp-corbaserver",
         "type": "github"
       }
@@ -218,6 +216,8 @@
         ],
         "hpp-util": [
           "hpp-corbaserver",
+          "hpp-core",
+          "hpp-constraints",
           "hpp-util"
         ],
         "nixpkgs": [
@@ -252,32 +252,6 @@
           "hpp-corbaserver",
           "hpp-core",
           "hpp-constraints",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1719580825,
-        "narHash": "sha256-trfl8A+P7a1gnACnTXNK98TYWWDAOM3PKfkXxpC3X/8=",
-        "owner": "humanoid-path-planner",
-        "repo": "hpp-util",
-        "rev": "0504f15818a92c7a257cd6b60cd8b6092bd6dbfa",
-        "type": "github"
-      },
-      "original": {
-        "owner": "humanoid-path-planner",
-        "ref": "release/5.1.0",
-        "repo": "hpp-util",
-        "type": "github"
-      }
-    },
-    "hpp-util_2": {
-      "inputs": {
-        "flake-parts": [
-          "hpp-corbaserver",
-          "flake-parts"
-        ],
-        "nixpkgs": [
-          "hpp-corbaserver",
           "nixpkgs"
         ]
       },
