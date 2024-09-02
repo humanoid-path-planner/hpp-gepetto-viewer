@@ -20,10 +20,10 @@
 import math
 
 import omniORB.any
-from hpp.quaternion import Quaternion
 
 from gepetto.color import Color
 from gepetto.corbaserver.client import _GhostGraphicalInterface
+from hpp.quaternion import Quaternion
 
 
 class _GhostViewerClient:
