@@ -141,7 +141,7 @@ class ViewerFactory:
         The arguments of Viewer.__init__ can be passed through kwargs
         """
         if host is not None and viewerClient is None:
-            from gepetto.corbaserver import Client as GuiClient
+            from gepetto_viewer_rerun import Client as GuiClient
 
             try:
                 viewerClient = GuiClient(host=host)

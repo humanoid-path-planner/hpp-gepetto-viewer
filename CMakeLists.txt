@@ -61,7 +61,7 @@ compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 add_project_dependency("hpp-corbaserver" REQUIRED)
-add_project_dependency("gepetto-viewer")
+add_project_dependency("gepetto-viewer-rerun")
 
 if(NOT FINDPYTHON_ALREADY_CALLED)
   findpython()

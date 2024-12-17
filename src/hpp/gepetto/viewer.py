@@ -22,7 +22,7 @@ import math
 import omniORB.any
 
 from gepetto.color import Color
-from gepetto.corbaserver.client import _GhostGraphicalInterface
+from gepetto_viewer_rerun.client import _GhostGraphicalInterface
 from hpp.quaternion import Quaternion
 
 
@@ -94,7 +94,7 @@ class Viewer:
     This class implements clients to both
     \\li hppcorbaserver through hpp.corbaserver.problem_solver.ProblemSolver
         python class,
-    \\li gepetto-viewer-server through gepetto.corbaserver.Client python class.
+    \\li gepetto-viewer-server through gepetto_viewer_rerun.Client python class.
 
     Operation that need to be synchronized between hppcorbaserver internal
     model and graphical user interface should be implemented by this class.
@@ -135,7 +135,7 @@ class Viewer:
         The robot loaded in hppcorbaserver is loaded into gepetto-viewer-server.
         """
 
-        from gepetto.corbaserver import Client as GuiClient
+        from gepetto_viewer_rerun import Client as GuiClient
 
         self.problemSolver = problemSolver
         self.robot = problemSolver.robot
@@ -225,7 +225,7 @@ class Viewer:
         urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames()
         self.client.gui.addURDF(self.displayName, urdfFilename)
         # Remove lighting from meshes
-        self._removeLightSources(self.client.gui.getGroupNodeList(self.displayName))
+        # self._removeLightSources(self.client.gui.getGroupNodeList(self.displayName))
         if self.collisionURDF:
             self.toggleVisual(False)
         self.client.gui.addToGroup(self.displayName, self.sceneName)
@@ -235,7 +235,7 @@ class Viewer:
 
         self.windowName = "scene_" + name
         try:
-            self.windowId = viewerClient.gui.getWindowID(self.windowName)
+            self.windowId = self.windowName
         except GepettoError:
             self.windowId = viewerClient.gui.createWindow(self.windowName)
         self.sceneName = self.windowName
