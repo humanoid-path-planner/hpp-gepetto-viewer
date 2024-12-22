@@ -2,7 +2,7 @@
   description = "Display of hpp robots and obstacles in gepetto-viewer";
 
   inputs = {
-    nixpkgs.url = "github:gepetto/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/refs/pull/362956/head";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
