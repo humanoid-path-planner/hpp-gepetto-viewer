@@ -26,7 +26,7 @@ macro(INSTALL_PYTHON_FILES MODULE)
 endmacro()
 
 install_python_files("hpp/gepetto" path_player.py viewer.py viewer_factory.py
-                     __init__.py)
+                     types.py __init__.py)
 
 install_python_files("hpp/gepetto/blender" exportmotion.py __init__.py)
 

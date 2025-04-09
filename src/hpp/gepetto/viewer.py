@@ -18,11 +18,13 @@
 # <http://www.gnu.org/licenses/>.
 
 import math
+import typing as T
 
 import omniORB.any
 
 from gepetto.color import Color
 from gepetto.corbaserver.client import _GhostGraphicalInterface
+from hpp.gepetto.types import ColorRGBA, Point3D
 from hpp.quaternion import Quaternion
 
 
@@ -517,6 +519,37 @@ class Viewer:
         )
         self.client.gui.addToGroup(name, self.sceneName)
         self.computeObjectPosition()
+
+    def loadPointCloudFromPoints(
+        self,
+        name: str,
+        resolution: float,
+        points: list[Point3D],
+        colors: T.Optional[list[ColorRGBA]] = None,
+        guiOnly: bool = False,
+    ):
+        """
+        Load a point cloud as an obstacle
+
+        \\param name name of the object,
+        \\param resolution the Octomap OcTree resolution.
+        \\param points a Nx3 matrix representing the points of the point cloud.
+        \\param colors a Nx4 matrix representing the colors of the point cloud, if any.
+        \\param guiOnly whether to control only gepetto-viewer-server
+        """
+        if not guiOnly:
+            self.problemSolver.hppcorba.obstacle.loadPointCloudFromPoints(
+                name, resolution, points
+            )
+        if self.client.gui.nodeExists(name):
+            self.client.gui.setCurvePoints(name, points)
+        else:
+            self.client.gui.addCurve(name, points, Color.lightGrey)
+            self.client.gui.setCurveMode(name, "POINTS")
+            self.client.gui.addToGroup(name, self.sceneName)
+
+        if colors is not None:
+            self.client.gui.setCurveColors(name, colors)
 
     def moveObstacle(self, name, position, guiOnly=False):
         """
