@@ -112,6 +112,15 @@ class ViewerFactory:
             self.problemSolver.hppcorba.obstacle.loadPointCloudFromPoints(
                 name, resolution, points
             )
+        # Remove previous calls to loadPointCloudFromPoints for the list of gui requests.
+        # 1. Only the last one is meaningful for display.
+        # 2. Memory footprint grows linearly with the number of calls if we keep all the calls.
+        oldGuiRequest = self.guiRequest
+        self.guiRequest = list()
+        for func, kwargs in oldGuiRequest:
+            if func != Viewer.loadPointCloudFromPoints or kwargs.get("name") != name:
+                self.guiRequest.append((func, kwargs))
+
         loc["guiOnly"] = True
         self.guiRequest.append((Viewer.loadPointCloudFromPoints, loc))
 
