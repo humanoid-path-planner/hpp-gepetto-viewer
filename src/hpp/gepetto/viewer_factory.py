@@ -17,7 +17,10 @@
 # hpp-gepetto-viewer.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+import typing as T
+
 from hpp.gepetto import Viewer
+from hpp.gepetto.types import ColorRGBA, Point3D
 from hpp.gepetto.viewer import _GhostViewerClient
 
 
@@ -86,6 +89,40 @@ class ViewerFactory:
             self.problemSolver.hppcorba.obstacle.loadPolyhedron(name, filename)
         loc["guiOnly"] = True
         self.guiRequest.append((Viewer.loadPolyhedronObstacleModel, loc))
+
+    def loadPointCloudFromPoints(
+        self,
+        name: str,
+        resolution: float,
+        points: list[Point3D],
+        colors: T.Optional[list[ColorRGBA]] = None,
+        guiOnly: bool = False,
+    ):
+        """
+        Load a point cloud as an obstacle
+
+        \\param name name of the object,
+        \\param resolution the Octomap OcTree resolution.
+        \\param points a Nx3 matrix representing the points of the point cloud.
+        \\param colors a Nx4 matrix representing the colors of the point cloud, if any.
+        \\param guiOnly whether to control only gepetto-viewer-server
+        """
+        loc = locals().copy()
+        if not guiOnly:
+            self.problemSolver.hppcorba.obstacle.loadPointCloudFromPoints(
+                name, resolution, points
+            )
+        # Remove previous calls to loadPointCloudFromPoints for the list of gui requests.
+        # 1. Only the last one is meaningful for display.
+        # 2. Memory footprint grows linearly with the number of calls if we keep all the calls.
+        oldGuiRequest = self.guiRequest
+        self.guiRequest = list()
+        for func, kwargs in oldGuiRequest:
+            if func != Viewer.loadPointCloudFromPoints or kwargs.get("name") != name:
+                self.guiRequest.append((func, kwargs))
+
+        loc["guiOnly"] = True
+        self.guiRequest.append((Viewer.loadPointCloudFromPoints, loc))
 
     def moveObstacle(self, name, position, guiOnly=False):
         """
