@@ -38,3 +38,8 @@ install_python_files("hpp/gepetto/gui" path_graph.py __init__.py)
 if(gepetto-viewer_FOUND)
   gepetto_gui_pyplugin("hpp/gepetto/gui/path_graph.py")
 endif()
+
+if (USE_HPP_PYTHON)
+  install_python_files("pyhpp" __init__.py)
+  install_python_files("pyhpp/gepetto" __init__.py viewer.py)
+endif()

@@ -60,8 +60,13 @@ include("${JRL_CMAKE_MODULES}/python.cmake")
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
+option(USE_HPP_PYTHON "Add dependency to hpp-python" OFF)
+
 add_project_dependency("hpp-corbaserver" REQUIRED)
 add_project_dependency("gepetto-viewer")
+if (USE_HPP_PYTHON)
+  add_project_dependency("hpp-python" REQUIRED)
+endif()
 
 if(NOT FINDPYTHON_ALREADY_CALLED)
   findpython()
