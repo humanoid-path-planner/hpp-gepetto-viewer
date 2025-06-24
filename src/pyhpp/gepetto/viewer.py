@@ -5,19 +5,18 @@ from gepetto import Error as GepettoError
 from pinocchio import forwardKinematics, updateGeometryPlacements, SE3
 from eigenpy import Quaternion
 from pyhpp.pinocchio import urdf
-from pyhpp.core import path
 
 import time
 
 class Viewer:
 
-    def displayPath(self, path):
+    def displayPath(self, path, speed=0.01, nbPoints=300):
         for i in range(path.numberPaths()):  
-            for t in np.linspace(0,path.pathAtRank(i).length(),1000):
+            for t in np.linspace(0,path.pathAtRank(i).length(),nbPoints):
                 q, success = path.pathAtRank(i).eval(t)
                 if success:
                     self.applyConfiguration(q)
-                    time.sleep(0.001)  
+                    time.sleep(speed)  
 
     def createWindowAndScene(self, name):
         self.windowName = "scene_hpp_" + name
