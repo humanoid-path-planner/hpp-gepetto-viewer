@@ -56,7 +56,7 @@ option(USE_HPP_PYTHON "Add dependency to hpp-python" OFF)
 
 add_project_dependency("hpp-corbaserver" REQUIRED)
 add_project_dependency("gepetto-viewer")
-if (USE_HPP_PYTHON)
+if(USE_HPP_PYTHON)
   add_project_dependency("hpp-python" REQUIRED)
 endif()
 
