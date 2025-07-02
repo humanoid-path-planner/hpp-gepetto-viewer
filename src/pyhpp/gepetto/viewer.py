@@ -1,22 +1,22 @@
-from math import pi
-import numpy as np
-from gepetto.corbaserver import Client
-from gepetto import Error as GepettoError
-from pinocchio import forwardKinematics, updateGeometryPlacements, SE3
-from eigenpy import Quaternion
-from pyhpp.pinocchio import urdf
-
 import time
 
-class Viewer:
+import numpy as np
+from eigenpy import Quaternion
+from gepetto import Error as GepettoError
+from gepetto.corbaserver import Client
+from pinocchio import SE3, forwardKinematics, updateGeometryPlacements
 
+from pyhpp.pinocchio import urdf
+
+
+class Viewer:
     def displayPath(self, path, speed=0.01, nbPoints=300):
-        for i in range(path.numberPaths()):  
-            for t in np.linspace(0,path.pathAtRank(i).length(),nbPoints):
+        for i in range(path.numberPaths()):
+            for t in np.linspace(0, path.pathAtRank(i).length(), nbPoints):
                 q, success = path.pathAtRank(i).eval(t)
                 if success:
                     self.applyConfiguration(q)
-                    time.sleep(speed)  
+                    time.sleep(speed)
 
     def createWindowAndScene(self, name):
         self.windowName = "scene_hpp_" + name
@@ -27,12 +27,16 @@ class Viewer:
         self.sceneName = self.windowName
 
     def addURDFObstacleToScene(self, filename, prefix):
-        urdf.loadModel(self.robot, 0, prefix, "anchor", filename, "", SE3.Identity());
+        urdf.loadModel(self.robot, 0, prefix, "anchor", filename, "", SE3.Identity())
         self.client.gui.addUrdfObjects(prefix, filename, True)
         self.client.gui.addToGroup(prefix, self.sceneName)
 
-    def addURDFToScene(self, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose):
-        urdf.loadModel(self.robot, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose)
+    def addURDFToScene(
+        self, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose
+    ):
+        urdf.loadModel(
+            self.robot, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose
+        )
         self.client.gui.addURDF(prefix, urdfFilename)
         self.client.gui.addToGroup(prefix, self.sceneName)
 
