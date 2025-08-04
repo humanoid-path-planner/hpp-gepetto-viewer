@@ -4,10 +4,11 @@ import numpy as np
 from eigenpy import Quaternion
 from gepetto import Error as GepettoError
 from gepetto.corbaserver import Client
-from pinocchio import SE3, forwardKinematics, updateGeometryPlacements
+from pinocchio import SE3, forwardKinematics, updateFramePlacements
 
 from pyhpp.pinocchio import urdf
-
+import pinocchio.pinocchio_pywrap_default
+BODY = pinocchio.pinocchio_pywrap_default.FrameType(8)
 
 class Viewer:
     def displayPath(self, path, speed=0.01, nbPoints=300):
@@ -28,8 +29,9 @@ class Viewer:
 
     def addURDFObstacleToScene(self, filename, prefix):
         urdf.loadModel(self.robot, 0, prefix, "anchor", filename, "", SE3.Identity())
-        self.client.gui.addUrdfObjects(prefix, filename, True)
-        self.client.gui.addToGroup(prefix, self.sceneName)
+        self.client.gui.addUrdfObjects(self.sceneName + "/" + prefix, filename, True)
+        self._recomputeObjects()
+        #self.client.gui.addToGroup(prefix, self.sceneName)
 
     def addURDFToScene(
         self, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose
@@ -37,24 +39,35 @@ class Viewer:
         urdf.loadModel(
             self.robot, frameIndex, prefix, rootType, urdfFilename, srdfFilename, pose
         )
-        self.client.gui.addURDF(prefix, urdfFilename)
-        self.client.gui.addToGroup(prefix, self.sceneName)
+        self.client.gui.addURDF(self.sceneName + "/" + prefix, urdfFilename)
+        self._recomputeObjects()
+        #self.client.gui.addToGroup(prefix, self.sceneName)
 
     def __init__(self, name, robot):
         self.robot = robot
         self.client = Client()
         self.createWindowAndScene(name)
+        self.hppObjectNames = list()
+        self.guiObjectNames = list()
+        self.objectIndices = list()
 
     def applyConfiguration(self, q):
         model = self.robot.model()
-        gmodel = self.robot.geomModel()
         data = model.createData()
-        gData = gmodel.createData()
-        objects = [gmodel.geometryObjects[i].name for i in range(gmodel.ngeoms)]
         forwardKinematics(model, data, q)
-        updateGeometryPlacements(model, data, gmodel, gData)
-        for i, o in enumerate(objects):
-            pose = gData.oMg[i]
+        updateFramePlacements(model, data)
+        for i, hppObj, guiObj in zip(self.objectIndices, self.hppObjectNames, self.guiObjectNames):
+            pose = data.oMf[i]
             pose1 = list(pose.translation) + list(Quaternion(pose.rotation).coeffs())
-            self.client.gui.applyConfiguration(o, pose1)
+            self.client.gui.applyConfiguration(guiObj, pose1)
         self.client.gui.refresh()
+
+    def _recomputeObjects(self):
+        self.hppObjectNames = list()
+        self.guiObjectNames = list()
+        model = self.robot.model()
+        for f in model.frames:
+            if model.existFrame(f.name, BODY):
+                self.hppObjectNames.append(f.name)
+                self.guiObjectNames.append(self.sceneName + "/" + f.name)
+                self.objectIndices.append(model.getFrameId(f.name))
