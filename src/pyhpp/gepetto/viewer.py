@@ -51,6 +51,16 @@ class Viewer(BaseVisualizer):
         super().__init__(robot.model(), robot.geomModel(), robot.geomModel())
         self.initViewer()
 
+    def __call__(self, q):
+        self.display(q)
+
+    def playPath(self, path, speed=0.01, nbPoints=300):
+        for t in np.linspace(0, path.length(), nbPoints):
+                q, success = path.eval(t)
+                if success:
+                    self.display(q)
+                    time.sleep(speed)
+
     def getViewerNodeName(self, geometry_object, geometry_type, create_groups = False):
         """Return the name of the geometry object inside the viewer"""
         type_str = "collision" if geometry_type == pin.GeometryType.COLLISION \
