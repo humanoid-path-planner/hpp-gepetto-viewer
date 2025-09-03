@@ -1,6 +1,6 @@
 # BSD 2-Clause License
 
-# Copyright (c) 2014-2024, CNRS - INRIA
+# Copyright (c) 2014-2025, CNRS - INRIA
 
 # Authors: Gabriele Buondono, Florent Lamiraux, Joris Vaillant
 
