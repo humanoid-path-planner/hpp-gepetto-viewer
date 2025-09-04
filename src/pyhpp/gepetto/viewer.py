@@ -48,7 +48,7 @@ class Viewer(BaseVisualizer):
     def __init__(self, robot):
         self.robot = robot
         self.viewerRootNodeName = self.robot.name()
-        super().__init__(robot.model(), robot.geomModel(), robot.geomModel())
+        super().__init__(robot.model(), robot.geomModel(), robot.visualModel())
         self.initViewer()
 
     def __call__(self, q):
