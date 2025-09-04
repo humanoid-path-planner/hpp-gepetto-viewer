@@ -28,9 +28,8 @@
 import warnings
 
 import numpy as np
-from numpy.linalg import norm
-
 import pinocchio as pin
+from numpy.linalg import norm
 from pinocchio.utils import npToTuple
 from pinocchio.visualize import BaseVisualizer
 
@@ -56,17 +55,18 @@ class Viewer(BaseVisualizer):
 
     def playPath(self, path, speed=0.01, nbPoints=300):
         for t in np.linspace(0, path.length(), nbPoints):
-                q, success = path.eval(t)
-                if success:
-                    self.display(q)
-                    time.sleep(speed)
+            q, success = path.eval(t)
+            if success:
+                self.display(q)
+                time.sleep(speed)
 
-    def getViewerNodeName(self, geometry_object, geometry_type, create_groups = False):
+    def getViewerNodeName(self, geometry_object, geometry_type, create_groups=False):
         """Return the name of the geometry object inside the viewer"""
-        type_str = "collision" if geometry_type == pin.GeometryType.COLLISION \
-            else "visual"
+        type_str = (
+            "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
+        )
         names = geometry_object.name.split("/")
-        assert(len(names) >= 2)
+        assert len(names) >= 2
         names = names[:-1] + [type_str] + names[-1:]
         res = self.viewerRootNodeName
         for n in names:
@@ -89,8 +89,8 @@ class Viewer(BaseVisualizer):
         loadModel=True,
     ):
         """Init GepettoViewer by loading the gui and creating a window."""
-        windowName="hpp"
-        sceneName=self.robot.name()
+        windowName = "hpp"
+        sceneName = self.robot.name()
 
         try:
             import gepetto.corbaserver
