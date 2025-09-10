@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-
 # BSD 2-Clause License
 
-# Copyright (c) 2014-2025, CNRS - INRIA
+# Copyright (c) 2014-2024, CNRS
 
 # Authors: Florent Lamiraux
 
@@ -27,6 +25,4 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .path_player import PathPlayer  # noqa: F401
-from .viewer import Color, Viewer, displayGripper, displayHandle  # noqa: F401
-from .viewer_factory import ViewerFactory  # noqa: F401
+from .viewer import Viewer
