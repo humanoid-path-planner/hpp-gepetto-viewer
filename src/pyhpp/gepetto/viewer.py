@@ -67,7 +67,7 @@ class Viewer(BaseVisualizer):
         )
         names = geometry_object.name.split("/")
         assert len(names) >= 2
-        names = names[:-1] + [type_str] + names[-1:]
+        names = names + [type_str]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
