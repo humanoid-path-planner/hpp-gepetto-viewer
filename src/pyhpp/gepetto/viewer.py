@@ -28,6 +28,7 @@
 import time
 import warnings
 
+import gepetto.corbaserver
 import numpy as np
 import pinocchio as pin
 from numpy.linalg import norm
@@ -140,45 +141,25 @@ class Viewer(BaseVisualizer):
         windowName = "hpp"
         sceneName = self.robot.name()
 
-        try:
-            import gepetto.corbaserver
-        except ImportError:
-            import warnings
+        self.client = gepetto.corbaserver.Client() if viewer is None else viewer
+        gui = self.client.gui
 
-            msg = (
-                "Error while importing the viewer client.\n"
-                "Check whether gepetto-gui is properly installed"
-            )
-            warnings.warn(msg, category=UserWarning, stacklevel=2)
+        # Create window
+        window_l = gui.getWindowList()
+        if windowName not in window_l:
+            self.windowID = self.client.gui.createWindow(windowName)
+        else:
+            self.windowID = self.client.gui.getWindowID(windowName)
 
-        try:
-            self.client = gepetto.corbaserver.Client() if viewer is None else viewer
-            gui = self.client.gui
+        # Create scene if needed
+        scene_l = gui.getSceneList()
+        if sceneName not in scene_l:
+            gui.createScene(sceneName)
+        self.sceneName = sceneName
+        gui.addSceneToWindow(sceneName, self.windowID)
 
-            # Create window
-            window_l = gui.getWindowList()
-            if windowName not in window_l:
-                self.windowID = self.client.gui.createWindow(windowName)
-            else:
-                self.windowID = self.client.gui.getWindowID(windowName)
-
-            # Create scene if needed
-            scene_l = gui.getSceneList()
-            if sceneName not in scene_l:
-                gui.createScene(sceneName)
-            self.sceneName = sceneName
-            gui.addSceneToWindow(sceneName, self.windowID)
-
-            if loadModel:
-                self.loadViewerModel()
-        except:  # noqa: E722
-            import warnings
-
-            msg = (
-                "Error while starting the viewer client.\n"
-                "Check whether gepetto-viewer is properly started"
-            )
-            warnings.warn(msg, category=UserWarning, stacklevel=2)
+        if loadModel:
+            self.loadViewerModel()
 
     def loadPrimitive(self, meshName, geometry_object):
         gui = self.client.gui
