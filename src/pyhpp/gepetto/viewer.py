@@ -61,7 +61,9 @@ class Viewer(BaseVisualizer):
                 self.display(q)
                 time.sleep(speed)
 
-    def getGeometryObjectNodeName(self, geometry_object, geometry_type, create_groups=False):
+    def getGeometryObjectNodeName(
+        self, geometry_object, geometry_type, create_groups=False
+    ):
         """
         Find the node corresponding to a GeometryObject
 
@@ -112,7 +114,7 @@ class Viewer(BaseVisualizer):
         """
         names = frame.name.split("/")
         assert len(names) >= 2
-        names = names[:-1] + ['frames'] + names[-1:]
+        names = names[:-1] + ["frames"] + names[-1:]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
@@ -325,7 +327,9 @@ class Viewer(BaseVisualizer):
             )
             gui.applyConfigurations(
                 [
-                    self.getGeometryObjectNodeName(collision, pin.GeometryType.COLLISION)
+                    self.getGeometryObjectNodeName(
+                        collision, pin.GeometryType.COLLISION
+                    )
                     for collision in self.collision_model.geometryObjects
                 ],
                 [
@@ -360,16 +364,9 @@ class Viewer(BaseVisualizer):
         # Recompute frame poses
         pin.updateFramePlacements(self.model, self.data)
         gui.applyConfigurations(
+            [self.getFrameNodeName(frame) for frame in self.frames],
             [
-                self.getFrameNodeName(frame)
-                for frame in self.frames
-            ],
-            [
-                pin.SE3ToXYZQUATtuple(
-                    self.data.oMf[
-                        self.model.getFrameId(frame.name)
-                        ]
-                    )
+                pin.SE3ToXYZQUATtuple(self.data.oMf[self.model.getFrameId(frame.name)])
                 for frame in self.frames
             ],
         )
@@ -388,7 +385,9 @@ class Viewer(BaseVisualizer):
             visibility_mode = "OFF"
 
         for collision in self.collision_model.geometryObjects:
-            nodeName = self.getGeometryObjectNodeName(collision, pin.GeometryType.COLLISION)
+            nodeName = self.getGeometryObjectNodeName(
+                collision, pin.GeometryType.COLLISION
+            )
             gui.setVisibility(nodeName, visibility_mode)
 
     def displayVisuals(self, visibility):
