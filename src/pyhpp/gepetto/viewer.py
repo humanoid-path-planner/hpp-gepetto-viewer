@@ -26,6 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import warnings
+import time
 
 import numpy as np
 import pinocchio as pin
@@ -84,7 +85,7 @@ class Viewer(BaseVisualizer):
         )
         names = geometry_object.name.split("/")
         assert len(names) >= 2
-        names = names + [type_str]
+        names = [*names, type_str]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
@@ -114,7 +115,7 @@ class Viewer(BaseVisualizer):
         """
         names = frame.name.split("/")
         assert len(names) >= 2
-        names = names[:-1] + ["frames"] + names[-1:]
+        names = [*names[:-1], "frames", *names[-1:]]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
