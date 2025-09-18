@@ -48,6 +48,7 @@ class Viewer(BaseVisualizer):
         self.robot = robot
         self.viewerRootNodeName = self.robot.name()
         super().__init__(robot.model(), robot.geomModel(), robot.visualModel())
+        self.frames = list()
         self.initViewer()
 
     def __call__(self, q):
@@ -82,6 +83,36 @@ class Viewer(BaseVisualizer):
         names = geometry_object.name.split("/")
         assert len(names) >= 2
         names = names + [type_str]
+        res = self.viewerRootNodeName
+        for n in names:
+            res += "/" + n
+        if create_groups:
+            group_name = self.viewerRootNodeName
+            if not self.client.gui.nodeExists(group_name):
+                self.client.gui.createGroup(group_name)
+            for n in names[:-1]:
+                node_name = group_name + "/" + n
+                if not self.client.gui.nodeExists(node_name):
+                    self.client.gui.createGroup(node_name)
+                    self.client.gui.addToGroup(node_name, group_name)
+                group_name = node_name
+        return res
+
+    def getFrameNodeName(self, frame, create_groups=False):
+        """
+        Find the node corresponding to a Frame
+
+        param frame pinocchio Frame instance
+        param create_groups if true, the method creates intermediate nodes between
+                            the root of the body tree and the node.
+
+        The name is in the form root/robot/frame
+          - root is the name of the composite robot in HPP,
+          - robot/frame is the name of the pinocchio frame
+        """
+        names = frame.name.split("/")
+        assert len(names) >= 2
+        names = names[:-1] + ['frames'] + names[-1:]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
@@ -272,6 +303,13 @@ class Viewer(BaseVisualizer):
         # Finally, refresh the layout to obtain your first rendering.
         gui.refresh()
 
+    def addFrame(self, frame_name):
+        frame_id = self.model.getFrameId(frame_name)
+        frame = self.model.frames[frame_id]
+        self.frames.append(frame)
+        node_name = self.getFrameNodeName(frame, True)
+        self.client.gui.addXYZaxis(node_name, [0, 1, 0, 1], 0.005, 0.015)
+
     def display(self, q=None):
         """
         Display the robot at configuration q in the viewer by placing all the bodies.
@@ -319,6 +357,22 @@ class Viewer(BaseVisualizer):
                 ],
             )
 
+        # Recompute frame poses
+        pin.updateFramePlacements(self.model, self.data)
+        gui.applyConfigurations(
+            [
+                self.getFrameNodeName(frame)
+                for frame in self.frames
+            ],
+            [
+                pin.SE3ToXYZQUATtuple(
+                    self.data.oMf[
+                        self.model.getFrameId(frame.name)
+                        ]
+                    )
+                for frame in self.frames
+            ],
+        )
         gui.refresh()
 
     def displayCollisions(self, visibility):
