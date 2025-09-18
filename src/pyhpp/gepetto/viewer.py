@@ -60,8 +60,22 @@ class Viewer(BaseVisualizer):
                 self.display(q)
                 time.sleep(speed)
 
-    def getViewerNodeName(self, geometry_object, geometry_type, create_groups=False):
-        """Return the name of the geometry object inside the viewer"""
+    def getGeometryObjectNodeName(self, geometry_object, geometry_type, create_groups=False):
+        """
+        Find the node corresponding to a GeometryObject
+
+        param geometry_object pinocchio GeometryObject instance
+        param geometry_type COLLISION or VISUAL
+        param create_groups if true, the method creates intermediate nodes between
+                            the root of the body tree and the node.
+
+        The name is in the form root/robot/link_i/type where
+           - root is the name of the composite robot in HPP,
+           - robot/link_i is the name of the pinocchio geometry object, i is an integer to
+                          differentiate several geometries attached to the same link,
+           - type is "collision" or "visual"
+        """
+
         type_str = (
             "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
         )
@@ -196,7 +210,7 @@ class Viewer(BaseVisualizer):
 
         gui = self.client.gui
 
-        meshName = self.getViewerNodeName(geometry_object, geometry_type, True)
+        meshName = self.getGeometryObjectNodeName(geometry_object, geometry_type, True)
         meshPath = geometry_object.meshPath
         meshTexturePath = geometry_object.meshTexturePath
         meshScale = geometry_object.meshScale
@@ -273,7 +287,7 @@ class Viewer(BaseVisualizer):
             )
             gui.applyConfigurations(
                 [
-                    self.getViewerNodeName(collision, pin.GeometryType.COLLISION)
+                    self.getGeometryObjectNodeName(collision, pin.GeometryType.COLLISION)
                     for collision in self.collision_model.geometryObjects
                 ],
                 [
@@ -292,7 +306,7 @@ class Viewer(BaseVisualizer):
             )
             gui.applyConfigurations(
                 [
-                    self.getViewerNodeName(visual, pin.GeometryType.VISUAL)
+                    self.getGeometryObjectNodeName(visual, pin.GeometryType.VISUAL)
                     for visual in self.visual_model.geometryObjects
                 ],
                 [
@@ -320,7 +334,7 @@ class Viewer(BaseVisualizer):
             visibility_mode = "OFF"
 
         for collision in self.collision_model.geometryObjects:
-            nodeName = self.getViewerNodeName(collision, pin.GeometryType.COLLISION)
+            nodeName = self.getGeometryObjectNodeName(collision, pin.GeometryType.COLLISION)
             gui.setVisibility(nodeName, visibility_mode)
 
     def displayVisuals(self, visibility):
@@ -336,7 +350,7 @@ class Viewer(BaseVisualizer):
             visibility_mode = "OFF"
 
         for visual in self.visual_model.geometryObjects:
-            nodeName = self.getViewerNodeName(visual, pin.GeometryType.VISUAL)
+            nodeName = self.getGeometryObjectNodeName(visual, pin.GeometryType.VISUAL)
             gui.setVisibility(nodeName, visibility_mode)
 
     def setBackgroundColor(self):
