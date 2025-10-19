@@ -53,7 +53,7 @@ class Viewer(Parent):
         if not self.client.gui.nodeExists(self.compositeRobotName):
             self.client.gui.createGroup(self.compositeRobotName)
             self.client.gui.addToGroup(self.compositeRobotName, self.sceneName)
-        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames()
+        urdfFilename, _srdfFilename = self.robot.urdfSrdfFilenames()
         name = self.compositeRobotName + "/" + self.robot.robotNames[0]
         self.client.gui.addURDF(name, urdfFilename)
         # Remove lighting from meshes
@@ -145,7 +145,7 @@ class Viewer(Parent):
 
     def loadUrdfInGUI(self, RobotType, robotName):
         # Load robot in viewer
-        urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+        urdfFilename, _srdfFilename = _urdfSrdfFilenames(RobotType)
         nodeName = self.compositeRobotName + "/" + robotName
         if self.collisionURDF:
             self.client.gui.addUrdfCollision(nodeName, urdfFilename)
@@ -155,7 +155,7 @@ class Viewer(Parent):
         self._removeLightSources(self.client.gui.getGroupNodeList(nodeName))
 
     def loadUrdfObjectsInGUI(self, RobotType, robotName):
-        urdfFilename, srdfFilename = _urdfSrdfFilenames(RobotType)
+        urdfFilename, _srdfFilename = _urdfSrdfFilenames(RobotType)
         self.client.gui.addUrdfObjects(robotName, urdfFilename, not self.collisionURDF)
         self._removeLightSources(self.client.gui.getGroupNodeList(robotName))
         self.client.gui.addToGroup(robotName, self.sceneName)

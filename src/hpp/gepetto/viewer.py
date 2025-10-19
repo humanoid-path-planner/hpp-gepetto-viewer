@@ -28,14 +28,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import math
-import typing as T
 
 import omniORB.any
+from hpp.quaternion import Quaternion
 
 from gepetto.color import Color
 from gepetto.corbaserver.client import _GhostGraphicalInterface
 from hpp.gepetto.types import ColorRGBA, Point3D
-from hpp.quaternion import Quaternion
 
 
 class _GhostViewerClient:
@@ -234,7 +233,7 @@ class Viewer:
             self._removeLightSources(children)
 
     def _initDisplay(self):
-        urdfFilename, srdfFilename = self.robot.urdfSrdfFilenames()
+        urdfFilename, _srdfFilename = self.robot.urdfSrdfFilenames()
         self.client.gui.addURDF(self.displayName, urdfFilename)
         # Remove lighting from meshes
         self._removeLightSources(self.client.gui.getGroupNodeList(self.displayName))
@@ -535,7 +534,7 @@ class Viewer:
         name: str,
         resolution: float,
         points: list[Point3D],
-        colors: T.Optional[list[ColorRGBA]] = None,
+        colors: list[ColorRGBA] | None = None,
         guiOnly: bool = False,
     ):
         """

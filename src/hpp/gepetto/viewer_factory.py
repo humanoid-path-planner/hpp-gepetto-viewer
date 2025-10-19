@@ -27,7 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import typing as T
 
 from hpp.gepetto import Viewer
 from hpp.gepetto.types import ColorRGBA, Point3D
@@ -105,7 +104,7 @@ class ViewerFactory:
         name: str,
         resolution: float,
         points: list[Point3D],
-        colors: T.Optional[list[ColorRGBA]] = None,
+        colors: list[ColorRGBA] | None = None,
         guiOnly: bool = False,
     ):
         """
