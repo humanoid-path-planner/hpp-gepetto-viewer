@@ -29,10 +29,9 @@ import math
 import pickle as pk
 import time
 
+import hpp.corbaserver.client
 import numpy as np
 import omniORB.any
-
-import hpp.corbaserver.client
 
 
 class PathPlayer:
