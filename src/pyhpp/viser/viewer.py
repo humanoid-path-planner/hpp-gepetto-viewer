@@ -98,7 +98,7 @@ class Viewer(BaseVisualizer):
         self, geometry_object, geometry_type, create_groups=False
     ):
         """
-        Find the node corresponding to a GeometryObject (Gepetto-GUI style)
+        Find the node corresponding to a GeometryObject 
         """
         type_str = (
             "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
