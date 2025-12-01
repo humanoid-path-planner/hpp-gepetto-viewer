@@ -46,6 +46,10 @@ except:  # noqa: E722
 class Viewer(BaseVisualizer):
     """An HPP display using Gepetto Viewer"""
 
+    start = 0.0
+    end = 1.0
+    dt = 0.01
+
     def __init__(self, robot):
         self.robot = robot
         self.viewerRootNodeName = self.robot.name()
@@ -56,12 +60,18 @@ class Viewer(BaseVisualizer):
     def __call__(self, q):
         self.display(q)
 
-    def playPath(self, path, speed=0.01, nbPoints=300):
-        for t in np.linspace(0, path.length(), nbPoints):
+    def playPath(self, path, speed=1):
+        length = self.end * path.length()
+        t = self.start * path.length()
+        while t < length:
+            start = time.time()
             q, success = path.eval(t)
             if success:
                 self.display(q)
-                time.sleep(speed)
+            t += self.dt * speed
+            elapsed = time.time() - start
+            if elapsed < self.dt:
+                time.sleep(self.dt - elapsed)
 
     def getGeometryObjectNodeName(
         self, geometry_object, geometry_type, create_groups=False
