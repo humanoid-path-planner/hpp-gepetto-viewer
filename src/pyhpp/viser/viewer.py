@@ -11,6 +11,7 @@ import numpy as np
 
 import pinocchio as pin
 from pinocchio.visualize import BaseVisualizer
+import threading
 
 try:
     import trimesh  # Required by viser
@@ -50,10 +51,7 @@ class Viewer(BaseVisualizer):
 
         if hasattr(model, 'model'):
             robot = model
-            
-            if hasattr(robot, 'asPinDevice'):
-                robot = robot.asPinDevice()
-            
+
             if callable(robot.model):
                 model = robot.model()
             else:
@@ -86,6 +84,9 @@ class Viewer(BaseVisualizer):
         self.framesRootNodeName = None
         self.framesRootFrame = None
         self._viewer_initialized = False
+        self.path = None
+        self.path_playing = False
+        self.path_thread = None
 
     def __call__(self, q):
         """Allow calling viewer as v(q) for compatibility with Gepetto-GUI."""
@@ -514,6 +515,96 @@ class Viewer(BaseVisualizer):
         return cli.get_render(
             height=height, width=width, transport_format=transport_format
         )
+
+    def loadPath(self, path):
+        """Load a path and create GUI controls for playback."""
+        self.path = path
+        self.path_playing = False
+        self.path_update_lock = False
+        
+        path_folder = self.viewer.gui.add_folder("Path Player")
+        
+        with path_folder:
+            self.path_slider = self.viewer.gui.add_slider(
+                "Position (s)",
+                min=0.0,
+                max=float(path.length()),
+                step=0.001,
+                initial_value=0.0
+            )
+            
+            self.play_button = self.viewer.gui.add_button("▶ Play")
+            self.stop_button = self.viewer.gui.add_button("⏸ Stop")
+            
+            self.speed_slider = self.viewer.gui.add_slider(
+                "Speed",
+                min=0.1,
+                max=10.0,
+                step=0.1,
+                initial_value=1.0
+            )
+        
+        @self.path_slider.on_update
+        def _on_slider_update(_):
+            if not self.path_update_lock:
+                q, success = self.path.eval(self.path_slider.value)
+                if success:
+                    self.display(q)
+        
+        @self.play_button.on_click
+        def _on_play_click(_):
+            if not self.path_playing:
+                self.path_playing = True
+                self._start_path_animation()
+        
+        @self.stop_button.on_click
+        def _on_stop_click(_):
+            self.path_playing = False
+        
+        q, success = self.path.eval(0.0)
+        if success:
+            self.display(q)
+
+    def _start_path_animation(self):
+        """Start animating the path in a background thread."""
+        if self.path_thread is not None and self.path_thread.is_alive():
+            return
+            
+        def animate():
+            path_length = self.path.length()
+            path_time = self.path_slider.value
+            last_wall_time = time.perf_counter()
+            slider_update_counter = 0
+            
+            while self.path_playing and path_time < path_length:
+                current_wall_time = time.perf_counter()
+                wall_dt = current_wall_time - last_wall_time
+                last_wall_time = current_wall_time
+                
+                path_time += wall_dt * self.speed_slider.value
+                path_time = min(path_time, path_length)
+                
+                q, success = self.path.eval(path_time)
+                if success:
+                    self.display(q)
+                
+                slider_update_counter += 1
+                if slider_update_counter >= 10:
+                    self.path_update_lock = True
+                    self.path_slider.value = path_time
+                    self.path_update_lock = False
+                    slider_update_counter = 0
+                
+                time.sleep(1.0 / 60.0)
+            
+            self.path_update_lock = True
+            self.path_slider.value = 0.0 if path_time >= path_length else path_time
+            self.path_update_lock = False
+            
+            self.path_playing = False
+
+        self.path_thread = threading.Thread(target=animate, daemon=True)
+        self.path_thread.start()
 
     def setBackgroundColor(self):
         raise NotImplementedError()
