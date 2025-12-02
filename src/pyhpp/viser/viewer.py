@@ -79,7 +79,7 @@ class Viewer(BaseVisualizer):
         self.viser_frames = {}
         self.display_collisions = False
         self.display_visuals = True
-        self.display_frames_flag = True
+        self.display_frames_flag = False
         self.viewerRootNodeName = None
         self.framesRootNodeName = None
         self.framesRootFrame = None
@@ -208,7 +208,7 @@ class Viewer(BaseVisualizer):
 
         self.framesRootNodeName = rootNodeName + "/frames"
         self.framesRootFrame = self.viewer.scene.add_frame(
-            self.framesRootNodeName, show_axes=False
+            self.framesRootNodeName, show_axes=False, visible=False
         )
 
         for frame in self.model.frames:
@@ -218,8 +218,26 @@ class Viewer(BaseVisualizer):
                 show_axes=True,
                 axes_length=frame_axis_length,
                 axes_radius=frame_axis_radius,
+                visible=False
             )
-        self.display_frames_flag = True
+        self.display_frames_flag = False
+        
+        # Add display controls
+        self._create_display_controls()
+
+    def _create_display_controls(self):
+        """Create GUI controls for display options."""
+        display_folder = self.viewer.gui.add_folder("Display Controls")
+        
+        with display_folder:
+            self.frames_checkbox = self.viewer.gui.add_checkbox(
+                "Show Frames",
+                initial_value=False
+            )
+        
+        @self.frames_checkbox.on_update
+        def _on_frames_toggle(_):
+            self.displayFrames(self.frames_checkbox.value)
 
     def loadViewerGeometryObject(self, geometry_object, geometry_type, color=None):
         """Load a single geometry object with hierarchical naming."""
