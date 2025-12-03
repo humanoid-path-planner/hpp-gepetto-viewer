@@ -98,7 +98,7 @@ class Viewer(BaseVisualizer):
         self, geometry_object, geometry_type, create_groups=False
     ):
         """
-        Find the node corresponding to a GeometryObject 
+        Find the node corresponding to a GeometryObject (Gepetto-GUI style)
         """
         type_str = (
             "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
@@ -114,13 +114,13 @@ class Viewer(BaseVisualizer):
             res += "/" + n
 
         if create_groups:
-            self._create_intermediate_frames(names)
+            self._create_hierarchy_nodes(names)
 
         return res
 
-    def _create_intermediate_frames(self, names):
+    def _create_hierarchy_nodes(self, names):
         """
-        Create intermediate Viser frames to build the hierarchy
+        Create intermediate scene nodes to build the hierarchical structure
         """
         frame_path = self.viewerRootNodeName
 
@@ -205,7 +205,6 @@ class Viewer(BaseVisualizer):
             self.collision_model is not None and self.visual_model is None
         )
 
-        # Load frames - créer un groupe "frames" dans l'arborescence
         self.framesRootNodeName = rootNodeName + "/frames"
         self.framesRootFrame = self.viewer.scene.add_frame(
             self.framesRootNodeName, show_axes=False
@@ -219,7 +218,6 @@ class Viewer(BaseVisualizer):
                 axes_length=frame_axis_length,
                 axes_radius=frame_axis_radius,
             )
-        # Frames visibles par défaut
         self.display_frames_flag = True
 
     def loadViewerGeometryObject(self, geometry_object, geometry_type, color=None):
