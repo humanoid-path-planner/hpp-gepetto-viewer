@@ -423,40 +423,41 @@ class Viewer(BaseVisualizer):
         if q is not None:
             pin.forwardKinematics(self.model, self.data, q)
 
-        if self.display_visuals and self.visual_model is not None:
-            pin.updateGeometryPlacements(
-                self.model, self.data, self.visual_model, self.visual_data
-            )
-            for visual in self.visual_model.geometryObjects:
-                node_name = self.getGeometryObjectNodeName(
-                    visual, pin.GeometryType.VISUAL
+        with self.viewer.atomic():
+            if self.display_visuals and self.visual_model is not None:
+                pin.updateGeometryPlacements(
+                    self.model, self.data, self.visual_model, self.visual_data
                 )
-                if node_name in self.viser_frames:
-                    M = self.visual_data.oMg[
-                        self.visual_model.getGeometryId(visual.name)
-                    ]
-                    frame = self.viser_frames[node_name]
-                    frame.position = M.translation * visual.meshScale
-                    frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
+                for visual in self.visual_model.geometryObjects:
+                    node_name = self.getGeometryObjectNodeName(
+                        visual, pin.GeometryType.VISUAL
+                    )
+                    if node_name in self.viser_frames:
+                        M = self.visual_data.oMg[
+                            self.visual_model.getGeometryId(visual.name)
+                        ]
+                        frame = self.viser_frames[node_name]
+                        frame.position = M.translation * visual.meshScale
+                        frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
-        if self.display_collisions and self.collision_model is not None:
-            pin.updateGeometryPlacements(
-                self.model, self.data, self.collision_model, self.collision_data
-            )
-            for collision in self.collision_model.geometryObjects:
-                node_name = self.getGeometryObjectNodeName(
-                    collision, pin.GeometryType.COLLISION
+            if self.display_collisions and self.collision_model is not None:
+                pin.updateGeometryPlacements(
+                    self.model, self.data, self.collision_model, self.collision_data
                 )
-                if node_name in self.viser_frames:
-                    M = self.collision_data.oMg[
-                        self.collision_model.getGeometryId(collision.name)
-                    ]
-                    frame = self.viser_frames[node_name]
-                    frame.position = M.translation * collision.meshScale
-                    frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
+                for collision in self.collision_model.geometryObjects:
+                    node_name = self.getGeometryObjectNodeName(
+                        collision, pin.GeometryType.COLLISION
+                    )
+                    if node_name in self.viser_frames:
+                        M = self.collision_data.oMg[
+                            self.collision_model.getGeometryId(collision.name)
+                        ]
+                        frame = self.viser_frames[node_name]
+                        frame.position = M.translation * collision.meshScale
+                        frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
-        if self.display_frames_flag:
-            self.updateFrames()
+            if self.display_frames_flag:
+                self.updateFrames()
 
     def updateFrames(self):
         """Update the position and orientation of all frames."""
@@ -561,6 +562,14 @@ class Viewer(BaseVisualizer):
                 step=0.1,
                 initial_value=1.0
             )
+            
+            self.fps_slider = self.viewer.gui.add_slider(
+                "Target FPS",
+                min=10,
+                max=120,
+                step=5,
+                initial_value=60
+            )
         
         @self.path_slider.on_update
         def _on_slider_update(_):
@@ -595,14 +604,17 @@ class Viewer(BaseVisualizer):
             slider_update_counter = 0
             
             while self.path_playing and path_time < path_length:
-                current_wall_time = time.perf_counter()
-                wall_dt = current_wall_time - last_wall_time
-                last_wall_time = current_wall_time
+                frame_start = time.perf_counter()
+                target_frame_time = 1.0 / self.fps_slider.value
+                
+                wall_dt = frame_start - last_wall_time
+                last_wall_time = frame_start
                 
                 path_time += wall_dt * self.speed_slider.value
                 path_time = min(path_time, path_length)
-                
+
                 q, success = self.path.eval(path_time)
+
                 if success:
                     self.display(q)
                 
@@ -613,7 +625,11 @@ class Viewer(BaseVisualizer):
                     self.path_update_lock = False
                     slider_update_counter = 0
                 
-                time.sleep(1.0 / 60.0)
+                # Adaptive sleep
+                elapsed = time.perf_counter() - frame_start
+                sleep_time = max(0, target_frame_time - elapsed)
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
             
             self.path_update_lock = True
             self.path_slider.value = 0.0 if path_time >= path_length else path_time
