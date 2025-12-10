@@ -245,6 +245,9 @@ class Viewer(BaseVisualizer):
                     warnings.warn(msg, category=UserWarning, stacklevel=2)
                     return
                 success = gui.addMesh(meshName, meshPath)
+                properties = self.client.gui.getPropertyNames(meshName)
+                if "RemoveLightSources" in properties:
+                    self.client.gui.removeLightSources(meshName)
             if not success:
                 return
         except Exception as e:
