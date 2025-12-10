@@ -246,22 +246,36 @@ class Viewer(BaseVisualizer):
         )
 
         geom = geometry_object.geometry
-        color_override = color or geometry_object.meshColor
+
+        if color is not None:
+            color_override = color
+            use_embedded_colors = False
+        elif geometry_object.overrideMaterial:
+            color_override = geometry_object.meshColor
+            use_embedded_colors = False
+        else:
+            color_override = None
+            use_embedded_colors = True
+
+        if use_embedded_colors:
+            primitive_color = (0.5, 0.5, 0.5, 1.0)
+        else:
+            primitive_color = color_override
 
         try:
             if isinstance(geom, hppfcl.Box):
                 frame = self.viewer.scene.add_box(
                     node_name,
                     dimensions=geom.halfSide * 2.0,
-                    color=color_override[:3],
-                    opacity=color_override[3],
+                    color=primitive_color[:3],
+                    opacity=primitive_color[3],
                 )
             elif isinstance(geom, hppfcl.Sphere):
                 frame = self.viewer.scene.add_icosphere(
                     node_name,
                     radius=geom.radius,
-                    color=color_override[:3],
-                    opacity=color_override[3],
+                    color=primitive_color[:3],
+                    opacity=primitive_color[3],
                 )
             elif isinstance(geom, hppfcl.Cylinder):
                 mesh = trimesh.creation.cylinder(
@@ -272,8 +286,8 @@ class Viewer(BaseVisualizer):
                     node_name,
                     mesh.vertices,
                     mesh.faces,
-                    color=color_override[:3],
-                    opacity=color_override[3],
+                    color=primitive_color[:3],
+                    opacity=primitive_color[3],
                 )
             elif isinstance(geom, hppfcl.Capsule):
                 mesh = trimesh.creation.capsule(
@@ -284,8 +298,8 @@ class Viewer(BaseVisualizer):
                     node_name,
                     mesh.vertices,
                     mesh.faces,
-                    color=color_override[:3],
-                    opacity=color_override[3],
+                    color=primitive_color[:3],
+                    opacity=primitive_color[3],
                 )
             elif isinstance(geom, hppfcl.Cone):
                 mesh = trimesh.creation.cone(
@@ -296,27 +310,33 @@ class Viewer(BaseVisualizer):
                     node_name,
                     mesh.vertices,
                     mesh.faces,
-                    color=color_override[:3],
-                    opacity=color_override[3],
+                    color=primitive_color[:3],
+                    opacity=primitive_color[3],
                 )
             elif isinstance(geom, MESH_TYPES):
                 frame = self._add_mesh_from_path(
-                    node_name, geometry_object.meshPath, color_override
+                    node_name, geometry_object.meshPath, color_override, use_embedded_colors
                 )
             elif isinstance(geom, hppfcl.Convex):
                 if len(geometry_object.meshPath) > 0:
                     frame = self._add_mesh_from_path(
-                        node_name, geometry_object.meshPath, color_override
+                        node_name, geometry_object.meshPath, color_override, use_embedded_colors
                     )
                 else:
-                    frame = self._add_mesh_from_convex(node_name, geom, color_override)
+                    frame = self._add_mesh_from_convex(node_name, geom, color_override or (0.5, 0.5, 0.5, 1.0))
             else:
                 msg = f"Unsupported geometry type for {geometry_object.name} ({type(geom)})"
                 warnings.warn(msg, category=UserWarning, stacklevel=2)
                 return
 
-            self.viser_frames[node_name] = frame
-            
+            # Handle both single frame and list of frames (for multi-geometry COLLADA)
+            if isinstance(frame, list):
+                for i, f in enumerate(frame):
+                    indexed_name = f"{node_name}_{i}"
+                    self.viser_frames[indexed_name] = f
+            else:
+                self.viser_frames[node_name] = frame
+
         except Exception as e:
             msg = (
                 "Error while loading geometry object: "
@@ -324,14 +344,9 @@ class Viewer(BaseVisualizer):
             )
             warnings.warn(msg, category=UserWarning, stacklevel=2)
 
-    def _add_mesh_from_path(self, name, mesh_path, color=None):
+    def _add_mesh_from_path(self, name, mesh_path, color, use_embedded_colors):
         """Load a mesh from a file."""
-        ext = os.path.splitext(mesh_path)[1].lower()
-        
-        if ext == ".dae":
-            return self._load_collada_mesh(name, mesh_path, color)
-        else:
-            return self._load_standard_mesh(name, mesh_path, color)
+        return self._load_standard_mesh(name, mesh_path, color, use_embedded_colors)
 
     def _load_collada_mesh(self, name, mesh_path, color):
         """Load a COLLADA mesh with color support."""
@@ -339,43 +354,45 @@ class Viewer(BaseVisualizer):
             mesh_collada = collada.Collada(mesh_path)
         except collada.DaeError:
             return self._load_standard_mesh(name, mesh_path, color)
-        
+
         if len(mesh_collada.effects) < len(mesh_collada.geometries):
             return self._load_standard_mesh(name, mesh_path, color)
-        
+
         frames = []
         for i, (geometry, effect) in enumerate(zip(mesh_collada.geometries, mesh_collada.effects)):
             frame = self._process_collada_geometry(name, i, geometry, effect, color, mesh_path)
             if frame:
                 frames.append(frame)
-        
-        return frames[0] if frames else None
+
+        # Return all frames as a list so they can all be tracked
+        return frames if frames else None
 
     def _process_collada_geometry(self, name, index, geometry, effect, fallback_color, mesh_path):
         """Process a single COLLADA geometry with its material."""
+        indexed_name = f"{name}_{index}"
+
         try:
             vertices, faces = self._extract_geometry_data(geometry)
         except (AttributeError, IndexError, KeyError):
             # Fallback if geometry data extraction fails
             mesh = trimesh.load_mesh(mesh_path)
-            return self.viewer.scene.add_mesh_trimesh(f"{name}_{index}", mesh)
-        
+            return self.viewer.scene.add_mesh_trimesh(indexed_name, mesh)
+
         mesh_color = getattr(effect, "diffuse", None)
-        
+
         if mesh_color is not None:
             return self.viewer.scene.add_mesh_simple(
-                f"{name}_{index}", vertices, faces,
+                indexed_name, vertices, faces,
                 color=mesh_color[:3], opacity=mesh_color[3]
             )
         elif fallback_color is not None:
             return self.viewer.scene.add_mesh_simple(
-                f"{name}_{index}", vertices, faces,
+                indexed_name, vertices, faces,
                 color=fallback_color[:3], opacity=fallback_color[3]
             )
         else:
-            # Let the exception propagate if mesh loading fails
             mesh = trimesh.load_mesh(mesh_path)
-            return self.viewer.scene.add_mesh_trimesh(f"{name}_{index}", mesh)
+            return self.viewer.scene.add_mesh_trimesh(indexed_name, mesh)
 
     def _extract_geometry_data(self, geometry):
         """Extract vertices and faces from a COLLADA geometry."""
@@ -389,19 +406,27 @@ class Viewer(BaseVisualizer):
 
         return vertices, faces
 
-    def _load_standard_mesh(self, name, mesh_path, color):
-        """Load a mesh using trimesh."""
+    def _load_standard_mesh(self, name, mesh_path, color, use_embedded_colors):
+        """Load a mesh using trimesh, preserving embedded colors when requested.
+        """
         mesh = trimesh.load_mesh(mesh_path)
-        if color is None:
+
+        # if we should use embedded colors and no explicit override, use trimesh mesh
+        if use_embedded_colors and color is None:
             return self.viewer.scene.add_mesh_trimesh(name, mesh)
-        else:
+
+        # If explicit color provided use it as override
+        if color is not None:
             return self.viewer.scene.add_mesh_simple(
                 name, mesh.vertices, mesh.faces,
                 color=color[:3], opacity=color[3]
             )
 
+        return self.viewer.scene.add_mesh_trimesh(name, mesh)
+
     def _add_mesh_from_convex(self, name, geom, color):
-        """Load a mesh from triangles stored inside a hppfcl.Convex."""
+        """Load a mesh from triangles stored inside a hppfcl.Convex.
+        """
         num_tris = geom.num_polygons
         call_triangles = geom.polygons
         call_vertices = geom.points
@@ -418,6 +443,21 @@ class Viewer(BaseVisualizer):
             color=color[:3], opacity=color[3],
         )
 
+    def _get_geometry_frames(self, node_name):
+        """Get all frames associated with a geometry object (handles indexed multi-geometry meshes)."""
+        if node_name in self.viser_frames:
+            return [self.viser_frames[node_name]]
+
+        frames = []
+        indexed_prefix = f"{node_name}_"
+        for key in self.viser_frames:
+            if key.startswith(indexed_prefix):
+                suffix = key[len(indexed_prefix):]
+                if suffix.isdigit():
+                    frames.append(self.viser_frames[key])
+
+        return frames
+
     def display(self, q=None):
         """Display the robot at configuration q."""
         if q is not None:
@@ -432,11 +472,12 @@ class Viewer(BaseVisualizer):
                     node_name = self.getGeometryObjectNodeName(
                         visual, pin.GeometryType.VISUAL
                     )
-                    if node_name in self.viser_frames:
-                        M = self.visual_data.oMg[
-                            self.visual_model.getGeometryId(visual.name)
-                        ]
-                        frame = self.viser_frames[node_name]
+
+                    M = self.visual_data.oMg[
+                        self.visual_model.getGeometryId(visual.name)
+                    ]
+
+                    for frame in self._get_geometry_frames(node_name):
                         frame.position = M.translation * visual.meshScale
                         frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
@@ -448,11 +489,12 @@ class Viewer(BaseVisualizer):
                     node_name = self.getGeometryObjectNodeName(
                         collision, pin.GeometryType.COLLISION
                     )
-                    if node_name in self.viser_frames:
-                        M = self.collision_data.oMg[
-                            self.collision_model.getGeometryId(collision.name)
-                        ]
-                        frame = self.viser_frames[node_name]
+
+                    M = self.collision_data.oMg[
+                        self.collision_model.getGeometryId(collision.name)
+                    ]
+
+                    for frame in self._get_geometry_frames(node_name):
                         frame.position = M.translation * collision.meshScale
                         frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
@@ -483,8 +525,8 @@ class Viewer(BaseVisualizer):
             node_name = self.getGeometryObjectNodeName(
                 collision, pin.GeometryType.COLLISION
             )
-            if node_name in self.viser_frames:
-                self.viser_frames[node_name].visible = visibility
+            for frame in self._get_geometry_frames(node_name):
+                frame.visible = visibility
 
     def displayVisuals(self, visibility):
         """Set whether to display visual objects or not."""
@@ -496,8 +538,8 @@ class Viewer(BaseVisualizer):
             node_name = self.getGeometryObjectNodeName(
                 visual, pin.GeometryType.VISUAL
             )
-            if node_name in self.viser_frames:
-                self.viser_frames[node_name].visible = visibility
+            for frame in self._get_geometry_frames(node_name):
+                frame.visible = visibility
 
     def displayFrames(self, visibility):
         """Set whether to display frames or not."""
