@@ -58,17 +58,17 @@ class Viewer(BaseVisualizer):
                 model = robot.model()
             else:
                 model = robot.model
-            
+
             if collision_model is None and hasattr(robot, 'collision_model'):
                 collision_model = robot.collision_model() if callable(robot.collision_model) else robot.collision_model
             if visual_model is None and hasattr(robot, 'visual_model'):
                 visual_model = robot.visual_model() if callable(robot.visual_model) else robot.visual_model
-            
+
             if collision_model is None and hasattr(robot, 'geomModel'):
                 collision_model = robot.geomModel() if callable(robot.geomModel) else robot.geomModel()
             if visual_model is None and hasattr(robot, 'visualModel'):
                 visual_model = robot.visualModel() if callable(robot.visualModel) else robot.visualModel()
-        
+
         super().__init__(
             model,
             collision_model,
@@ -104,18 +104,18 @@ class Viewer(BaseVisualizer):
             "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
         )
         names = geometry_object.name.split("/")
-        
+
         if len(names) == 1:
             names = [self.viewerRootNodeName.split("/")[-1], names[0]]
-        
+
         names = [*names, type_str]
         res = self.viewerRootNodeName
         for n in names:
             res += "/" + n
-        
+
         if create_groups:
             self._create_intermediate_frames(names)
-        
+
         return res
 
     def _create_intermediate_frames(self, names):
@@ -123,16 +123,16 @@ class Viewer(BaseVisualizer):
         Create intermediate Viser frames to build the hierarchy
         """
         frame_path = self.viewerRootNodeName
-        
+
         if frame_path not in self.viser_frames:
             self.viser_frames[frame_path] = self.viewer.scene.add_frame(
                 frame_path, show_axes=False
             )
-        
+
         for n in names[:-1]:
             parent_path = frame_path
             frame_path = frame_path + "/" + n
-            
+
             if frame_path not in self.viser_frames:
                 self.viser_frames[frame_path] = self.viewer.scene.add_frame(
                     frame_path, show_axes=False
@@ -210,7 +210,7 @@ class Viewer(BaseVisualizer):
         self.framesRootFrame = self.viewer.scene.add_frame(
             self.framesRootNodeName, show_axes=False
         )
-        
+
         for frame in self.model.frames:
             frame_name = self.framesRootNodeName + "/" + frame.name
             self.viser_frames[frame_name] = self.viewer.scene.add_frame(
@@ -227,7 +227,7 @@ class Viewer(BaseVisualizer):
         node_name = self.getGeometryObjectNodeName(
             geometry_object, geometry_type, create_groups=True
         )
-        
+
         geom = geometry_object.geometry
         color_override = color or geometry_object.meshColor
 
@@ -364,12 +364,12 @@ class Viewer(BaseVisualizer):
         """Extract vertices and faces from a COLLADA geometry."""
         vertices = geometry.primitives[0].sources["VERTEX"][0][4].data
         indices = geometry.primitives[0].indices
-        
+
         if indices.ndim == 3:
             faces = indices[:, :, 0]
         else:
             faces = indices.reshape(-1, 3)
-        
+
         return vertices, faces
 
     def _load_standard_mesh(self, name, mesh_path, color):
@@ -484,15 +484,15 @@ class Viewer(BaseVisualizer):
     def displayFrames(self, visibility):
         """Set whether to display frames or not."""
         self.display_frames_flag = visibility
-        
+
         if self.framesRootFrame is not None:
             self.framesRootFrame.visible = visibility
-        
+
         for frame in self.model.frames:
             frame_name = self.framesRootNodeName + "/" + frame.name
             if frame_name in self.viser_frames:
                 self.viser_frames[frame_name].visible = visibility
-        
+
         if visibility:
             self.updateFrames()
 
