@@ -114,7 +114,6 @@ class Viewer(BaseVisualizer):
             )
 
         for n in names[:-1]:
-            parent_path = frame_path
             frame_path = frame_path + "/" + n
 
             if frame_path not in self.viser_frames:
