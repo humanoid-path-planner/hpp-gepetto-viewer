@@ -31,13 +31,7 @@ class Viewer(BaseVisualizer):
 
     def __init__(
         self,
-        model=pin.Model(),
-        collision_model=None,
-        visual_model=None,
-        copy_models=False,
-        data=None,
-        collision_data=None,
-        visual_data=None,
+        robot
     ):
         if not import_viser_succeed:
             msg = (
@@ -48,48 +42,22 @@ class Viewer(BaseVisualizer):
             )
             raise ImportError(msg)
 
-        if hasattr(model, "model"):
-            robot = model
-
-            if callable(robot.model):
-                model = robot.model()
-            else:
-                model = robot.model
-
-            if collision_model is None and hasattr(robot, "collision_model"):
-                collision_model = (
-                    robot.collision_model()
-                    if callable(robot.collision_model)
-                    else robot.collision_model
-                )
-            if visual_model is None and hasattr(robot, "visual_model"):
-                visual_model = (
-                    robot.visual_model()
-                    if callable(robot.visual_model)
-                    else robot.visual_model
-                )
-
-            if collision_model is None and hasattr(robot, "geomModel"):
-                collision_model = (
-                    robot.geomModel()
-                    if callable(robot.geomModel)
-                    else robot.geomModel()
-                )
-            if visual_model is None and hasattr(robot, "visualModel"):
-                visual_model = (
-                    robot.visualModel()
-                    if callable(robot.visualModel)
-                    else robot.visualModel()
-                )
+        model = robot.model()
+        collision_model = None
+        if callable(robot.geomModel):
+            collision_model = robot.geomModel()
+        visual_model = None
+        if callable(robot.visualModel):
+            visual_model = robot.visualModel()
 
         super().__init__(
             model,
             collision_model,
             visual_model,
-            copy_models,
-            data,
-            collision_data,
-            visual_data,
+            copy_models = False,
+            data = None,
+            collision_data = None,
+            visual_data = None,
         )
         self.viser_frames = {}
         self.display_collisions = False
