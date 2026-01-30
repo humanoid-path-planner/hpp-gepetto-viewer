@@ -29,10 +29,7 @@ MESH_TYPES = (hppfcl.BVHModelBase, hppfcl.HeightFieldOBBRSS, hppfcl.HeightFieldA
 class Viewer(BaseVisualizer):
     """A Pinocchio visualizer using Viser with Gepetto-GUI style hierarchy."""
 
-    def __init__(
-        self,
-        robot
-    ):
+    def __init__(self, robot):
         if not import_viser_succeed:
             msg = (
                 "Error while importing the viewer client.\n"
@@ -54,10 +51,10 @@ class Viewer(BaseVisualizer):
             model,
             collision_model,
             visual_model,
-            copy_models = False,
-            data = None,
-            collision_data = None,
-            visual_data = None,
+            copy_models=False,
+            data=None,
+            collision_data=None,
+            visual_data=None,
         )
         self.viser_frames = {}
         self.display_collisions = False
