@@ -1,3 +1,4 @@
+import queue
 import time
 import warnings
 from dataclasses import dataclass, field
@@ -55,7 +56,7 @@ class _SelectionState:
 class Viewer(BaseVisualizer):
     """A Pinocchio visualizer using Viser with Gepetto-GUI style hierarchy."""
 
-    def __init__(self, robot):
+    def __init__(self, robot, problem=None):
         if not import_viser_succeed:
             msg = (
                 "Error while importing the viewer client.\n"
@@ -91,6 +92,15 @@ class Viewer(BaseVisualizer):
         self.framesRootNodeName = None
         self.framesRootFrame = None
         self._viewer_initialized = False
+
+        self.problem = problem
+        self.graph = None
+        if problem is not None:
+            try:
+                self.graph = problem.constraintGraph()
+            except AttributeError:
+                pass
+        self._config_queue = None  # Initialized when viewer starts
 
     def __call__(self, q):
         """Allow calling viewer as v(q) for compatibility with Gepetto-GUI."""
@@ -244,6 +254,10 @@ class Viewer(BaseVisualizer):
 
         self._create_selection_panel()
         self._create_path_player()
+        self._create_graph_viewer_controls()
+
+        # Start config queue processing for graph viewer integration
+        self._start_config_queue_processor()
 
     def _create_selection_panel(self):
         """Create GUI panel for displaying selected object info."""
@@ -833,6 +847,91 @@ class Viewer(BaseVisualizer):
 
         self._path_player.thread = threading.Thread(target=animate, daemon=True)
         self._path_player.thread.start()
+
+    def _create_graph_viewer_controls(self):
+        """Create GUI controls for constraint graph viewer integration."""
+        graph_folder = self.viewer.gui.add_folder("Constraint Graph")
+
+        with graph_folder:
+            self._graph_button = self.viewer.gui.add_button("Show Graph Viewer")
+
+        @self._graph_button.on_click
+        def _on_show_graph_click(_):
+            self._launch_graph_viewer()
+
+    def setProblem(self, problem):
+        """Set Problem for graph viewer integration.
+
+        Args:
+            problem: PyWProblem from pyhpp.manipulation
+        """
+        self.problem = problem
+
+    def setGraph(self, graph):
+        """Set constraint graph for graph viewer integration.
+
+        Args:
+            graph: PyWGraph from pyhpp.manipulation
+        """
+        self.graph = graph
+
+    def _launch_graph_viewer(self):
+        """Launch hpp-plot graph viewer in separate thread."""
+        if self.graph is None:
+            print("No constraint graph set. Use viewer.setGraph(graph)")
+            return
+        if self.problem is None:
+            print("No problem set. Use viewer.setProblem(problem)")
+            return
+
+        try:
+            from pyhpp_plot import GraphViewerThread
+
+            thread = GraphViewerThread(
+                self.graph,
+                self.problem,
+                self._on_config_generated
+            )
+            thread.start()
+            print("Graph viewer launched in background thread")
+        except ImportError as e:
+            print(f"Error: Could not import pyhpp_plot: {e}")
+            print("Make sure hpp-plot is built and installed with Python bindings")
+        except Exception as e:
+            print(f"Error launching graph viewer: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _on_config_generated(self, config, label):
+        """Called from graph viewer thread when config is generated.
+
+        Args:
+            config: Generated configuration (numpy array)
+            label: Description of the configuration
+        """
+        if self._config_queue is not None:
+            self._config_queue.put((config, label))
+
+    def _start_config_queue_processor(self):
+        """Start periodic processing of config queue from graph viewer thread."""
+        self._config_queue = queue.Queue()
+
+        def process_queue():
+            while True:
+                try:
+                    config, label = self._config_queue.get(timeout=0.1)
+                    self.display(config)
+                    print(f"Displayed config: {label}")
+                except queue.Empty:
+                    pass
+                except Exception as e:
+                    print(f"Error processing config from queue: {e}")
+                time.sleep(0.1)
+
+        processor_thread = threading.Thread(
+            target=process_queue, daemon=True, name="ConfigQueueProcessor"
+        )
+        processor_thread.start()
 
     def setBackgroundColor(self):
         raise NotImplementedError()
