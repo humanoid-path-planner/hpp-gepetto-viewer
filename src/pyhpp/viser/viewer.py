@@ -888,9 +888,7 @@ class Viewer(BaseVisualizer):
             from pyhpp_plot import GraphViewerThread
 
             thread = GraphViewerThread(
-                self.graph,
-                self.problem,
-                self._on_config_generated
+                self.graph, self.problem, self._on_config_generated
             )
             thread.start()
             print("Graph viewer launched in background thread")
@@ -900,6 +898,7 @@ class Viewer(BaseVisualizer):
         except Exception as e:
             print(f"Error launching graph viewer: {e}")
             import traceback
+
             traceback.print_exc()
 
     def _on_config_generated(self, config, label):
