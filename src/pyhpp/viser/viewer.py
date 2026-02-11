@@ -1,4 +1,3 @@
-import queue
 import time
 import warnings
 from dataclasses import dataclass, field
@@ -255,7 +254,6 @@ class Viewer(BaseVisualizer):
         self._create_selection_panel()
         self._create_path_player()
         self._create_graph_viewer_controls()
-
 
     def _create_selection_panel(self):
         """Create GUI panel for displaying selected object info."""
