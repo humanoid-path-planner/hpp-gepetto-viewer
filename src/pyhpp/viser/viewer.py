@@ -100,7 +100,7 @@ class Viewer(BaseVisualizer):
                 self.graph = problem.constraintGraph()
             except AttributeError:
                 pass
-        self._config_queue = None  # Initialized when viewer starts
+        self._config_queue = None
 
     def __call__(self, q):
         """Allow calling viewer as v(q) for compatibility with Gepetto-GUI."""
@@ -256,8 +256,6 @@ class Viewer(BaseVisualizer):
         self._create_path_player()
         self._create_graph_viewer_controls()
 
-        # Start config queue processing for graph viewer integration
-        self._start_config_queue_processor()
 
     def _create_selection_panel(self):
         """Create GUI panel for displaying selected object info."""
@@ -902,35 +900,9 @@ class Viewer(BaseVisualizer):
             traceback.print_exc()
 
     def _on_config_generated(self, config, label):
-        """Called from graph viewer thread when config is generated.
-
-        Args:
-            config: Generated configuration (numpy array)
-            label: Description of the configuration
-        """
-        if self._config_queue is not None:
-            self._config_queue.put((config, label))
-
-    def _start_config_queue_processor(self):
-        """Start periodic processing of config queue from graph viewer thread."""
-        self._config_queue = queue.Queue()
-
-        def process_queue():
-            while True:
-                try:
-                    config, label = self._config_queue.get(timeout=0.1)
-                    self.display(config)
-                    print(f"Displayed config: {label}")
-                except queue.Empty:
-                    pass
-                except Exception as e:
-                    print(f"Error processing config from queue: {e}")
-                time.sleep(0.1)
-
-        processor_thread = threading.Thread(
-            target=process_queue, daemon=True, name="ConfigQueueProcessor"
-        )
-        processor_thread.start()
+        """Called from graph viewer thread when config is generated."""
+        self.display(config)
+        print(f"Displayed config: {label}")
 
     def setBackgroundColor(self):
         raise NotImplementedError()
