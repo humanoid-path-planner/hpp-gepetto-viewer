@@ -609,9 +609,13 @@ class Viewer(BaseVisualizer):
             )
             warnings.warn(msg, category=UserWarning, stacklevel=2)
 
-    def _add_mesh_from_path(self, name, mesh_path, color, use_embedded_colors, scale=None):
+    def _add_mesh_from_path(
+        self, name, mesh_path, color, use_embedded_colors, scale=None
+    ):
         """Load a mesh from a file."""
-        return self._load_standard_mesh(name, mesh_path, color, use_embedded_colors, scale=scale)
+        return self._load_standard_mesh(
+            name, mesh_path, color, use_embedded_colors, scale=scale
+        )
 
     def _load_collada_mesh(self, name, mesh_path, color):
         """Load a COLLADA mesh with color support."""
@@ -683,7 +687,9 @@ class Viewer(BaseVisualizer):
 
         return vertices, faces
 
-    def _load_standard_mesh(self, name, mesh_path, color, use_embedded_colors, scale=None):
+    def _load_standard_mesh(
+        self, name, mesh_path, color, use_embedded_colors, scale=None
+    ):
         """Load a mesh using trimesh, preserving embedded colors when requested."""
         mesh = trimesh.load_mesh(mesh_path)
         apply_scale = scale is not None and not np.allclose(scale, 1.0)
