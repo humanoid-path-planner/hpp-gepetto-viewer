@@ -563,6 +563,7 @@ class Viewer(BaseVisualizer):
                     geometry_object.meshPath,
                     color_override,
                     use_embedded_colors,
+                    scale=geometry_object.meshScale,
                 )
             elif isinstance(geom, hppfcl.Convex):
                 if len(geometry_object.meshPath) > 0:
@@ -571,6 +572,7 @@ class Viewer(BaseVisualizer):
                         geometry_object.meshPath,
                         color_override,
                         use_embedded_colors,
+                        scale=geometry_object.meshScale,
                     )
                 else:
                     frame = self._add_mesh_from_convex(
@@ -607,9 +609,9 @@ class Viewer(BaseVisualizer):
             )
             warnings.warn(msg, category=UserWarning, stacklevel=2)
 
-    def _add_mesh_from_path(self, name, mesh_path, color, use_embedded_colors):
+    def _add_mesh_from_path(self, name, mesh_path, color, use_embedded_colors, scale=None):
         """Load a mesh from a file."""
-        return self._load_standard_mesh(name, mesh_path, color, use_embedded_colors)
+        return self._load_standard_mesh(name, mesh_path, color, use_embedded_colors, scale=scale)
 
     def _load_collada_mesh(self, name, mesh_path, color):
         """Load a COLLADA mesh with color support."""
@@ -681,9 +683,13 @@ class Viewer(BaseVisualizer):
 
         return vertices, faces
 
-    def _load_standard_mesh(self, name, mesh_path, color, use_embedded_colors):
+    def _load_standard_mesh(self, name, mesh_path, color, use_embedded_colors, scale=None):
         """Load a mesh using trimesh, preserving embedded colors when requested."""
         mesh = trimesh.load_mesh(mesh_path)
+        apply_scale = scale is not None and not np.allclose(scale, 1.0)
+
+        if apply_scale:
+            mesh.apply_scale(scale)
 
         # if we should use embedded colors and no explicit override, use trimesh mesh
         if use_embedded_colors and color is None:
@@ -753,7 +759,7 @@ class Viewer(BaseVisualizer):
                     ]
 
                     for frame in self._get_geometry_frames(node_name):
-                        frame.position = M.translation * visual.meshScale
+                        frame.position = M.translation
                         frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
             if self._display.collisions and self.collision_model is not None:
@@ -770,7 +776,7 @@ class Viewer(BaseVisualizer):
                     ]
 
                     for frame in self._get_geometry_frames(node_name):
-                        frame.position = M.translation * collision.meshScale
+                        frame.position = M.translation
                         frame.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
 
             self.updateFrames()
