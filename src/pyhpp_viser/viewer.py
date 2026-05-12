@@ -293,6 +293,28 @@ class Viewer(BaseVisualizer):
             open=open, loadModel=True, host=host, port=port, new_server=new_server
         )
 
+    @staticmethod
+    def _reset_gui(gui):
+        """Reset viser GUI controls, including tab groups."""
+        root_container = getattr(gui, "_container_handle_from_uuid", {}).get("root")
+        if root_container is None or not hasattr(root_container, "_children"):
+            gui.reset()
+            return
+
+        while root_container._children:
+            handle = next(iter(root_container._children.values()))
+            tab_handles = getattr(handle, "_tab_handles", None)
+            if tab_handles is not None:
+                # Viser marks tab groups removed before removing their tabs.
+                for tab in tuple(tab_handles):
+                    tab.remove()
+            handle.remove()
+
+        while getattr(gui, "_modal_handle_from_uuid", {}):
+            next(iter(gui._modal_handle_from_uuid.values())).close()
+        while getattr(gui, "_command_handle_from_uuid", {}):
+            next(iter(gui._command_handle_from_uuid.values())).remove()
+
     def initViewer(
         self,
         viewer=None,
@@ -330,7 +352,7 @@ class Viewer(BaseVisualizer):
             self.viewer = Viewer._shared_server
             # Clear previous scene and GUI so the new model loads cleanly
             self.viewer.scene.reset()
-            self.viewer.gui.reset()
+            self._reset_gui(self.viewer.gui)
         else:
             self.viewer = viser.ViserServer(host=host, server_port=port)
             Viewer._shared_server = self.viewer
