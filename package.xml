@@ -1,31 +1,28 @@
-<package format="3">
+<?xml version='1.0'?>
+<package format='3'>
   <name>hpp_gepetto_viewer</name>
   <version>8.0.0</version>
-  <description>Display of hpp robots and obstacles in gepetto-viewer </description>
-
-  <maintainer email="guilhem.saurel@laas.fr">Guilhem Saurel</maintainer>
-
+  <description>Display of hpp robots and obstacles in gepetto-viewer</description>
   <author>Joseph Mirabel</author>
-  <author>Florent Lamiraux et al.</author>
-  <license>BSD-2</license>
+  <author>Florent Lamiraux</author>
+  <maintainer email='guilhem.saurel@laas.fr'>Guilhem Saurel</maintainer>
+  <license>BSD-2-Clause</license>
 
   <url type="website">https://github.com/humanoid-path-planner/hpp-gepetto-viewer</url>
   <url type="repository">https://github.com/humanoid-path-planner/hpp-gepetto-viewer</url>
   <url type="bugtracker">https://github.com/humanoid-path-planner/hpp-gepetto-viewer/issues</url>
 
-  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
-  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
-  <buildtool_depend>cmake</buildtool_depend>
+  <exec_depend>hpp_python</exec_depend>
 
-  <build_depend>doxygen</build_depend>
-
-
-  <exec_depend>hpp-corbaserver</exec_depend>
-  <exec_depend>gepetto-viewer</exec_depend>
+  <!-- <exec_depend>hpp_corbaserver</exec_depend> -->
+  <!-- <exec_depend>gepetto-viewer</exec_depend> -->
 
   <depend condition="$ROS_PYTHON_VERSION == 2">python</depend>
   <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
 
+  <buildtool_depend>cmake</buildtool_depend>
+  <build_depend>doxygen</build_depend>
+  <build_depend>jrl_cmakemodules</build_depend>
 
   <export>
     <build_type>cmake</build_type>
