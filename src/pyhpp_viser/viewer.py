@@ -41,6 +41,15 @@ _FRAME_TYPE_GROUPS = {
     pin.FrameType.SENSOR: "sensors",
 }
 
+_LANDMARK_COLORS = np.array(
+    [
+        [[255, 0, 0], [255, 0, 0]],
+        [[0, 255, 0], [0, 255, 0]],
+        [[0, 0, 255], [0, 0, 255]],
+    ],
+    dtype=np.uint8,
+)
+
 
 @dataclass
 class _PathPlayerState:
@@ -76,6 +85,21 @@ class _SelectionState:
     geom_name: str | None = None
     geom_type: str | None = None
     frame_id: int | None = None
+
+
+@dataclass
+class _LandmarkState:
+    target_name: str
+    handle: object
+    anchor: object = None
+    geometry_type: object = None
+    geom_id: int | None = None
+    geometry_object: object = None
+    frame_id: int | None = None
+    is_static: bool = False
+    initialized: bool = False
+    last_position: object = None
+    last_rotation: object = None
 
 
 @dataclass
@@ -135,6 +159,19 @@ class _ProfilerState:
     entries: dict = field(default_factory=dict)
 
 
+def _landmark_segments(size):
+    """Return Gepetto-GUI landmark segments: x=red, y=green, z=blue."""
+    length = float(size)
+    return np.array(
+        [
+            [[0.0, 0.0, 0.0], [length, 0.0, 0.0]],
+            [[0.0, 0.0, 0.0], [0.0, length, 0.0]],
+            [[0.0, 0.0, 0.0], [0.0, 0.0, length]],
+        ],
+        dtype=np.float32,
+    )
+
+
 class Viewer(BaseVisualizer):
     """A Pinocchio visualizer using Viser with Gepetto-GUI style hierarchy."""
 
@@ -185,6 +222,8 @@ class Viewer(BaseVisualizer):
         self._visual_display_handles = []
         self._collision_geometry_frames = []
         self._profiler = _ProfilerState()
+        self._landmarks = {}
+        self._path_trajectories = {}
         self._viewer_initialized = False
         self.start_qt_viewer = False
         self._react_graph_viewer_port = 6789
@@ -206,6 +245,7 @@ class Viewer(BaseVisualizer):
         self._contact_surfaces_root = None
         self._graph_thread = None
         self._last_config = None
+        self._displayed_config = None
 
     def __call__(self, q):
         """Allow calling viewer as v(q) for compatibility with Gepetto-GUI."""
@@ -276,7 +316,7 @@ class Viewer(BaseVisualizer):
         """Return whether a geometry is attached to the universe joint."""
         return getattr(geometry_object, "parentJoint", None) == 0
 
-    def start(self, host="localhost", port="8000", open=True, new_server=False):
+    def start(self, host="localhost", port=8000, open=True, new_server=False):
         """Start the viewer, load the robot model, and open the browser.
 
         This is the recommended way to initialize the viewer:
@@ -321,7 +361,7 @@ class Viewer(BaseVisualizer):
         open=False,
         loadModel=False,
         host="localhost",
-        port="8000",
+        port=8000,
         new_server=False,
     ):
         """
@@ -347,14 +387,14 @@ class Viewer(BaseVisualizer):
         if viewer is not None:
             self.viewer = viewer
         elif new_server:
-            self.viewer = viser.ViserServer(host=host, server_port=port)
+            self.viewer = viser.ViserServer(host=host, port=int(port))
         elif Viewer._shared_server is not None:
             self.viewer = Viewer._shared_server
             # Clear previous scene and GUI so the new model loads cleanly
             self.viewer.scene.reset()
             self._reset_gui(self.viewer.gui)
         else:
-            self.viewer = viser.ViserServer(host=host, server_port=port)
+            self.viewer = viser.ViserServer(host=host, port=int(port))
             Viewer._shared_server = self.viewer
 
         if open:
@@ -386,6 +426,8 @@ class Viewer(BaseVisualizer):
         self._contact_surface_frames = {}
         self._contact_surface_joints = {}
         self._contact_surfaces_root = None
+        self._landmarks = {}
+        self.clearTrajectories()
         self._display.frames = False
         self._display.contact_surfaces = False
         self._frame_batches = {}
@@ -488,6 +530,13 @@ class Viewer(BaseVisualizer):
             self._create_path_player()
             self._create_graph_viewer_controls()
 
+        with tab_group.add_tab("Trajectory"):
+            self._create_trajectory_controls()
+
+        self._landmarks_tab = tab_group.add_tab("Landmarks")
+        with self._landmarks_tab:
+            self._create_landmark_controls()
+
         with tab_group.add_tab("Display"):
             self._create_visibility_toggles()
 
@@ -503,6 +552,38 @@ class Viewer(BaseVisualizer):
         @self._focus_button.on_click
         def _on_focus_click(_):
             self._focus_selected()
+
+    def _create_landmark_controls(self):
+        """Create GUI controls for selected-object landmarks."""
+        selection_folder = self.viewer.gui.add_folder("Selected Object")
+
+        with selection_folder:
+            self._landmark_selection_name_text = self.viewer.gui.add_markdown("*None*")
+            self._landmark_selection_type_text = self.viewer.gui.add_markdown("")
+            self._selection_landmark_text = self.viewer.gui.add_markdown("")
+            self._landmark_size_slider = self.viewer.gui.add_slider(
+                "Landmark Size",
+                min=0.005,
+                max=0.5,
+                step=0.005,
+                initial_value=0.05,
+            )
+            self._add_landmark_button = self.viewer.gui.add_button("Add Landmark")
+            self._delete_landmark_button = self.viewer.gui.add_button(
+                "Delete Landmark"
+            )
+
+        @self._add_landmark_button.on_click
+        def _on_add_landmark_click(_):
+            if self._selection.node_name is not None:
+                self.addLandmark(
+                    self._selection.node_name, self._landmark_size_slider.value
+                )
+
+        @self._delete_landmark_button.on_click
+        def _on_delete_landmark_click(_):
+            if self._selection.node_name is not None:
+                self.deleteLandmark(self._selection.node_name)
 
     def _create_path_player(self):
         """Create the path player GUI controls (always visible)."""
@@ -569,6 +650,125 @@ class Viewer(BaseVisualizer):
         def _on_stop_click(_):
             self._path_player.playing = False
 
+    def _create_trajectory_controls(self):
+        """Create GUI controls for plotting frame trajectories."""
+        frame_options = self._trajectory_frame_options("")
+        self._trajectory_frame_option_ids = {
+            option: frame_id for option, frame_id in frame_options
+        }
+        initial_frame = frame_options[0][0] if frame_options else "None"
+
+        with self.viewer.gui.add_folder("Frame"):
+            self.trajectory_frame_filter = self.viewer.gui.add_text(
+                "Search", initial_value="", hint="Filter frames by name"
+            )
+            self.trajectory_frame_dropdown = self.viewer.gui.add_dropdown(
+                "Frame",
+                options=[option for option, _ in frame_options] or ["None"],
+                initial_value=initial_frame,
+            )
+
+        with self.viewer.gui.add_folder("Draw"):
+            self.trajectory_samples_slider = self.viewer.gui.add_slider(
+                "Samples",
+                min=2,
+                max=1000,
+                step=1,
+                initial_value=200,
+            )
+            self.trajectory_line_width_slider = self.viewer.gui.add_slider(
+                "Line Width",
+                min=1,
+                max=10,
+                step=0.5,
+                initial_value=3,
+            )
+            self.plot_frame_trajectory_button = self.viewer.gui.add_button(
+                "Plot Frame"
+            )
+            self.plot_selected_trajectory_button = self.viewer.gui.add_button(
+                "Plot Selected"
+            )
+            self.clear_trajectories_button = self.viewer.gui.add_button(
+                "Clear Trajectories"
+            )
+            self._trajectory_status_text = self.viewer.gui.add_markdown("")
+
+        @self.trajectory_frame_filter.on_update
+        def _on_frame_filter_update(_):
+            self._refresh_trajectory_frame_dropdown()
+
+        @self.plot_frame_trajectory_button.on_click
+        def _on_plot_frame_trajectory_click(_):
+            frame_id = self._trajectory_selected_frame_id()
+            if frame_id is None:
+                self._set_trajectory_status("Trajectory: select a frame")
+                return
+            self._path_player.playing = False
+            self.plotFrameTrajectory(
+                frame_id,
+                samples=int(self.trajectory_samples_slider.value),
+                line_width=float(self.trajectory_line_width_slider.value),
+            )
+
+        @self.plot_selected_trajectory_button.on_click
+        def _on_plot_selected_trajectory_click(_):
+            self._path_player.playing = False
+            self.plotSelectedTrajectory(
+                samples=int(self.trajectory_samples_slider.value),
+                line_width=float(self.trajectory_line_width_slider.value),
+            )
+
+        @self.clear_trajectories_button.on_click
+        def _on_clear_trajectories_click(_):
+            self.clearTrajectories()
+
+    def _trajectory_frame_options(self, pattern):
+        pattern = pattern.strip().lower()
+        options = []
+        for frame_id, frame in enumerate(self.model.frames):
+            group = _FRAME_TYPE_GROUPS.get(frame.type, "other")
+            option = f"{frame_id}: {frame.name} ({group})"
+            if pattern and pattern not in option.lower():
+                continue
+            options.append((option, frame_id))
+        return options
+
+    def _trajectory_selected_frame_id(self):
+        if not hasattr(self, "trajectory_frame_dropdown"):
+            return self._selection.frame_id
+        option = self.trajectory_frame_dropdown.value
+        return self._trajectory_frame_option_ids.get(option)
+
+    def _refresh_trajectory_frame_dropdown(self):
+        selected_frame_id = self._trajectory_selected_frame_id()
+        frame_options = self._trajectory_frame_options(
+            self.trajectory_frame_filter.value
+        )
+        if not frame_options:
+            self._trajectory_frame_option_ids = {"None": None}
+            self.trajectory_frame_dropdown.options = ["None"]
+            self.trajectory_frame_dropdown.value = "None"
+            return
+
+        self._trajectory_frame_option_ids = {
+            option: frame_id for option, frame_id in frame_options
+        }
+        self.trajectory_frame_dropdown.options = [option for option, _ in frame_options]
+        for option, frame_id in frame_options:
+            if frame_id == selected_frame_id:
+                self.trajectory_frame_dropdown.value = option
+                return
+        self.trajectory_frame_dropdown.value = frame_options[0][0]
+
+    def _set_trajectory_frame_selection(self, frame_id):
+        if not hasattr(self, "trajectory_frame_dropdown"):
+            return
+        for option, option_frame_id in self._trajectory_frame_option_ids.items():
+            if option_frame_id == frame_id:
+                self.trajectory_frame_dropdown.value = option
+                return
+
     def _register_click_callback(self, handle, node_name):
         """Register a click callback on a mesh handle for selection."""
 
@@ -612,6 +812,7 @@ class Viewer(BaseVisualizer):
         self._selection.geom_type = "frame"
         self._selection.frame_id = frame_id
         self._update_selection_panel()
+        self._set_trajectory_frame_selection(frame_id)
 
     def _select_node(self, node_name):
         """Select or deselect a scene node."""
@@ -644,12 +845,258 @@ class Viewer(BaseVisualizer):
     def _update_selection_panel(self):
         """Update the selection info panel GUI."""
         if self._selection.geom_name is not None:
-            self._selection_name_text.content = f"**{self._selection.geom_name}**"
+            selected_name = f"**{self._selection.geom_name}**"
             geom_type = self._selection.geom_type
-            self._selection_type_text.content = f"Type: {geom_type}"
+            selected_type = f"Type: {geom_type}"
         else:
-            self._selection_name_text.content = "*None*"
-            self._selection_type_text.content = ""
+            selected_name = "*None*"
+            selected_type = ""
+
+        if hasattr(self, "_selection_name_text"):
+            self._selection_name_text.content = selected_name
+            self._selection_type_text.content = selected_type
+
+        if not hasattr(self, "_landmark_selection_name_text"):
+            return
+
+        self._landmark_selection_name_text.content = selected_name
+        self._landmark_selection_type_text.content = selected_type
+        if self._selection.node_name is None:
+            self._selection_landmark_text.content = ""
+        elif self.hasLandmark(self._selection.node_name):
+            self._selection_landmark_text.content = "Landmark: present"
+        else:
+            self._selection_landmark_text.content = "Landmark: none"
+
+    def _resolve_landmark_target(self, linkname):
+        if linkname is None:
+            return None
+
+        name = str(linkname).strip("/")
+        candidates = [str(linkname), name]
+        if self.viewerRootNodeName is not None and not name.startswith(
+            self.viewerRootNodeName + "/"
+        ):
+            candidates.append(f"{self.viewerRootNodeName}/{name}")
+
+        for candidate in candidates:
+            if (
+                candidate in self.viser_frames
+                or candidate in self._node_to_geom_info
+                or self._landmark_frame_id(candidate) is not None
+            ):
+                return candidate
+        return None
+
+    def _landmark_frame_id(self, node_name):
+        if self.framesRootNodeName is None:
+            return None
+        if not node_name.startswith(self.framesRootNodeName + "/"):
+            return None
+        leaf = node_name.rsplit("/", 1)[-1]
+        if ":" not in leaf:
+            return None
+        frame_id_text = leaf.split(":", 1)[0]
+        if not frame_id_text.isdigit():
+            return None
+        frame_id = int(frame_id_text)
+        return frame_id if frame_id < len(self.model.frames) else None
+
+    def _landmark_geometry_state(self, target_name):
+        geom_info = self._node_to_geom_info.get(target_name)
+        if geom_info is None:
+            return None
+
+        geometry_type = geom_info.get("geometry_type")
+        geom_name = geom_info.get("name")
+        geom_model = (
+            self.collision_model
+            if geometry_type == pin.GeometryType.COLLISION
+            else self.visual_model
+        )
+        if geom_model is None or geom_name is None:
+            return None
+
+        geom_id = geom_model.getGeometryId(geom_name)
+        geometry_object = geom_model.geometryObjects[geom_id]
+        return {
+            "geometry_type": geometry_type,
+            "geom_id": geom_id,
+            "geometry_object": geometry_object,
+            "is_static": self._is_geometry_static(geometry_object),
+        }
+
+    def addLandmark(self, linkname, size=0.05):
+        """Add a Gepetto-style landmark on a scene node."""
+        if not self._viewer_initialized:
+            if hasattr(self, "viewer") and self.viewer is not None:
+                self.loadViewerModel()
+            else:
+                self.initViewer(loadModel=True)
+
+        target_name = self._resolve_landmark_target(linkname)
+        if target_name is None:
+            return False
+
+        self.deleteLandmark(target_name)
+
+        frame_id = self._landmark_frame_id(target_name)
+        geometry_state = self._landmark_geometry_state(target_name)
+        needs_anchor = target_name not in self.viser_frames
+        visible = self._landmark_initial_visibility(frame_id, geometry_state)
+
+        anchor = None
+        if needs_anchor:
+            anchor = self.viewer.scene.add_frame(
+                target_name,
+                show_axes=False,
+                visible=visible,
+            )
+            self.viser_frames[target_name] = anchor
+
+        landmark_name = target_name + "/landmark"
+        handle = self.viewer.scene.add_line_segments(
+            landmark_name,
+            points=_landmark_segments(size),
+            colors=_LANDMARK_COLORS,
+            line_width=2.0,
+            visible=visible,
+        )
+        self.viser_frames[landmark_name] = handle
+
+        state = _LandmarkState(
+            target_name=target_name,
+            handle=handle,
+            anchor=anchor,
+            frame_id=frame_id,
+            **(geometry_state or {}),
+        )
+        self._landmarks[target_name] = state
+        self._update_landmarks()
+        self._update_selection_panel()
+        return True
+
+    def _landmark_initial_visibility(self, frame_id, geometry_state):
+        if frame_id is not None:
+            return self._display.frames
+        if geometry_state is None:
+            return True
+        if geometry_state["geometry_type"] == pin.GeometryType.VISUAL:
+            return self._display.visuals
+        if geometry_state["geometry_type"] == pin.GeometryType.COLLISION:
+            return self._display.collisions
+        return True
+
+    def deleteLandmark(self, linkname):
+        target_name = self._resolve_landmark_target(linkname)
+        if target_name is None:
+            target_name = str(linkname)
+            target_exists = False
+        else:
+            target_exists = True
+
+        state = self._landmarks.pop(target_name, None)
+        if state is None:
+            self._update_selection_panel()
+            return target_exists
+
+        landmark_name = state.target_name + "/landmark"
+        self.viser_frames.pop(landmark_name, None)
+        state.handle.remove()
+        if state.anchor is not None:
+            self.viser_frames.pop(state.target_name, None)
+            state.anchor.remove()
+        self._update_selection_panel()
+        return True
+
+    def removeLandmark(self, linkname):
+        return self.deleteLandmark(linkname)
+
+    def hasLandmark(self, linkname):
+        target_name = self._resolve_landmark_target(linkname) or str(linkname)
+        return target_name in self._landmarks
+
+    def _set_landmarks_visibility(self, visibility, geometry_type=None, frames=False):
+        for state in self._landmarks.values():
+            if frames:
+                if state.frame_id is None:
+                    continue
+            elif state.geometry_type != geometry_type:
+                continue
+            if state.anchor is not None:
+                state.anchor.visible = visibility
+            state.handle.visible = visibility
+
+    def _update_landmarks(self):
+        if not self._landmarks:
+            return
+
+        frame_landmarks = [
+            state
+            for state in self._landmarks.values()
+            if state.anchor is not None and state.frame_id is not None
+        ]
+        if frame_landmarks:
+            pin.updateFramePlacements(self.model, self.data)
+
+        visual_landmarks = [
+            state
+            for state in self._landmarks.values()
+            if state.anchor is not None
+            and state.geometry_type == pin.GeometryType.VISUAL
+        ]
+        if visual_landmarks and self.visual_model is not None:
+            pin.updateGeometryPlacements(
+                self.model, self.data, self.visual_model, self.visual_data
+            )
+
+        collision_landmarks = [
+            state
+            for state in self._landmarks.values()
+            if state.anchor is not None
+            and state.geometry_type == pin.GeometryType.COLLISION
+        ]
+        if collision_landmarks and self.collision_model is not None:
+            pin.updateGeometryPlacements(
+                self.model, self.data, self.collision_model, self.collision_data
+            )
+
+        for state in self._landmarks.values():
+            if state.anchor is None:
+                continue
+            if state.is_static and state.initialized:
+                continue
+
+            M = None
+            mesh_scale = 1.0
+            if state.frame_id is not None:
+                M = self.data.oMf[state.frame_id]
+            elif state.geometry_type == pin.GeometryType.VISUAL:
+                M = self.visual_data.oMg[state.geom_id]
+                mesh_scale = state.geometry_object.meshScale
+            elif state.geometry_type == pin.GeometryType.COLLISION:
+                M = self.collision_data.oMg[state.geom_id]
+                mesh_scale = state.geometry_object.meshScale
+            if M is None:
+                continue
+
+            position = M.translation * mesh_scale
+            rotation = M.rotation
+            position_changed = state.last_position is None or not np.array_equal(
+                position, state.last_position
+            )
+            rotation_changed = state.last_rotation is None or not np.array_equal(
+                rotation, state.last_rotation
+            )
+            if not position_changed and not rotation_changed:
+                continue
+            if position_changed:
+                state.anchor.position = position
+                state.last_position = position.copy()
+            if rotation_changed:
+                state.anchor.wxyz = pin.Quaternion(rotation).coeffs()[[3, 0, 1, 2]]
+                state.last_rotation = rotation.copy()
+            state.initialized = True
 
     def _focus_selected(self):
         """Center the camera on the currently selected object."""
@@ -684,6 +1131,10 @@ class Viewer(BaseVisualizer):
         clients = self.viewer.get_clients()
         for client in clients.values():
             client.camera.look_at = position
+
+    def _set_trajectory_status(self, text):
+        if hasattr(self, "_trajectory_status_text"):
+            self._trajectory_status_text.content = text
 
     def _load_visual_geometry_objects(self, visual_color):
         """Load visual objects, batching repeated simple primitives when possible."""
@@ -1333,6 +1784,7 @@ class Viewer(BaseVisualizer):
         messages_start = self._profile_message_counter()
 
         if q is not None:
+            self._displayed_config = np.asarray(q).copy()
             fk_start = self._profile_start()
             pin.forwardKinematics(self.model, self.data, q)
             self._profile_since("display.forward_kinematics", fk_start)
@@ -1381,6 +1833,9 @@ class Viewer(BaseVisualizer):
                 contacts_start = self._profile_start()
                 self.updateContactSurfaces()
                 self._profile_since("display.contact_surfaces", contacts_start)
+            landmarks_start = self._profile_start()
+            self._update_landmarks()
+            self._profile_since("display.landmarks", landmarks_start)
         self._profile_since("display.atomic_block", atomic_start)
         self._profile_messages_since("display.queued_messages", messages_start)
         self._profile_since("display.total", display_start)
@@ -1529,6 +1984,9 @@ class Viewer(BaseVisualizer):
             )
             for frame in self._get_geometry_frames(node_name):
                 frame.visible = visibility
+        self._set_landmarks_visibility(
+            visibility, geometry_type=pin.GeometryType.COLLISION
+        )
 
     def displayVisuals(self, visibility):
         """Set whether to display visual objects or not."""
@@ -1537,6 +1995,9 @@ class Viewer(BaseVisualizer):
             self._reset_playback_update_timer("visuals")
         for frame in self._visual_display_handles:
             frame.visible = visibility
+        self._set_landmarks_visibility(
+            visibility, geometry_type=pin.GeometryType.VISUAL
+        )
 
     def displayFrames(self, visibility):
         """Set whether to display frames or not.
@@ -1555,6 +2016,7 @@ class Viewer(BaseVisualizer):
             batch.handle.visible = visibility
         if visibility:
             self.updateFrames()
+        self._set_landmarks_visibility(visibility, frames=True)
 
     def _apply_frame_filter(self, pattern):
         """Filter batched frame axes by scaling unmatched instances to zero."""
@@ -1712,6 +2174,118 @@ class Viewer(BaseVisualizer):
         q, success = path.eval(0.0)
         if success:
             self.display(q)
+
+    def _trajectory_root_name(self):
+        root = self.viewerRootNodeName + "/trajectories"
+        if root not in self.viser_frames:
+            self.viser_frames[root] = self.viewer.scene.add_frame(
+                root, show_axes=False
+            )
+        return root
+
+    def _frame_id_from_target(self, frame):
+        if isinstance(frame, str):
+            frame_id = self.model.getFrameId(frame)
+        else:
+            frame_id = int(frame)
+        if frame_id < 0 or frame_id >= len(self.model.frames):
+            return None
+        return frame_id
+
+    def _sample_frame_trajectory(self, path, frame_id, samples):
+        samples = max(2, int(samples))
+        path_length = float(path.length())
+        positions = []
+        for t in np.linspace(0.0, path_length, samples):
+            q, success = path.eval(float(t))
+            if not success:
+                continue
+            pin.forwardKinematics(self.model, self.data, q)
+            pin.updateFramePlacements(self.model, self.data)
+            positions.append(self.data.oMf[frame_id].translation.copy())
+
+        if self._displayed_config is not None:
+            self.display(self._displayed_config)
+
+        if len(positions) < 2:
+            return None
+        return np.asarray(positions, dtype=np.float32)
+
+    def plotFrameTrajectory(
+        self,
+        frame,
+        path=None,
+        samples=200,
+        color=(255, 180, 60),
+        line_width=3.0,
+        name=None,
+    ):
+        """Plot the trajectory of a frame over a path in the Viser scene."""
+        if not self._viewer_initialized:
+            if hasattr(self, "viewer") and self.viewer is not None:
+                self.loadViewerModel()
+            else:
+                self.initViewer(loadModel=True)
+
+        if path is None:
+            path = self._path_player.current
+        if path is None:
+            self._set_trajectory_status("Trajectory: no path selected")
+            return False
+
+        frame_id = self._frame_id_from_target(frame)
+        if frame_id is None:
+            self._set_trajectory_status("Trajectory: unknown frame")
+            return False
+
+        positions = self._sample_frame_trajectory(path, frame_id, samples)
+        if positions is None:
+            self._set_trajectory_status("Trajectory: not enough valid samples")
+            return False
+
+        segments = np.stack([positions[:-1], positions[1:]], axis=1)
+        target_name = self.model.frames[frame_id].name
+        trace_name = name
+        if trace_name is None:
+            root = self._trajectory_root_name()
+            trace_name = f"{root}/trajectory_{len(self._path_trajectories)}"
+
+        color = np.asarray(color[:3], dtype=float)
+        if np.max(color) <= 1.0:
+            color *= 255.0
+        handle = self.viewer.scene.add_line_segments(
+            trace_name,
+            points=segments,
+            colors=np.clip(color, 0.0, 255.0).astype(np.uint8),
+            line_width=float(line_width),
+        )
+        self._path_trajectories[trace_name] = handle
+        self._set_trajectory_status(f"Trajectory: {target_name}")
+        return True
+
+    def plotSelectedTrajectory(
+        self,
+        samples=200,
+        color=(255, 180, 60),
+        line_width=3.0,
+    ):
+        """Plot the current selection trajectory over the current path."""
+        if self._selection.frame_id is None:
+            self._set_trajectory_status("Trajectory: select a frame")
+            return False
+        return self.plotFrameTrajectory(
+            self._selection.frame_id,
+            samples=samples,
+            color=color,
+            line_width=line_width,
+        )
+
+    def clearTrajectories(self):
+        """Remove all plotted path trajectories."""
+        for handle in self._path_trajectories.values():
+            handle.remove()
+        self._path_trajectories.clear()
+        self._set_trajectory_status("")
 
     def _start_path_animation(self):
         """Start animating the path in a background thread."""
