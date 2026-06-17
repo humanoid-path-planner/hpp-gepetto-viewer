@@ -569,9 +569,7 @@ class Viewer(BaseVisualizer):
                 initial_value=0.05,
             )
             self._add_landmark_button = self.viewer.gui.add_button("Add Landmark")
-            self._delete_landmark_button = self.viewer.gui.add_button(
-                "Delete Landmark"
-            )
+            self._delete_landmark_button = self.viewer.gui.add_button("Delete Landmark")
 
         @self._add_landmark_button.on_click
         def _on_add_landmark_click(_):
@@ -683,9 +681,7 @@ class Viewer(BaseVisualizer):
                 step=0.5,
                 initial_value=3,
             )
-            self.plot_frame_trajectory_button = self.viewer.gui.add_button(
-                "Plot Frame"
-            )
+            self.plot_frame_trajectory_button = self.viewer.gui.add_button("Plot Frame")
             self.plot_selected_trajectory_button = self.viewer.gui.add_button(
                 "Plot Selected"
             )
@@ -2178,9 +2174,7 @@ class Viewer(BaseVisualizer):
     def _trajectory_root_name(self):
         root = self.viewerRootNodeName + "/trajectories"
         if root not in self.viser_frames:
-            self.viser_frames[root] = self.viewer.scene.add_frame(
-                root, show_axes=False
-            )
+            self.viser_frames[root] = self.viewer.scene.add_frame(root, show_axes=False)
         return root
 
     def _frame_id_from_target(self, frame):
