@@ -46,4 +46,11 @@ endif()
 if(USE_HPP_PYTHON)
     install_python_files("pyhpp_gepetto" __init__.py viewer.py)
     install_python_files("pyhpp_viser" __init__.py viewer.py)
+    install_python_files("pyhpp_rviz" __init__.py viewer.py)
+    install_python_files("pyhpp_rviz/publisher" __init__.py
+                       Navigation.py
+                       RobotDescriptionPublisher.py
+                       StaticTfPublisher.py
+                       TransformStampedPublisher.py
+    )
 endif()

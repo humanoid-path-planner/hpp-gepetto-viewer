@@ -1,0 +1,14 @@
+<library path="hpp_ros_visualization">
+  <class name="Trajectory" type="hpp::displays::TrajectoryDisplay" base_class_type="rviz_common::Display">
+    <description>hpp trajectory display</description>
+  </class>
+  <class name="TrajectorySlider" type="hpp::panel::TrajectorySlider" base_class_type="rviz_common::Panel">
+    <description>hpp trajectory panel</description>
+  </class>
+  <class name="Waypoint" type="hpp::tool::Waypoint" base_class_type="rviz_common::Tool">
+    <description>hpp waypoint tool</description>
+  </class>
+  <class name="Waypoint" type="hpp::displays::WaypointDisplay" base_class_type="rviz_common::Display">
+    <description>hpp waypoint display</description>
+  </class>
+</library>

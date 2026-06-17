@@ -2502,6 +2502,12 @@ class Viewer(BaseVisualizer):
         self._react_graph_viewer_port = port
         self._react_graph_viewer_host = host
 
+    def sendConfigToGraphViewer(self, config=None):
+        if config is not None:
+            self._graph_thread.sendConfig(config)
+        elif self._last_config is not None:
+            self._graph_thread.sendConfig(self._last_config)
+
     def setupWebSocketBridge(self, port: int, host: str = "localhost"):
         """Set the port for the WebSocket-based graph viewer (Qt).
 
