@@ -1,5 +1,5 @@
 <package format="3">
-  <name>hpp_gepetto_viewer</name>
+  <name>hpp-gepetto-viewer</name>
   <version>8.0.0</version>
   <description>Display of hpp robots and obstacles in gepetto-viewer </description>
 

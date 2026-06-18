@@ -17,7 +17,7 @@
 # dependency: python-rospkg
 
 cmake_minimum_required(VERSION 3.22)
-project(hpp_gepetto_viewer VERSION 8.0.0 LANGUAGES C CXX)
+project(hpp-gepetto-viewer VERSION 8.0.0 LANGUAGES C CXX)
 
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 
