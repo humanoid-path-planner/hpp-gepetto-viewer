@@ -17,8 +17,9 @@
 # dependency: python-rospkg
 
 cmake_minimum_required(VERSION 3.22)
-project(hpp_gepetto_viewer VERSION 8.0.0 LANGUAGES C CXX)
 
+set(PROJECT_NAME hpp-gepetto-viewer)
+set(PROJECT_DESCRIPTION "Display of hpp robots and obstacles in gepetto-viewer")
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 
 # Check if the submodule cmake have been initialized
@@ -52,123 +53,29 @@ else()
     endif()
 endif()
 
-find_package(ament_cmake REQUIRED)
-
-# jrl helpers (sans compute_project_args qui appellerait project() une 2e fois)
+include("${JRL_CMAKE_MODULES}/hpp.cmake")
 include("${JRL_CMAKE_MODULES}/python.cmake")
+
+compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 option(USE_HPP_PYTHON "Add dependency to hpp-python" ON)
 option(USE_CORBA "Enable dependency to hpp-manipulation-corba" OFF)
-option(BUILD_HPP_RVIZ_PKGS "Build hpp_rviz (messages + RViz2 plugin)" OFF)
 
 if(USE_CORBA)
-    find_package(hpp-corbaserver REQUIRED)
-    find_package(gepetto-viewer QUIET)
+    add_project_dependency("hpp-corbaserver" REQUIRED)
+    add_project_dependency("gepetto-viewer")
 endif()
 
 if(USE_HPP_PYTHON)
-    find_package("hpp-python" REQUIRED)
+    add_project_dependency("hpp-python" REQUIRED)
 endif()
 
 if(NOT FINDPYTHON_ALREADY_CALLED)
     findpython()
 endif()
 
-if(BUILD_HPP_RVIZ_PKGS)
-    find_package(rosidl_default_generators REQUIRED)
-    find_package(std_msgs REQUIRED)
-
-    set(HPP_RVIZ_MSG_TARGET "${PROJECT_NAME}")
-    rosidl_generate_interfaces(${HPP_RVIZ_MSG_TARGET}
-        src/hpp_rviz/msg/PathInfo.msg
-        src/hpp_rviz/msg/PinocchioJoint.msg
-        src/hpp_rviz/msg/HppVectorConfiguration.msg
-        src/hpp_rviz/msg/HppWaypoint.msg
-        DEPENDENCIES std_msgs
-    )
-    ament_export_dependencies(rosidl_default_runtime)
-
-    rosidl_get_typesupport_target(cpp_typesupport_target
-        ${HPP_RVIZ_MSG_TARGET} rosidl_typesupport_cpp
-    )
-
-    find_package(ament_cmake_ros REQUIRED)
-    find_package(pluginlib REQUIRED)
-    find_package(rviz_common REQUIRED)
-    find_package(rviz_default_plugins REQUIRED)
-    find_package(rviz_rendering REQUIRED)
-    find_package(sensor_msgs REQUIRED)
-    find_package(visualization_msgs REQUIRED)
-
-    set(HPP_RVIZ_PLUGIN_TARGET "${PROJECT_NAME}_plugin")
-
-    set(MOC_FILE_TMP
-        src/hpp_rviz/include/hpp/display/trajectory.hpp
-        src/hpp_rviz/include/hpp/panel/trajectory_slider.hpp
-        src/hpp_rviz/include/hpp/doubleSlider.hpp
-        src/hpp_rviz/include/hpp/tool/waypoint.hpp
-        src/hpp_rviz/include/hpp/tool/interactiveWaypoint.hpp
-        src/hpp_rviz/include/hpp/display/waypoint.hpp
-        src/hpp_rviz/include/hpp/display/WaypointProperty.hpp
-    )
-
-    if(QT_VERSION_MAJOR EQUAL 6)
-        qt6_wrap_cpp(MOC_FILES ${MOC_FILE_TMP})
-    else()
-        qt5_wrap_cpp(MOC_FILES ${MOC_FILE_TMP})
-    endif()
-
-    add_library(
-        ${HPP_RVIZ_PLUGIN_TARGET}
-        src/hpp_rviz/src/display/trajectory.cpp
-        src/hpp_rviz/src/panel/trajectory_slider.cpp
-        src/hpp_rviz/src/panel/ui.cpp
-        src/hpp_rviz/src/panel/communication.cpp
-        src/hpp_rviz/src/tool/waypoint.cpp
-        src/hpp_rviz/src/display/waypoint.cpp
-        ${MOC_FILES}
-    )
-
-    target_link_libraries(
-        ${HPP_RVIZ_PLUGIN_TARGET}
-        PRIVATE
-            pluginlib::pluginlib
-            rviz_common::rviz_common
-            rviz_default_plugins::rviz_default_plugins
-            rviz_rendering::rviz_rendering
-            ${sensor_msgs_TARGETS}
-            ${std_msgs_TARGETS}
-            ${visualization_msgs_TARGETS}
-            ${cpp_typesupport_target}
-    )
-
-    install(
-        TARGETS ${HPP_RVIZ_PLUGIN_TARGET}
-        EXPORT export_${HPP_RVIZ_PLUGIN_TARGET}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
-
-    install(DIRECTORY src/hpp_rviz/include/ DESTINATION include)
-    install(FILES rviz_common_plugins.xml DESTINATION share/${PROJECT_NAME})
-    install(
-        FILES src/hpp_rviz/icons/Trajectory.png src/hpp_rviz/icons/Waypoint.png
-        DESTINATION share/${PROJECT_NAME}/icons/classes
-    )
-    ament_export_include_directories(include)
-    ament_export_targets(export_${HPP_RVIZ_PLUGIN_TARGET})
-    pluginlib_export_plugin_description_file(rviz_common rviz_common_plugins.xml)
-else()
-    add_library(${PROJECT_NAME} INTERFACE)
-    install(
-        TARGETS ${PROJECT_NAME}
-        EXPORT ${PROJECT_NAME}Targets
-        DESTINATION lib
-    )
-endif()
+add_library(${PROJECT_NAME} INTERFACE)
+install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
 add_subdirectory(src)
-
-ament_package()
