@@ -1,20 +1,16 @@
-from re import L
 import threading
-from types import LambdaType
-from typing import Optional
 
 import numpy as np
 import pinocchio.pinocchio_pywrap_default as pin
-
 import pyhpp.core as core
-from pyhpp_plot.graph_viewer_thread import GraphViewerThread
 import rclpy
 from geometry_msgs.msg import PoseStamped, TransformStamped
-from hpp_rviz.msg import HppVectorConfiguration, PathInfo, PinocchioJoint, Landmark
+from hpp_rviz.msg import HppVectorConfiguration, Landmark, PathInfo, PinocchioJoint
 from nav_msgs.msg import Path
 from pinocchio.visualize import BaseVisualizer
 from pyhpp import tools
 from pyhpp.manipulation import Device, modelsInfo
+from pyhpp_plot.graph_viewer_thread import GraphViewerThread
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -54,7 +50,7 @@ class RVizVisualizer(BaseVisualizer):
         self.description_publishers = {}
         self.graph = None
         self.problem = None
-        self._graph_thread: Optional[GraphViewerThread] = None
+        self._graph_thread: GraphViewerThread | None = None
         self._react_graph_viewer_port = 6789
         self._react_graph_viewer_host = "localhost"
         self._web_socket_bridge_port = 8765
@@ -381,7 +377,7 @@ class RVizVisualizer(BaseVisualizer):
         landmark.oz = quat_xyzw[2]
         landmark.ow = quat_xyzw[3]
         landmark.enable = True
-        if name == None:
+        if name is None:
             name = ""
         landmark.name = name
         self.landMark_pub.publish(landmark)
