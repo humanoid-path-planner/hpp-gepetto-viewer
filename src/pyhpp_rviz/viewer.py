@@ -24,6 +24,7 @@ from .publisher.RobotDescriptionPublisher import RobotDescriptionPublisher
 from .publisher.StaticTfPublisher import StaticTFPublisher
 from .publisher.TransformStampedPublisher import TransformStampedPublisher
 
+
 class RVizVisualizer(BaseVisualizer):
     """Pinocchio RViz2 visualizer (ROS 2)"""
 
@@ -53,7 +54,7 @@ class RVizVisualizer(BaseVisualizer):
         self.description_publishers = {}
         self.graph = None
         self.problem = None
-        self._graph_thread : Optional[GraphViewerThread] = None
+        self._graph_thread: Optional[GraphViewerThread] = None
         self._react_graph_viewer_port = 6789
         self._react_graph_viewer_host = "localhost"
         self._web_socket_bridge_port = 8765
@@ -219,9 +220,10 @@ class RVizVisualizer(BaseVisualizer):
     def _publish_joint_states(self, q_vec, now):
         """Publish the joint states of the robot as HppVectorConfiguration on /hpp/scene_objects."""
         array_msg = HppVectorConfiguration()
-        joints_list: list[PinocchioJoint] = []  # Declare a separate variable with type hint
+        joints_list: list[
+            PinocchioJoint
+        ] = []  # Declare a separate variable with type hint
 
-        
         for joint_id in range(1, self.model.njoints):
             joint: pin.JointModel = self.model.joints[joint_id]
             name = self.model.names[joint_id]
@@ -366,7 +368,7 @@ class RVizVisualizer(BaseVisualizer):
 
     # ====================== Waypoints ======================
 
-    def addLandMark(self, xyz: list[float], quat_xyzw: list[float], name = None):
+    def addLandMark(self, xyz: list[float], quat_xyzw: list[float], name=None):
 
         landmark = Landmark()
         landmark.header.frame_id = self.fixed_frame
@@ -379,7 +381,7 @@ class RVizVisualizer(BaseVisualizer):
         landmark.oz = quat_xyzw[2]
         landmark.ow = quat_xyzw[3]
         landmark.enable = True
-        if (name == None):
+        if name == None:
             name = ""
         landmark.name = name
         self.landMark_pub.publish(landmark)
@@ -460,7 +462,6 @@ class RVizVisualizer(BaseVisualizer):
         """Called from graph viewer thread when config is generated."""
         self.last_vector_configuration = config
         self.display(config)
-
 
     # ====================== Méthodes abstraites ======================
     def captureImage(self, w=None, h=None):
