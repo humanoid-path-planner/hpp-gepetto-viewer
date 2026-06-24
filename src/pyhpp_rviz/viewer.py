@@ -1,11 +1,16 @@
+from re import L
 import threading
+from types import LambdaType
+from typing import Optional
 
 import numpy as np
-import pinocchio as pin
+import pinocchio.pinocchio_pywrap_default as pin
+
 import pyhpp.core as core
+from pyhpp_plot.graph_viewer_thread import GraphViewerThread
 import rclpy
 from geometry_msgs.msg import PoseStamped, TransformStamped
-from hpp_rviz.msg import HppVectorConfiguration, PathInfo, PinocchioJoint
+from hpp_rviz.msg import HppVectorConfiguration, PathInfo, PinocchioJoint, Landmark
 from nav_msgs.msg import Path
 from pinocchio.visualize import BaseVisualizer
 from pyhpp import tools
@@ -19,26 +24,25 @@ from .publisher.RobotDescriptionPublisher import RobotDescriptionPublisher
 from .publisher.StaticTfPublisher import StaticTFPublisher
 from .publisher.TransformStampedPublisher import TransformStampedPublisher
 
-
 class RVizVisualizer(BaseVisualizer):
     """Pinocchio RViz2 visualizer (ROS 2)"""
 
     def __init__(self):
-        self.robot: Device = None
-        self.model: pin.Model = pin.Model()
-        self.data: pin.Data = pin.Data()
+        self.robot: Device
+        self.model: pin.Model
+        self.data: pin.Data
 
         self.fixed_frame = "world"
 
-        self.robot_description_publisher: RobotDescriptionPublisher = None
-        self.static_tf_publisher: StaticTFPublisher = None
-        self.navigation_publisher: NavigationPublisher = None
-        self.transform_stamped_publisher: TransformStampedPublisher = None
-        self._joints_node: Node = None
-        self._path_node: Node = None
+        self.robot_description_publisher: RobotDescriptionPublisher
+        self.static_tf_publisher: StaticTFPublisher
+        self.navigation_publisher: NavigationPublisher
+        self.transform_stamped_publisher: TransformStampedPublisher
+        self._joints_node: Node
+        self._path_node: Node
 
-        self.pinocchioJoint_pub: Publisher = None
-        self.path_info_pub: Publisher = None
+        self.pinocchioJoint_pub: Publisher
+        self.path_info_pub: Publisher
 
         self._executor = None
         self._spin_thread = None
@@ -46,14 +50,10 @@ class RVizVisualizer(BaseVisualizer):
         self.current_path = None
         self.last_vector_configuration = None
 
-        self.path_info_pub = None
-        self.pinocchioJoint_pub = None
-
         self.description_publishers = {}
-
         self.graph = None
         self.problem = None
-        self._graph_thread = None
+        self._graph_thread : Optional[GraphViewerThread] = None
         self._react_graph_viewer_port = 6789
         self._react_graph_viewer_host = "localhost"
         self._web_socket_bridge_port = 8765
@@ -61,7 +61,7 @@ class RVizVisualizer(BaseVisualizer):
 
     # ====================== Init ======================
 
-    def initViewer(self, robot: Device = None):
+    def initViewer(self, robot: Device):
         self._init_model(robot)
         self._init_ros_nodes()
         self._init_executor()
@@ -73,9 +73,7 @@ class RVizVisualizer(BaseVisualizer):
         self.robot = robot
 
     def _init_ros_nodes(self):
-
-        if not rclpy.ok():
-            rclpy.init()
+        rclpy.init()
 
         self.robot_description_publisher = RobotDescriptionPublisher()
         self.static_tf_publisher = StaticTFPublisher()
@@ -106,8 +104,8 @@ class RVizVisualizer(BaseVisualizer):
         self.path_info_pub = self._path_node.create_publisher(
             PathInfo, "/hpp/pathInfo", 10
         )
-        self.waypoint_pub = self._waypoint_node.create_publisher(
-            PoseStamped, "/hpp_waypoint_server/waypoint", 10
+        self.landMark_pub = self._waypoint_node.create_publisher(
+            Landmark, "/hpp_landmark_server/landmark", 10
         )
 
     def _init_executor(self):
@@ -221,7 +219,9 @@ class RVizVisualizer(BaseVisualizer):
     def _publish_joint_states(self, q_vec, now):
         """Publish the joint states of the robot as HppVectorConfiguration on /hpp/scene_objects."""
         array_msg = HppVectorConfiguration()
+        joints_list: list[PinocchioJoint] = []  # Declare a separate variable with type hint
 
+        
         for joint_id in range(1, self.model.njoints):
             joint: pin.JointModel = self.model.joints[joint_id]
             name = self.model.names[joint_id]
@@ -242,9 +242,9 @@ class RVizVisualizer(BaseVisualizer):
             elif jtype == "FREE_FLYER":
                 vals = q_vec[idx_q : idx_q + 7]
                 msg.values = vals.tolist()
+            joints_list.append(msg)
 
-            array_msg.joints.append(msg)
-
+        array_msg.joints = joints_list
         array_msg.hpp_vector = q_vec.tolist()
         self.pinocchioJoint_pub.publish(array_msg)
 
@@ -316,6 +316,7 @@ class RVizVisualizer(BaseVisualizer):
         msg = Path()
         msg.header.frame_id = origin
         msg.header.stamp = now
+        poseList: list[PoseStamped] = []
 
         t = 0.0
         while t <= path.length() + 1e-6:
@@ -336,9 +337,9 @@ class RVizVisualizer(BaseVisualizer):
             pose.pose.orientation.y = quat.y
             pose.pose.orientation.z = quat.z
             pose.pose.orientation.w = quat.w
-            msg.poses.append(pose)
+            poseList.append(pose)
             t += dt
-
+        msg.poses = poseList
         self.navigation_publisher.publish(path_msg=msg, topic_name=topic_name)
 
     def printActualRvizVectorConfiguration(self, with_names: bool = True):
@@ -365,20 +366,25 @@ class RVizVisualizer(BaseVisualizer):
 
     # ====================== Waypoints ======================
 
-    def addWaypoint(self, xyz: list[float], quat_xyzw: list[float]):
-        pose = PoseStamped()
-        pose.header.frame_id = self.fixed_frame
-        pose.header.stamp = self._waypoint_node.get_clock().now().to_msg()
-        pose.pose.position.x = xyz[0]
-        pose.pose.position.y = xyz[1]
-        pose.pose.position.z = xyz[2]
-        pose.pose.orientation.x = quat_xyzw[0]
-        pose.pose.orientation.y = quat_xyzw[1]
-        pose.pose.orientation.z = quat_xyzw[2]
-        pose.pose.orientation.w = quat_xyzw[3]
-        self.waypoint_pub.publish(pose)
+    def addLandMark(self, xyz: list[float], quat_xyzw: list[float], name = None):
 
-    def addWaypointFromFrame(self, target_frame: str):
+        landmark = Landmark()
+        landmark.header.frame_id = self.fixed_frame
+        landmark.header.stamp = self._waypoint_node.get_clock().now().to_msg()
+        landmark.tx = xyz[0]
+        landmark.ty = xyz[1]
+        landmark.tz = xyz[2]
+        landmark.ox = quat_xyzw[0]
+        landmark.oy = quat_xyzw[1]
+        landmark.oz = quat_xyzw[2]
+        landmark.ow = quat_xyzw[3]
+        landmark.enable = True
+        if (name == None):
+            name = ""
+        landmark.name = name
+        self.landMark_pub.publish(landmark)
+
+    def addLandMarkFromFrame(self, target_frame: str, name):
         if target_frame is None or target_frame == "":
             return
         frame_names = [f.name for f in self.model.frames]
@@ -391,7 +397,7 @@ class RVizVisualizer(BaseVisualizer):
         frame_id = self.model.getFrameId(target_frame)
         oMf = self.data.oMf[frame_id]
         quat = pin.Quaternion(oMf.rotation)
-        self.addWaypoint(oMf.translation.tolist(), quat.coeffs().tolist())
+        self.addLandMark(oMf.translation.tolist(), quat.coeffs().tolist(), name)
 
     # ====================== Graph Viewer ======================
     def setProblem(self, problem):
@@ -455,16 +461,8 @@ class RVizVisualizer(BaseVisualizer):
         self.last_vector_configuration = config
         self.display(config)
 
-    def sendConfigToGraphViewer(self, config=None):
-        if config is not None:
-            self._graph_thread.sendConfig(config)
-        elif self.last_vector_configuration is not None:
-            self._graph_thread.sendConfig(self.last_vector_configuration)
-        else:
-            print("No configuration available to send to graph viewer.")
 
     # ====================== Méthodes abstraites ======================
-
     def captureImage(self, w=None, h=None):
         pass
 
@@ -480,7 +478,7 @@ class RVizVisualizer(BaseVisualizer):
     def setBackgroundColor(self, *args, **kwargs):
         pass
 
-    def setCameraPose(self, pose):
+    def setCameraPose(self, pose: np.ndarray = np.eye(4)):
         pass
 
     def setCameraPosition(self, position):
