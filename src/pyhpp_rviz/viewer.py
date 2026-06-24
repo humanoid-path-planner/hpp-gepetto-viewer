@@ -274,6 +274,12 @@ class RVizVisualizer(BaseVisualizer):
     # ====================== Path ======================
 
     def loadPath(self, path: core.bindings.Path):
+        """
+        Load a path to be displayed.
+
+        Args:
+            path: The path to be load on the viewer.
+        """
         self.current_path = path
         msg = PathInfo()
         msg.path_length = float(path.length())
@@ -301,6 +307,7 @@ class RVizVisualizer(BaseVisualizer):
         origin: str = "world",
         target_frame: str | None = None,
     ):
+        self.current_path = path
         if target_frame is None or target_frame == "":
             return
         frame_names = [f.name for f in self.model.frames]
@@ -341,6 +348,12 @@ class RVizVisualizer(BaseVisualizer):
         self.navigation_publisher.publish(path_msg=msg, topic_name=topic_name)
 
     def printActualRvizVectorConfiguration(self, with_names: bool = True):
+        """
+        Print the actual vector configuration of the robot.
+
+        Args:
+            with_names (bool, optional): If True, the names of the joints are printed. Defaults to True.
+        """
         if self.last_vector_configuration is None:
             print("No configuration available.")
             return
@@ -365,7 +378,12 @@ class RVizVisualizer(BaseVisualizer):
     # ====================== Waypoints ======================
 
     def addLandMark(self, xyz: list[float], quat_xyzw: list[float], name=None):
-
+        """Add a landmark to the viewer
+        Args:
+            xyz: position of the landmark
+            quat_xyzw: orientation of the landmark
+            name: name of the landmark
+        """
         landmark = Landmark()
         landmark.header.frame_id = self.fixed_frame
         landmark.header.stamp = self._waypoint_node.get_clock().now().to_msg()
@@ -383,6 +401,13 @@ class RVizVisualizer(BaseVisualizer):
         self.landMark_pub.publish(landmark)
 
     def addLandMarkFromFrame(self, target_frame: str, name):
+        """
+        Add a landmark from a frame in the robot model.
+
+        Args:
+            target_frame (str): The name of the frame to add as a landmark.
+            name (str): The name of the landmark. If None, the frame name will be used.
+        """
         if target_frame is None or target_frame == "":
             return
         frame_names = [f.name for f in self.model.frames]
