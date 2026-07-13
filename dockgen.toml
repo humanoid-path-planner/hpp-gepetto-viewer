@@ -1,0 +1,6 @@
+[hpp-gepetto-viewer]
+src_deps = ["hpp-python"]
+url = "."
+
+[hpp-python]
+url = "github:humanoid-path-planner"
