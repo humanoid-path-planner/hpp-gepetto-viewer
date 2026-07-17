@@ -1,5 +1,14 @@
+[build-system]
+build-backend = "cmeel"
+requires = [
+  "cmeel[build]",
+  "hpp-python[build]",
+  "jrl-cmakemodules[build]"
+]
+
 [project]
 dependencies = [
+  "hpp-python",
   "numpy",
   "pin",
   "pycollada",
@@ -10,7 +19,16 @@ dependencies = [
 description = "Display of hpp robots and obstacles in gepetto-viewer"
 license = "BSD-2-Clause"
 name = "hpp-gepetto-viewer"
+requires-python = ">= 3.10"
 version = "9.0.0"
+
+[project.urls]
+homepage = "https://github.com/cmake-wheel/hpp-gepetto-viewer"
+repository = "https://github.com/cmake-wheel/hpp-gepetto-viewer.git"
+upstream = "https://github.com/humanoid-path-planner/hpp-gepetto-viewer"
+
+[tool.cmeel]
+has-binaries = false
 
 [tool.ruff]
 extend-exclude = ["cmake"]
