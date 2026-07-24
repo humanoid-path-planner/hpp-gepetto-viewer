@@ -20,7 +20,7 @@ description = "Display of hpp robots and obstacles in gepetto-viewer"
 license = "BSD-2-Clause"
 name = "hpp-gepetto-viewer"
 requires-python = ">= 3.10"
-version = "9.0.0"
+version = "9.0.2"
 
 [project.urls]
 homepage = "https://github.com/cmake-wheel/hpp-gepetto-viewer"
