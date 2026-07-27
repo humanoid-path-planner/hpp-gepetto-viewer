@@ -107,7 +107,7 @@ class _FrameGroupState:
     group: str
     frame_ids: list
     frame_names: list
-    handles: list        # one add_frame handle per frame
+    handles: list  # one add_frame handle per frame
 
 
 @dataclass
@@ -774,7 +774,9 @@ class Viewer(BaseVisualizer):
         def _on_mesh_click(_):
             self._select_node(node_name)
 
-    def _register_individual_frame_click_callback(self, handle, group, frame_id, frame_name):
+    def _register_individual_frame_click_callback(
+        self, handle, group, frame_id, frame_name
+    ):
         """Register a click callback on a single-instance batched-axes handle."""
         safe_name = frame_name.replace("/", ".")
         node_name = f"{self.framesRootNodeName}/{group}/{frame_id}:{safe_name}"
