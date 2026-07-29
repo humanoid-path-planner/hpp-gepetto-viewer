@@ -821,7 +821,7 @@ class Viewer(BaseVisualizer):
             "Hide All Frames", icon=viser.Icon.EYE_OFF
         )
 
-        with self.viewer.gui.add_folder("Frame Options", expand_by_default=False):
+        with self.viewer.gui.add_folder("Frame Options", expand_by_default=True):
             self._frame_axes_length_slider = self.viewer.gui.add_slider(
                 "Axes Length",
                 min=0.005,
@@ -994,9 +994,15 @@ class Viewer(BaseVisualizer):
     def _add_scene_frame_tree_folder_toggle(self, folder, folder_name):
         targets = self._scene_frame_tree_folder_targets[folder_name]
         shown = all(self.hasSceneFrame(target) for target in targets)
+        prefix = f"{folder_name}/" if folder_name else ""
+        has_nested_folders = any(
+            name != folder_name and (not folder_name or name.startswith(prefix))
+            for name in self._scene_frame_tree_folder_targets
+        )
+        label = "Show All Children" if has_nested_folders else "Show All"
         with folder:
             toggle = self.viewer.gui.add_checkbox(
-                "Show All Children",
+                label,
                 initial_value=shown,
                 hint="Show or hide all descendant frames recursively",
             )
