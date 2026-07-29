@@ -216,7 +216,6 @@ class Viewer(BaseVisualizer):
         self._frame_groups = {}
         self._frame_axes_length = 0.1
         self._frame_axes_radius = 0.003
-        self._frames_checkbox = None
         self._frame_axes_length_slider = None
         self._frame_axes_radius_slider = None
         self._frame_rate_slider = None
@@ -240,6 +239,9 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_children = []
         self._scene_frame_tree_folders = {}
         self._scene_frame_tree_toggles = {}
+        self._scene_frame_tree_folder_targets = {}
+        self._scene_frame_tree_folder_toggles = {}
+        self._scene_frame_tree_bulk_update = False
         self.scene_frame_filter = None
         self.clear_scene_frames_button = None
         self._path_trajectories = {}
@@ -454,6 +456,9 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_children = []
         self._scene_frame_tree_folders = {}
         self._scene_frame_tree_toggles = {}
+        self._scene_frame_tree_folder_targets = {}
+        self._scene_frame_tree_folder_toggles = {}
+        self._scene_frame_tree_bulk_update = False
         self._selection = _SelectionState()
         self.scene_frame_filter = None
         self.clear_scene_frames_button = None
@@ -463,7 +468,6 @@ class Viewer(BaseVisualizer):
         self._frame_groups = {}
         self._frame_axes_length = float(frame_axis_length)
         self._frame_axes_radius = float(frame_axis_radius)
-        self._frames_checkbox = None
         self._frame_axes_length_slider = None
         self._frame_axes_radius_slider = None
         self._frame_rate_slider = None
@@ -813,17 +817,6 @@ class Viewer(BaseVisualizer):
         """Create GUI controls for scene frames."""
         self._create_selection_panel()
 
-        model_handles = [
-            handle
-            for group_state in self._frame_groups.values()
-            for handle in group_state.handles
-        ]
-        self._frames_checkbox = self.viewer.gui.add_checkbox(
-            "Show All Model Frames",
-            initial_value=bool(model_handles)
-            and all(handle.visible for handle in model_handles),
-            disabled=not model_handles,
-        )
         self.clear_scene_frames_button = self.viewer.gui.add_button(
             "Hide All Frames", icon=viser.Icon.EYE_OFF
         )
@@ -859,11 +852,6 @@ class Viewer(BaseVisualizer):
             "Scene Tree", expand_by_default=True
         )
         self._rebuild_scene_frame_tree()
-
-        @self._frames_checkbox.on_update
-        def _on_all_model_frames_update(event):
-            if event.client is not None:
-                self.displayFrames(event.target.value)
 
         def _update_frame_axes(_):
             self._frame_axes_length = self._frame_axes_length_slider.value
@@ -964,6 +952,67 @@ class Viewer(BaseVisualizer):
             *frame.name.split("/"),
         ]
 
+    def _set_scene_frame_targets_visibility(self, targets, visibility):
+        model_handles = []
+        overlay_targets = []
+        for target_name in targets:
+            if self.hasSceneFrame(target_name) == visibility:
+                continue
+            frame_id = self._landmark_frame_id(target_name)
+            if frame_id is None:
+                overlay_targets.append(target_name)
+                continue
+            handle = self._frame_handle(frame_id)
+            handle.visible = visibility
+            if visibility:
+                handle.axes_length = self._frame_axes_length
+                handle.axes_radius = self._frame_axes_radius
+            model_handles.append(handle)
+
+        self._scene_frame_tree_bulk_update = True
+        try:
+            if visibility and model_handles:
+                self.updateFrames()
+            overlay_states = []
+            for target_name in overlay_targets:
+                if visibility:
+                    overlay_states.append(
+                        self._add_scene_frame_overlay(
+                            target_name,
+                            self._frame_axes_length,
+                            self._frame_axes_radius,
+                        )
+                    )
+                else:
+                    self.deleteSceneFrame(target_name)
+            self._update_overlays(overlay_states)
+        finally:
+            self._scene_frame_tree_bulk_update = False
+            self._update_scene_frame_tree_toggles()
+            self._update_selection_panel()
+
+    def _add_scene_frame_tree_folder_toggle(self, folder, folder_name):
+        targets = self._scene_frame_tree_folder_targets[folder_name]
+        shown = all(self.hasSceneFrame(target) for target in targets)
+        with folder:
+            toggle = self.viewer.gui.add_checkbox(
+                "Show All Children",
+                initial_value=shown,
+                hint="Show or hide all descendant frames recursively",
+            )
+        self._scene_frame_tree_folder_toggles[folder_name] = toggle
+
+        def _toggle_scene_frame_folder(event, children=targets):
+            if event.client is None:
+                return
+            shown = all(self.hasSceneFrame(target) for target in children)
+            if event.target.value == shown:
+                return
+            self._set_scene_frame_targets_visibility(children, event.target.value)
+
+        toggle.on_update(_toggle_scene_frame_folder)
+        return toggle
+
     def _rebuild_scene_frame_tree(self):
         if self._scene_frame_tree_root is None:
             return
@@ -973,8 +1022,27 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_children = []
         self._scene_frame_tree_folders = {}
         self._scene_frame_tree_toggles = {}
+        self._scene_frame_tree_folder_targets = {}
+        self._scene_frame_tree_folder_toggles = {}
 
-        for target_name in sorted(set(self._scene_frame_targets(""))):
+        target_names = sorted(set(self._scene_frame_targets("")))
+        folder_targets = {"": target_names}
+        for target_name in target_names:
+            parts = self._scene_frame_tree_parts(target_name)
+            for depth in range(1, len(parts)):
+                folder_name = "/".join(parts[:depth])
+                folder_targets.setdefault(folder_name, []).append(target_name)
+        self._scene_frame_tree_folder_targets = {
+            folder_name: tuple(targets)
+            for folder_name, targets in folder_targets.items()
+        }
+        if target_names:
+            toggle = self._add_scene_frame_tree_folder_toggle(
+                self._scene_frame_tree_root, ""
+            )
+            self._scene_frame_tree_children.append(toggle)
+
+        for target_name in target_names:
             parts = self._scene_frame_tree_parts(target_name)
             parent = self._scene_frame_tree_root
             for depth, part in enumerate(parts[:-1]):
@@ -986,6 +1054,7 @@ class Viewer(BaseVisualizer):
                             part, expand_by_default=depth == 0
                         )
                     self._scene_frame_tree_folders[folder_name] = folder
+                    self._add_scene_frame_tree_folder_toggle(folder, folder_name)
                     if depth == 0:
                         self._scene_frame_tree_children.append(folder)
                 parent = folder
@@ -1002,11 +1071,15 @@ class Viewer(BaseVisualizer):
             self._scene_frame_tree_toggles[target_name] = toggle
 
             def _toggle_scene_frame(event, target=target_name):
+                if event.client is None:
+                    return
                 shown = self.hasSceneFrame(target)
                 if event.target.value == shown:
                     return
                 if event.target.value:
                     self._show_scene_frame_from_controls(target)
+                    self._set_scene_selection(target)
+                    self._focus_scene_target(target)
                 else:
                     self.deleteSceneFrame(target)
 
@@ -1036,12 +1109,33 @@ class Viewer(BaseVisualizer):
                 folder.visible = visible
 
     def _update_scene_frame_tree_toggles(self, target_name=None):
+        if self._scene_frame_tree_bulk_update:
+            return
+
         toggles = self._scene_frame_tree_toggles.items()
         if target_name is not None:
             toggle = self._scene_frame_tree_toggles.get(target_name)
             toggles = () if toggle is None else ((target_name, toggle),)
         for name, toggle in toggles:
             shown = self.hasSceneFrame(name)
+            if toggle.value != shown:
+                toggle.value = shown
+
+        folder_toggles = self._scene_frame_tree_folder_toggles.items()
+        if target_name is not None:
+            parts = self._scene_frame_tree_parts(target_name)
+            folder_names = [
+                "",
+                *("/".join(parts[:depth]) for depth in range(1, len(parts))),
+            ]
+            folder_toggles = (
+                (folder_name, self._scene_frame_tree_folder_toggles[folder_name])
+                for folder_name in folder_names
+                if folder_name in self._scene_frame_tree_folder_toggles
+            )
+        for folder_name, toggle in folder_toggles:
+            targets = self._scene_frame_tree_folder_targets[folder_name]
+            shown = all(self.hasSceneFrame(target) for target in targets)
             if toggle.value != shown:
                 toggle.value = shown
 
@@ -1053,11 +1147,7 @@ class Viewer(BaseVisualizer):
         all_visible = bool(model_handles) and all(
             handle.visible for handle in model_handles
         )
-        if (
-            self._frames_checkbox is not None
-            and self._frames_checkbox.value != all_visible
-        ):
-            self._frames_checkbox.value = all_visible
+        self._display.frames = all_visible
 
     def _register_click_callback(self, handle, node_name):
         """Register a click callback on a mesh handle for selection."""
@@ -1307,6 +1397,32 @@ class Viewer(BaseVisualizer):
             }
         return {}
 
+    def _add_scene_frame_overlay(self, target_name, axes_length, axes_radius):
+        root_name = self._scene_frame_root_name()
+        if self._scene_frames_root is None:
+            self._scene_frames_root = self.viewer.scene.add_frame(
+                root_name, show_axes=False
+            )
+            self.viser_frames[root_name] = self._scene_frames_root
+
+        node_name = self._scene_frame_node_name(target_name)
+        handle = self.viewer.scene.add_frame(
+            node_name,
+            axes_length=axes_length,
+            axes_radius=axes_radius,
+            visible=True,
+        )
+        self.viser_frames[node_name] = handle
+        state = _OverlayState(
+            target_name=target_name,
+            node_name=node_name,
+            handle=handle,
+            transform_handle=handle,
+            **self._overlay_state_kwargs(target_name),
+        )
+        self._scene_frames[target_name] = state
+        return state
+
     def addSceneFrame(self, target, size=0.05):
         """Add an explicit coordinate frame overlay on a scene item."""
         if not self._viewer_initialized:
@@ -1334,29 +1450,7 @@ class Viewer(BaseVisualizer):
 
         self.deleteSceneFrame(target_name)
 
-        root_name = self._scene_frame_root_name()
-        if self._scene_frames_root is None:
-            self._scene_frames_root = self.viewer.scene.add_frame(
-                root_name, show_axes=False
-            )
-            self.viser_frames[root_name] = self._scene_frames_root
-
-        node_name = self._scene_frame_node_name(target_name)
-        handle = self.viewer.scene.add_frame(
-            node_name,
-            axes_length=size,
-            axes_radius=axes_radius,
-            visible=True,
-        )
-        self.viser_frames[node_name] = handle
-        state = _OverlayState(
-            target_name=target_name,
-            node_name=node_name,
-            handle=handle,
-            transform_handle=handle,
-            **self._overlay_state_kwargs(target_name),
-        )
-        self._scene_frames[target_name] = state
+        state = self._add_scene_frame_overlay(target_name, size, axes_radius)
         self._update_overlays([state])
         self._update_scene_frame_tree_toggles(target_name)
         self._update_selection_panel()
