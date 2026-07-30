@@ -1070,7 +1070,7 @@ class Viewer(BaseVisualizer):
                     initial_value=shown,
                     hint=f"Show or hide frame: {target_name}",
                 )
-            if len(parts) == 1:
+            if len(parts) == 1 and not is_branch:
                 self._scene_frame_tree_children.append(toggle)
             self._scene_frame_tree_toggles[target_name] = toggle
 
