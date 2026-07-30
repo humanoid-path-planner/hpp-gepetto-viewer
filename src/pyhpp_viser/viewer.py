@@ -95,7 +95,6 @@ class _OverlayState:
     node_name: str | None = None
     geometry_type: object = None
     geom_id: int | None = None
-    geometry_object: object = None
     frame_id: int | None = None
     contact_joint_name: str | None = None
     is_static: bool = False
@@ -114,7 +113,6 @@ class _FrameGroupState:
 @dataclass
 class _GeometryFrameState:
     geom_id: int
-    geometry_object: object
     frames: tuple
     is_static: bool = False
     initialized: bool = False
@@ -133,7 +131,6 @@ class _BatchedGeometryState:
     handle: object
     entries: list
     geom_ids: list
-    mesh_scales: np.ndarray
     positions: np.ndarray
     wxyzs: np.ndarray
     is_static: bool = False
@@ -1299,7 +1296,6 @@ class Viewer(BaseVisualizer):
         return {
             "geometry_type": geometry_type,
             "geom_id": geom_id,
-            "geometry_object": geometry_object,
             "is_static": self._is_geometry_static(geometry_object),
         }
 
@@ -1616,15 +1612,12 @@ class Viewer(BaseVisualizer):
 
     def _overlay_transform(self, state):
         M = None
-        mesh_scale = 1.0
         if state.frame_id is not None:
             M = self.data.oMf[state.frame_id]
         elif state.geometry_type == pin.GeometryType.VISUAL:
             M = self.visual_data.oMg[state.geom_id]
-            mesh_scale = state.geometry_object.meshScale
         elif state.geometry_type == pin.GeometryType.COLLISION:
             M = self.collision_data.oMg[state.geom_id]
-            mesh_scale = state.geometry_object.meshScale
         elif state.contact_joint_name == "universe":
             return np.zeros(3), np.eye(3)
         elif state.contact_joint_name is not None:
@@ -1636,7 +1629,7 @@ class Viewer(BaseVisualizer):
 
         if M is None:
             return None
-        return M.translation * mesh_scale, M.rotation
+        return M.translation, M.rotation
 
     def _update_overlays(self, states):
         states = [state for state in states if state.transform_handle is not None]
@@ -1902,6 +1895,10 @@ class Viewer(BaseVisualizer):
         positions = np.zeros((num_objects, 3), dtype=np.float32)
         wxyzs = np.zeros((num_objects, 4), dtype=np.float32)
         wxyzs[:, 0] = 1.0
+        mesh_scales = np.asarray(
+            [geometry_object.meshScale for geometry_object in objects],
+            dtype=np.float32,
+        )
 
         self._create_hierarchy_nodes([*group["parent_names"], "visual_batch"])
 
@@ -1927,6 +1924,7 @@ class Viewer(BaseVisualizer):
                 faces=np.asarray(mesh.faces, dtype=np.uint32),
                 batched_wxyzs=wxyzs,
                 batched_positions=positions,
+                batched_scales=mesh_scales,
                 batched_colors=color[:3],
                 opacity=color[3],
                 flat_shading=group["flat_shading"],
@@ -1940,6 +1938,7 @@ class Viewer(BaseVisualizer):
                     mesh=mesh,
                     batched_wxyzs=wxyzs,
                     batched_positions=positions,
+                    batched_scales=mesh_scales,
                     visible=self._display.visuals,
                 )
             except Exception as exc:
@@ -1954,8 +1953,7 @@ class Viewer(BaseVisualizer):
 
         entries = []
         geom_ids = []
-        mesh_scales = np.empty((num_objects, 3), dtype=np.float32)
-        for index, (visual, node_name) in enumerate(zip(objects, group["node_names"])):
+        for visual, node_name in zip(objects, group["node_names"]):
             geom_info = {
                 "name": visual.name,
                 "type": "visual",
@@ -1966,14 +1964,12 @@ class Viewer(BaseVisualizer):
             self._geometry_frames[node_name] = [handle]
             entries.append(_BatchedGeometryEntry(node_name=node_name))
             geom_ids.append(geom_id)
-            mesh_scales[index] = visual.meshScale
 
         batch = _BatchedGeometryState(
             name=batch_name,
             handle=handle,
             entries=entries,
             geom_ids=geom_ids,
-            mesh_scales=mesh_scales,
             positions=positions,
             wxyzs=wxyzs,
             is_static=group["is_static"],
@@ -2018,6 +2014,7 @@ class Viewer(BaseVisualizer):
         primitive_color, color_override, use_embedded_colors = (
             self._geometry_color_options(geometry_object, color)
         )
+        mesh_scale = tuple(float(value) for value in geometry_object.meshScale)
 
         type_str = (
             "collision" if geometry_type == pin.GeometryType.COLLISION else "visual"
@@ -2030,6 +2027,7 @@ class Viewer(BaseVisualizer):
                     dimensions=geom.halfSide * 2.0,
                     color=primitive_color[:3],
                     opacity=primitive_color[3],
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, hppfcl.Sphere):
                 frame = self.viewer.scene.add_icosphere(
@@ -2037,6 +2035,7 @@ class Viewer(BaseVisualizer):
                     radius=geom.radius,
                     color=primitive_color[:3],
                     opacity=primitive_color[3],
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, hppfcl.Cylinder):
                 mesh = trimesh.creation.cylinder(
@@ -2049,6 +2048,7 @@ class Viewer(BaseVisualizer):
                     mesh.faces,
                     color=primitive_color[:3],
                     opacity=primitive_color[3],
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, hppfcl.Capsule):
                 mesh = trimesh.creation.capsule(
@@ -2061,6 +2061,7 @@ class Viewer(BaseVisualizer):
                     mesh.faces,
                     color=primitive_color[:3],
                     opacity=primitive_color[3],
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, hppfcl.Cone):
                 mesh = trimesh.creation.cone(
@@ -2073,6 +2074,7 @@ class Viewer(BaseVisualizer):
                     mesh.faces,
                     color=primitive_color[:3],
                     opacity=primitive_color[3],
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, MESH_TYPES):
                 frame = self._add_mesh_from_path(
@@ -2080,7 +2082,7 @@ class Viewer(BaseVisualizer):
                     geometry_object.meshPath,
                     color_override,
                     use_embedded_colors,
-                    scale=geometry_object.meshScale,
+                    scale=mesh_scale,
                 )
             elif isinstance(geom, hppfcl.Convex):
                 if len(geometry_object.meshPath) > 0:
@@ -2089,11 +2091,14 @@ class Viewer(BaseVisualizer):
                         geometry_object.meshPath,
                         color_override,
                         use_embedded_colors,
-                        scale=geometry_object.meshScale,
+                        scale=mesh_scale,
                     )
                 else:
                     frame = self._add_mesh_from_convex(
-                        node_name, geom, color_override or (0.5, 0.5, 0.5, 1.0)
+                        node_name,
+                        geom,
+                        color_override or (0.5, 0.5, 0.5, 1.0),
+                        mesh_scale,
                     )
             else:
                 msg = f"Unsupported geometry type for {geometry_object.name} ({type(geom)})"
@@ -2122,7 +2127,6 @@ class Viewer(BaseVisualizer):
                 geom_id = geom_model.getGeometryId(geometry_object.name)
                 cached_entry = _GeometryFrameState(
                     geom_id,
-                    geometry_object,
                     tuple(frames),
                     is_static=self._is_geometry_static(geometry_object),
                 )
@@ -2142,7 +2146,7 @@ class Viewer(BaseVisualizer):
             warnings.warn(msg, category=UserWarning, stacklevel=2)
 
     def _add_mesh_from_path(
-        self, name, mesh_path, color, use_embedded_colors, scale=None
+        self, name, mesh_path, color, use_embedded_colors, scale=1.0
     ):
         """Load a mesh from a file."""
         return self._load_standard_mesh(
@@ -2162,28 +2166,29 @@ class Viewer(BaseVisualizer):
             raise
 
     def _load_standard_mesh(
-        self, name, mesh_path, color, use_embedded_colors, scale=None
+        self, name, mesh_path, color, use_embedded_colors, scale=1.0
     ):
         """Load a mesh using trimesh, preserving embedded colors when requested."""
         mesh = self._load_mesh(mesh_path)
-        apply_scale = scale is not None and not np.allclose(scale, 1.0)
-
-        if apply_scale:
-            mesh.apply_scale(scale)
 
         # if we should use embedded colors and no explicit override, use trimesh mesh
         if use_embedded_colors and color is None:
-            return self.viewer.scene.add_mesh_trimesh(name, mesh)
+            return self.viewer.scene.add_mesh_trimesh(name, mesh, scale=scale)
 
         # If explicit color provided use it as override
         if color is not None:
             return self.viewer.scene.add_mesh_simple(
-                name, mesh.vertices, mesh.faces, color=color[:3], opacity=color[3]
+                name,
+                mesh.vertices,
+                mesh.faces,
+                color=color[:3],
+                opacity=color[3],
+                scale=scale,
             )
 
-        return self.viewer.scene.add_mesh_trimesh(name, mesh)
+        return self.viewer.scene.add_mesh_trimesh(name, mesh, scale=scale)
 
-    def _add_mesh_from_convex(self, name, geom, color):
+    def _add_mesh_from_convex(self, name, geom, color, scale=1.0):
         """Load a mesh from triangles stored inside a hppfcl.Convex."""
         num_tris = geom.num_polygons
         call_triangles = geom.polygons
@@ -2202,6 +2207,7 @@ class Viewer(BaseVisualizer):
             faces,
             color=color[:3],
             opacity=color[3],
+            scale=scale,
         )
 
     def _get_geometry_frames(self, node_name):
@@ -2462,7 +2468,7 @@ class Viewer(BaseVisualizer):
                 continue
 
             M = geom_data.oMg[entry.geom_id]
-            position = M.translation * entry.geometry_object.meshScale
+            position = M.translation
             rotation = M.rotation
 
             position_changed = entry.last_position is None or not np.array_equal(
@@ -2519,7 +2525,7 @@ class Viewer(BaseVisualizer):
 
             for index, geom_id in enumerate(batch.geom_ids):
                 M = geom_data.oMg[geom_id]
-                batch.positions[index] = M.translation * batch.mesh_scales[index]
+                batch.positions[index] = M.translation
                 batch.wxyzs[index] = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
         self._profile_since(f"{label}.batched_geometry.fill_arrays", fill_start)
 
