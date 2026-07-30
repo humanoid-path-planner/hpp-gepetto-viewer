@@ -13,7 +13,7 @@ dependencies = [
   "pin",
   "pycollada",
   "trimesh",
-  "viser",
+  "viser>=1.0.27",
   "websockets"
 ]
 description = "Display of hpp robots and obstacles in gepetto-viewer"
