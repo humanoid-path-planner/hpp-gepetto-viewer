@@ -83,7 +83,6 @@ class _PlaybackUpdateRateState:
 @dataclass
 class _SelectionState:
     node_name: str | None = None
-    frames: list = field(default_factory=list)
     geom_name: str | None = None
     geom_type: str | None = None
     frame_id: int | None = None
@@ -110,7 +109,6 @@ class _OverlayState:
 class _FrameGroupState:
     group: str
     frame_ids: list
-    frame_names: list
     handles: list  # one add_frame handle per frame
 
 
@@ -218,9 +216,6 @@ class Viewer(BaseVisualizer):
         self._frame_groups = {}
         self._frame_axes_length = 0.1
         self._frame_axes_radius = 0.003
-        self._frame_axes_length_slider = None
-        self._frame_axes_radius_slider = None
-        self._frame_rate_slider = None
         self.frame_focus_dropdown = None
         self._frame_focus_targets = {}
         self._frame_focus_labels = {}
@@ -472,9 +467,6 @@ class Viewer(BaseVisualizer):
         self._frame_groups = {}
         self._frame_axes_length = float(frame_axis_length)
         self._frame_axes_radius = float(frame_axis_radius)
-        self._frame_axes_length_slider = None
-        self._frame_axes_radius_slider = None
-        self._frame_rate_slider = None
         self.frame_focus_dropdown = None
         self._frame_focus_targets = {}
         self._frame_focus_labels = {}
@@ -543,7 +535,6 @@ class Viewer(BaseVisualizer):
         """Create one add_frame leaf node per frame, toggleable from the scene tree."""
         handles = []
         frame_ids = []
-        frame_names = []
         for frame_id, frame_name in frames:
             parts = frame_name.split("/")
             for depth in range(1, len(parts)):
@@ -563,13 +554,11 @@ class Viewer(BaseVisualizer):
             self.viser_frames[node_name] = handle
             handles.append(handle)
             frame_ids.append(frame_id)
-            frame_names.append(frame_name)
             self._register_individual_frame_click_callback(handle, frame_id)
 
         state = _FrameGroupState(
             group=group,
             frame_ids=frame_ids,
-            frame_names=frame_names,
             handles=handles,
         )
         self._frame_groups[group] = state
@@ -823,21 +812,21 @@ class Viewer(BaseVisualizer):
         )
 
         with self.viewer.gui.add_folder("Frame Options", expand_by_default=True):
-            self._frame_axes_length_slider = self.viewer.gui.add_slider(
+            frame_axes_length_slider = self.viewer.gui.add_slider(
                 "Axes Length",
                 min=min(0.005, self._frame_axes_length),
                 max=max(1.0, self._frame_axes_length),
                 step=0.005,
                 initial_value=self._frame_axes_length,
             )
-            self._frame_axes_radius_slider = self.viewer.gui.add_slider(
+            frame_axes_radius_slider = self.viewer.gui.add_slider(
                 "Axes Radius",
                 min=min(0.001, self._frame_axes_radius),
                 max=max(0.05, self._frame_axes_radius),
                 step=0.001,
                 initial_value=self._frame_axes_radius,
             )
-            self._frame_rate_slider = self.viewer.gui.add_slider(
+            frame_rate_slider = self.viewer.gui.add_slider(
                 "Frame FPS",
                 min=0,
                 max=120,
@@ -855,8 +844,8 @@ class Viewer(BaseVisualizer):
         self._rebuild_scene_frame_tree()
 
         def _update_frame_axes(_):
-            self._frame_axes_length = self._frame_axes_length_slider.value
-            self._frame_axes_radius = self._frame_axes_radius_slider.value
+            self._frame_axes_length = frame_axes_length_slider.value
+            self._frame_axes_radius = frame_axes_radius_slider.value
             handles = [
                 handle
                 for group_state in self._frame_groups.values()
@@ -867,12 +856,12 @@ class Viewer(BaseVisualizer):
                 handle.axes_length = self._frame_axes_length
                 handle.axes_radius = self._frame_axes_radius
 
-        self._frame_axes_length_slider.on_update(_update_frame_axes)
-        self._frame_axes_radius_slider.on_update(_update_frame_axes)
+        frame_axes_length_slider.on_update(_update_frame_axes)
+        frame_axes_radius_slider.on_update(_update_frame_axes)
 
-        @self._frame_rate_slider.on_update
+        @frame_rate_slider.on_update
         def _on_frame_rate_update(_):
-            self.setPlaybackUpdateRates(frames=self._frame_rate_slider.value)
+            self.setPlaybackUpdateRates(frames=frame_rate_slider.value)
 
         @self.scene_frame_filter.on_update
         def _on_scene_frame_filter_update(_):
@@ -1208,12 +1197,10 @@ class Viewer(BaseVisualizer):
         frame_id = self._landmark_frame_id(target_name)
         if frame_id is None:
             geom_info = self._node_to_geom_info.get(target_name, {})
-            self._selection.frames = self._get_geometry_frames(target_name)
             self._selection.geom_name = geom_info.get("name")
             self._selection.geom_type = geom_info.get("type")
         else:
             frame = self.model.frames[frame_id]
-            self._selection.frames = [self._frame_handle(frame_id)]
             self._selection.geom_name = frame.name
             self._selection.geom_type = "frame"
             self._set_trajectory_frame_selection(frame_id)
@@ -1225,7 +1212,6 @@ class Viewer(BaseVisualizer):
     def _deselect(self):
         """Clear the current selection."""
         self._selection.node_name = None
-        self._selection.frames = []
         self._selection.geom_name = None
         self._selection.geom_type = None
         self._selection.frame_id = None
@@ -2136,7 +2122,6 @@ class Viewer(BaseVisualizer):
             self._node_to_geom_info[node_name] = geom_info
             self._register_click_callback(frame, node_name)
 
-            self._node_to_geom_info[node_name] = geom_info
             self._geometry_frames[node_name] = frames
             geom_model = (
                 self.collision_model
