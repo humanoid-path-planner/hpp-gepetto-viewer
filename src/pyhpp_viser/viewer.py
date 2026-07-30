@@ -3,6 +3,8 @@ import os
 import time
 import warnings
 from dataclasses import dataclass, field
+from urllib.parse import quote
+from uuid import uuid4
 
 # Suppress GTK warnings
 os.environ.setdefault("GTK_MODULES", "")
@@ -235,6 +237,7 @@ class Viewer(BaseVisualizer):
         self._landmarks = {}
         self._scene_frames = {}
         self._scene_frames_root = None
+        self._scene_frames_root_name = f"__hpp_scene_frames_{uuid4().hex}"
         self._scene_frame_tree_root = None
         self._scene_frame_tree_children = []
         self._scene_frame_tree_folders = {}
@@ -1381,10 +1384,10 @@ class Viewer(BaseVisualizer):
         return None
 
     def _scene_frame_root_name(self):
-        return self.viewerRootNodeName + "/scene_frames"
+        return self._scene_frames_root_name
 
     def _scene_frame_node_name(self, target_name):
-        return self._scene_frame_root_name() + "/" + target_name.strip("/")
+        return self._scene_frame_root_name() + "/" + quote(target_name, safe="")
 
     def _overlay_state_kwargs(self, target_name):
         frame_id = self._landmark_frame_id(target_name)
@@ -1484,6 +1487,10 @@ class Viewer(BaseVisualizer):
 
         self.viser_frames.pop(state.node_name, None)
         state.handle.remove()
+        if not self._scene_frames and self._scene_frames_root is not None:
+            self.viser_frames.pop(self._scene_frame_root_name(), None)
+            self._scene_frames_root.remove()
+            self._scene_frames_root = None
         self._update_scene_frame_tree_toggles(target_name)
         self._update_selection_panel()
         return True
