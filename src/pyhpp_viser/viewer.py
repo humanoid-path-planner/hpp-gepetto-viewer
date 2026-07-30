@@ -449,6 +449,7 @@ class Viewer(BaseVisualizer):
         self._visual_batched_geometry_frames = []
         self._visual_display_handles = []
         self._collision_geometry_frames = []
+        self._node_to_geom_info = {}
         self._contact_surface_frames = {}
         self._contact_surface_joints = {}
         self._contact_surfaces_root = None
@@ -1035,14 +1036,22 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_folder_toggles = {}
 
         target_names = sorted(set(self._scene_frame_targets("")))
+        parts_by_target = {
+            target_name: self._scene_frame_tree_parts(target_name)
+            for target_name in target_names
+        }
         folder_targets = {"": target_names}
-        for target_name in target_names:
-            parts = self._scene_frame_tree_parts(target_name)
+        for target_name, parts in parts_by_target.items():
             for depth in range(1, len(parts)):
                 folder_name = "/".join(parts[:depth])
                 folder_targets.setdefault(folder_name, []).append(target_name)
+        branch_paths = set(folder_targets)
+        for target_name, parts in parts_by_target.items():
+            branch_name = "/".join(parts)
+            if branch_name in branch_paths:
+                folder_targets[branch_name].append(target_name)
         self._scene_frame_tree_folder_targets = {
-            folder_name: tuple(targets)
+            folder_name: tuple(sorted(targets))
             for folder_name, targets in folder_targets.items()
         }
         if target_names:
@@ -1052,9 +1061,12 @@ class Viewer(BaseVisualizer):
             self._scene_frame_tree_children.append(toggle)
 
         for target_name in target_names:
-            parts = self._scene_frame_tree_parts(target_name)
+            parts = parts_by_target[target_name]
+            branch_name = "/".join(parts)
+            is_branch = branch_name in branch_paths
             parent = self._scene_frame_tree_root
-            for depth, part in enumerate(parts[:-1]):
+            folder_parts = parts if is_branch else parts[:-1]
+            for depth, part in enumerate(folder_parts):
                 folder_name = "/".join(parts[: depth + 1])
                 folder = self._scene_frame_tree_folders.get(folder_name)
                 if folder is None:
@@ -1071,7 +1083,7 @@ class Viewer(BaseVisualizer):
             shown = self.hasSceneFrame(target_name)
             with parent:
                 toggle = self.viewer.gui.add_checkbox(
-                    parts[-1],
+                    "Show Frame" if is_branch else parts[-1],
                     initial_value=shown,
                     hint=f"Show or hide frame: {target_name}",
                 )
@@ -1110,7 +1122,7 @@ class Viewer(BaseVisualizer):
             if visible:
                 parts = self._scene_frame_tree_parts(target_name)
                 visible_folders.update(
-                    "/".join(parts[:depth]) for depth in range(1, len(parts))
+                    "/".join(parts[:depth]) for depth in range(1, len(parts) + 1)
                 )
         for folder_name, folder in self._scene_frame_tree_folders.items():
             visible = folder_name in visible_folders
@@ -1135,7 +1147,7 @@ class Viewer(BaseVisualizer):
             parts = self._scene_frame_tree_parts(target_name)
             folder_names = [
                 "",
-                *("/".join(parts[:depth]) for depth in range(1, len(parts))),
+                *("/".join(parts[:depth]) for depth in range(1, len(parts) + 1)),
             ]
             folder_toggles = (
                 (folder_name, self._scene_frame_tree_folder_toggles[folder_name])
@@ -1290,7 +1302,9 @@ class Viewer(BaseVisualizer):
         if not frame_id_text.isdigit():
             return None
         frame_id = int(frame_id_text)
-        return frame_id if frame_id < len(self.model.frames) else None
+        if frame_id >= len(self.model.frames):
+            return None
+        return frame_id if node_name == self._frame_target_name(frame_id) else None
 
     def _landmark_geometry_state(self, target_name):
         geom_info = self._node_to_geom_info.get(target_name)
@@ -1373,15 +1387,15 @@ class Viewer(BaseVisualizer):
             if frame_id is not None:
                 return self._frame_target_name(frame_id)
 
+        matches = {
+            node_name
+            for node_name, geom_info in self._node_to_geom_info.items()
+            if geom_info.get("name") in candidates
+        }
         frame_target = self._resolve_model_frame_target(stripped)
         if frame_target is not None:
-            return frame_target
-
-        for candidate in candidates:
-            for node_name, geom_info in self._node_to_geom_info.items():
-                if geom_info.get("name") == candidate:
-                    return node_name
-        return None
+            matches.add(frame_target)
+        return next(iter(matches)) if len(matches) == 1 else None
 
     def _scene_frame_root_name(self):
         return self._scene_frames_root_name
@@ -2141,6 +2155,8 @@ class Viewer(BaseVisualizer):
                 else:
                     self._visual_geometry_frames.append(cached_entry)
                     self._visual_display_handles.extend(frames)
+            if self._scene_frame_tree_root is not None:
+                self._rebuild_scene_frame_tree()
 
         except Exception as e:
             msg = (
