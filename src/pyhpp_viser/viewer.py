@@ -828,15 +828,15 @@ class Viewer(BaseVisualizer):
         with self.viewer.gui.add_folder("Frame Options", expand_by_default=True):
             self._frame_axes_length_slider = self.viewer.gui.add_slider(
                 "Axes Length",
-                min=0.005,
-                max=1.0,
+                min=min(0.005, self._frame_axes_length),
+                max=max(1.0, self._frame_axes_length),
                 step=0.005,
                 initial_value=self._frame_axes_length,
             )
             self._frame_axes_radius_slider = self.viewer.gui.add_slider(
                 "Axes Radius",
-                min=0.001,
-                max=0.05,
+                min=min(0.001, self._frame_axes_radius),
+                max=max(0.05, self._frame_axes_radius),
                 step=0.001,
                 initial_value=self._frame_axes_radius,
             )
