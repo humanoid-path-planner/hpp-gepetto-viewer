@@ -956,6 +956,16 @@ class Viewer(BaseVisualizer):
             *frame.name.split("/"),
         ]
 
+    def _set_model_frame_visibility(self, target_name, visibility):
+        handle = self._frame_handle(self._landmark_frame_id(target_name))
+        handle.visible = visibility
+        landmark = self._landmarks.get(target_name)
+        if landmark is not None:
+            if landmark.transform_handle is not None:
+                landmark.transform_handle.visible = visibility
+            landmark.handle.visible = visibility
+        return handle
+
     def _set_scene_frame_targets_visibility(self, targets, visibility):
         model_handles = []
         overlay_targets = []
@@ -966,8 +976,7 @@ class Viewer(BaseVisualizer):
             if frame_id is None:
                 overlay_targets.append(target_name)
                 continue
-            handle = self._frame_handle(frame_id)
-            handle.visible = visibility
+            handle = self._set_model_frame_visibility(target_name, visibility)
             if visibility:
                 handle.axes_length = self._frame_axes_length
                 handle.axes_radius = self._frame_axes_radius
@@ -1462,10 +1471,9 @@ class Viewer(BaseVisualizer):
         axes_radius = max(0.001, size * 0.04)
         frame_id = self._landmark_frame_id(target_name)
         if frame_id is not None:
-            handle = self._frame_handle(frame_id)
+            handle = self._set_model_frame_visibility(target_name, True)
             handle.axes_length = size
             handle.axes_radius = axes_radius
-            handle.visible = True
             self.updateFrames()
             self._update_scene_frame_tree_toggles(target_name)
             self._update_selection_panel()
@@ -1489,7 +1497,7 @@ class Viewer(BaseVisualizer):
 
         frame_id = self._landmark_frame_id(target_name)
         if frame_id is not None:
-            self._frame_handle(frame_id).visible = False
+            self._set_model_frame_visibility(target_name, False)
             self._update_scene_frame_tree_toggles(target_name)
             self._update_selection_panel()
             return True
@@ -1526,6 +1534,7 @@ class Viewer(BaseVisualizer):
         for group_state in self._frame_groups.values():
             for handle in group_state.handles:
                 handle.visible = False
+        self._set_landmarks_visibility(False, frames=True)
         for state in self._scene_frames.values():
             self.viser_frames.pop(state.node_name, None)
             state.handle.remove()
@@ -1589,7 +1598,7 @@ class Viewer(BaseVisualizer):
 
     def _landmark_initial_visibility(self, frame_id, geometry_state):
         if frame_id is not None:
-            return self._display.frames
+            return self._frame_handle(frame_id).visible
         if geometry_state is None:
             return True
         if geometry_state["geometry_type"] == pin.GeometryType.VISUAL:
