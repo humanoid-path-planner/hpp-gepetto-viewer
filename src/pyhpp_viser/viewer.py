@@ -633,10 +633,7 @@ class Viewer(BaseVisualizer):
             target = self._selection.node_name
             if target is None or event.target.value == self.hasSceneFrame(target):
                 return
-            if event.target.value:
-                self._show_scene_frame_from_controls(target)
-            else:
-                self.deleteSceneFrame(target)
+            self._set_scene_frame_targets_visibility((target,), event.target.value)
 
     def _create_path_player(self):
         """Create the path player GUI controls (always visible)."""
@@ -885,18 +882,6 @@ class Viewer(BaseVisualizer):
         def _on_clear_scene_frames_click(_):
             self.clearSceneFrames()
 
-    def _show_scene_frame_from_controls(self, target):
-        if not self.addSceneFrame(target, self._frame_axes_length):
-            return
-        target_name = self._resolve_scene_frame_target(target)
-        frame_id = self._landmark_frame_id(target_name)
-        handle = (
-            self._frame_handle(frame_id)
-            if frame_id is not None
-            else self._scene_frames[target_name].handle
-        )
-        handle.axes_radius = self._frame_axes_radius
-
     def _scene_frame_targets(self, pattern):
         tokens = pattern.strip().lower().split()
         targets = []
@@ -997,7 +982,7 @@ class Viewer(BaseVisualizer):
                         )
                     )
                 else:
-                    self.deleteSceneFrame(target_name)
+                    self._remove_scene_frame_overlay(target_name)
             self._update_overlays(overlay_states)
         finally:
             self._scene_frame_tree_bulk_update = False
@@ -1106,12 +1091,10 @@ class Viewer(BaseVisualizer):
                 shown = self.hasSceneFrame(target)
                 if event.target.value == shown:
                     return
+                self._set_scene_frame_targets_visibility((target,), event.target.value)
                 if event.target.value:
-                    self._show_scene_frame_from_controls(target)
                     self._set_scene_selection(target)
-                    self._focus_scene_target(target)
-                else:
-                    self.deleteSceneFrame(target)
+                    self._focus_scene_target(target, refresh=False)
 
             toggle.on_update(_toggle_scene_frame)
 
@@ -1455,6 +1438,18 @@ class Viewer(BaseVisualizer):
         self._scene_frames[target_name] = state
         return state
 
+    def _remove_scene_frame_overlay(self, target_name):
+        state = self._scene_frames.pop(target_name, None)
+        if state is None:
+            return False
+        self.viser_frames.pop(state.node_name, None)
+        state.handle.remove()
+        if not self._scene_frames and self._scene_frames_root is not None:
+            self.viser_frames.pop(self._scene_frame_root_name(), None)
+            self._scene_frames_root.remove()
+            self._scene_frames_root = None
+        return True
+
     def addSceneFrame(self, target, size=0.05):
         """Add an explicit coordinate frame overlay on a scene item."""
         if not self._viewer_initialized:
@@ -1479,9 +1474,12 @@ class Viewer(BaseVisualizer):
             self._update_selection_panel()
             return True
 
-        self.deleteSceneFrame(target_name)
-
-        state = self._add_scene_frame_overlay(target_name, size, axes_radius)
+        state = self._scene_frames.get(target_name)
+        if state is None:
+            state = self._add_scene_frame_overlay(target_name, size, axes_radius)
+        else:
+            state.handle.axes_length = size
+            state.handle.axes_radius = axes_radius
         self._update_overlays([state])
         self._update_scene_frame_tree_toggles(target_name)
         self._update_selection_panel()
@@ -1502,17 +1500,10 @@ class Viewer(BaseVisualizer):
             self._update_selection_panel()
             return True
 
-        state = self._scene_frames.pop(target_name, None)
-        if state is None:
+        if not self._remove_scene_frame_overlay(target_name):
             self._update_selection_panel()
             return target_exists
 
-        self.viser_frames.pop(state.node_name, None)
-        state.handle.remove()
-        if not self._scene_frames and self._scene_frames_root is not None:
-            self.viser_frames.pop(self._scene_frame_root_name(), None)
-            self._scene_frames_root.remove()
-            self._scene_frames_root = None
         self._update_scene_frame_tree_toggles(target_name)
         self._update_selection_panel()
         return True
@@ -1725,7 +1716,7 @@ class Viewer(BaseVisualizer):
                 state.last_rotation = rotation.copy()
             state.initialized = True
 
-    def _focus_scene_target(self, target):
+    def _focus_scene_target(self, target, refresh=True):
         target_name = self._resolve_scene_frame_target(target)
         if target_name is None:
             return
@@ -1735,22 +1726,23 @@ class Viewer(BaseVisualizer):
             **self._overlay_state_kwargs(target_name),
         )
 
-        if state.frame_id is not None or state.contact_joint_name is not None:
-            pin.updateFramePlacements(self.model, self.data)
-        elif (
-            state.geometry_type == pin.GeometryType.VISUAL
-            and self.visual_model is not None
-        ):
-            pin.updateGeometryPlacements(
-                self.model, self.data, self.visual_model, self.visual_data
-            )
-        elif (
-            state.geometry_type == pin.GeometryType.COLLISION
-            and self.collision_model is not None
-        ):
-            pin.updateGeometryPlacements(
-                self.model, self.data, self.collision_model, self.collision_data
-            )
+        if refresh:
+            if state.frame_id is not None or state.contact_joint_name is not None:
+                pin.updateFramePlacements(self.model, self.data)
+            elif (
+                state.geometry_type == pin.GeometryType.VISUAL
+                and self.visual_model is not None
+            ):
+                pin.updateGeometryPlacements(
+                    self.model, self.data, self.visual_model, self.visual_data
+                )
+            elif (
+                state.geometry_type == pin.GeometryType.COLLISION
+                and self.collision_model is not None
+            ):
+                pin.updateGeometryPlacements(
+                    self.model, self.data, self.collision_model, self.collision_data
+                )
 
         transform = self._overlay_transform(state)
         if transform is None:
