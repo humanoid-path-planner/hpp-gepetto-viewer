@@ -1621,9 +1621,8 @@ class Viewer(BaseVisualizer):
         elif state.contact_joint_name == "universe":
             return np.zeros(3), np.eye(3)
         elif state.contact_joint_name is not None:
-            try:
-                frame_id = self.model.getFrameId(state.contact_joint_name)
-            except (ValueError, IndexError):
+            frame_id = self.model.getFrameId(state.contact_joint_name)
+            if frame_id >= len(self.model.frames):
                 return None
             M = self.data.oMf[frame_id]
 
@@ -2698,19 +2697,18 @@ class Viewer(BaseVisualizer):
         """Update contact surface positions based on current joint transforms."""
         total_start = self._profile_start()
         for node_name, mesh_handle in self._contact_surface_frames.items():
-            joint_name = self._contact_surface_joints.get(node_name)
-            if joint_name == "universe" or joint_name is None:
+            joint_name = self._contact_surface_joints[node_name]
+            if joint_name == "universe":
                 continue
 
-            try:
-                frame = self.model.getFrameId(joint_name)
-                M = self.data.oMf[frame]
-                queue_start = self._profile_start()
-                mesh_handle.position = M.translation
-                mesh_handle.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
-                self._profile_since("contacts.queue_transforms", queue_start)
-            except (ValueError, KeyError):
-                pass
+            frame_id = self.model.getFrameId(joint_name)
+            if frame_id >= len(self.model.frames):
+                continue
+            M = self.data.oMf[frame_id]
+            queue_start = self._profile_start()
+            mesh_handle.position = M.translation
+            mesh_handle.wxyz = pin.Quaternion(M.rotation).coeffs()[[3, 0, 1, 2]]
+            self._profile_since("contacts.queue_transforms", queue_start)
         self._profile_since("contacts.total", total_start)
 
     def captureImage(self, w=None, h=None, client_id=None, transport_format="jpeg"):
