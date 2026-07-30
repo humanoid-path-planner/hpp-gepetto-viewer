@@ -67,7 +67,6 @@ class _PathPlayerState:
 class _DisplayState:
     collisions: bool = False
     contact_surfaces: bool = False
-    frames: bool = False
     visuals: bool = True
 
 
@@ -462,7 +461,6 @@ class Viewer(BaseVisualizer):
         self.scene_frame_filter = None
         self.clear_scene_frames_button = None
         self.clearTrajectories()
-        self._display.frames = False
         self._display.contact_surfaces = False
         self._frame_groups = {}
         self._frame_axes_length = float(frame_axis_length)
@@ -930,8 +928,8 @@ class Viewer(BaseVisualizer):
             *frame.name.split("/"),
         ]
 
-    def _set_model_frame_visibility(self, target_name, visibility):
-        handle = self._frame_handle(self._landmark_frame_id(target_name))
+    def _set_model_frame_visibility(self, target_name, frame_id, visibility):
+        handle = self._frame_handle(frame_id)
         handle.visible = visibility
         landmark = self._landmarks.get(target_name)
         if landmark is not None:
@@ -944,13 +942,18 @@ class Viewer(BaseVisualizer):
         model_handles = []
         overlay_targets = []
         for target_name in targets:
-            if self.hasSceneFrame(target_name) == visibility:
-                continue
             frame_id = self._landmark_frame_id(target_name)
+            shown = (
+                self._frame_handle(frame_id).visible
+                if frame_id is not None
+                else target_name in self._scene_frames
+            )
+            if shown == visibility:
+                continue
             if frame_id is None:
                 overlay_targets.append(target_name)
                 continue
-            handle = self._set_model_frame_visibility(target_name, visibility)
+            handle = self._set_model_frame_visibility(target_name, frame_id, visibility)
             if visibility:
                 handle.axes_length = self._frame_axes_length
                 handle.axes_radius = self._frame_axes_radius
@@ -1140,16 +1143,6 @@ class Viewer(BaseVisualizer):
             shown = all(self.hasSceneFrame(target) for target in targets)
             if toggle.value != shown:
                 toggle.value = shown
-
-        model_handles = [
-            handle
-            for group_state in self._frame_groups.values()
-            for handle in group_state.handles
-        ]
-        all_visible = bool(model_handles) and all(
-            handle.visible for handle in model_handles
-        )
-        self._display.frames = all_visible
 
     def _register_click_callback(self, handle, node_name):
         """Register a click callback on a mesh handle for selection."""
@@ -1450,7 +1443,7 @@ class Viewer(BaseVisualizer):
         axes_radius = max(0.001, size * 0.04)
         frame_id = self._landmark_frame_id(target_name)
         if frame_id is not None:
-            handle = self._set_model_frame_visibility(target_name, True)
+            handle = self._set_model_frame_visibility(target_name, frame_id, True)
             handle.axes_length = size
             handle.axes_radius = axes_radius
             self.updateFrames()
@@ -1479,7 +1472,7 @@ class Viewer(BaseVisualizer):
 
         frame_id = self._landmark_frame_id(target_name)
         if frame_id is not None:
-            self._set_model_frame_visibility(target_name, False)
+            self._set_model_frame_visibility(target_name, frame_id, False)
             self._update_scene_frame_tree_toggles(target_name)
             self._update_selection_panel()
             return True
@@ -1505,7 +1498,6 @@ class Viewer(BaseVisualizer):
         return target_name in self._scene_frames
 
     def clearSceneFrames(self):
-        self._display.frames = False
         for group_state in self._frame_groups.values():
             for handle in group_state.handles:
                 handle.visible = False
@@ -2601,7 +2593,6 @@ class Viewer(BaseVisualizer):
 
     def displayFrames(self, visibility):
         """Set whether to display all model frames."""
-        self._display.frames = visibility
         if visibility:
             self._reset_playback_update_timer("frames")
         for group_state in self._frame_groups.values():
