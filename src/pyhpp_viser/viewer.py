@@ -127,7 +127,6 @@ class _BatchedGeometryEntry:
 
 @dataclass
 class _BatchedGeometryState:
-    name: str
     handle: object
     entries: list
     geom_ids: list
@@ -208,7 +207,6 @@ class Viewer(BaseVisualizer):
         self.viewerRootNodeName = None
         self.framesRootNodeName = None
         self.framesRootFrame = None
-        self._frame_type_roots = {}
         self._frame_groups = {}
         self._frame_axes_length = 0.1
         self._frame_axes_radius = 0.003
@@ -219,7 +217,6 @@ class Viewer(BaseVisualizer):
         self._selection_name_text = None
         self._selection_type_text = None
         self._focus_button = None
-        self._geometry_frames = {}  # {base geometry path: [viser handles]}
         self._visual_geometry_frames = []
         self._visual_batched_geometry_frames = []
         self._visual_display_handles = []
@@ -235,9 +232,7 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_toggles = {}
         self._scene_frame_tree_folder_targets = {}
         self._scene_frame_tree_folder_toggles = {}
-        self._scene_frame_tree_bulk_update = False
         self.scene_frame_filter = None
-        self.clear_scene_frames_button = None
         self._path_trajectories = {}
         self._viewer_initialized = False
         self.start_qt_viewer = False
@@ -435,7 +430,6 @@ class Viewer(BaseVisualizer):
             self.clearSceneFrames()
         self.viewerRootNodeName = rootNodeName
         self._viewer_initialized = True
-        self._geometry_frames = {}
         self._visual_geometry_frames = []
         self._visual_batched_geometry_frames = []
         self._visual_display_handles = []
@@ -453,10 +447,8 @@ class Viewer(BaseVisualizer):
         self._scene_frame_tree_toggles = {}
         self._scene_frame_tree_folder_targets = {}
         self._scene_frame_tree_folder_toggles = {}
-        self._scene_frame_tree_bulk_update = False
         self._selection = _SelectionState()
         self.scene_frame_filter = None
-        self.clear_scene_frames_button = None
         self.clearTrajectories()
         self._display.contact_surfaces = False
         self._frame_groups = {}
@@ -501,7 +493,6 @@ class Viewer(BaseVisualizer):
         )
 
         # Group frames by type for selective display in scene tree.
-        self._frame_type_roots = {}
         frames_by_group = {}
         for frame_id, frame in enumerate(self.model.frames):
             group = _FRAME_TYPE_GROUPS.get(frame.type, "other")
@@ -509,10 +500,9 @@ class Viewer(BaseVisualizer):
 
         for group, frames in sorted(frames_by_group.items()):
             group_path = self.framesRootNodeName + "/" + group
-            self._frame_type_roots[group] = self.viewer.scene.add_frame(
+            self.viser_frames[group_path] = self.viewer.scene.add_frame(
                 group_path, show_axes=False
             )
-            self.viser_frames[group_path] = self._frame_type_roots[group]
             self._add_frame_group(
                 group, group_path, frames, frame_axis_length, frame_axis_radius
             )
@@ -802,7 +792,7 @@ class Viewer(BaseVisualizer):
         """Create GUI controls for scene frames."""
         self._create_selection_panel()
 
-        self.clear_scene_frames_button = self.viewer.gui.add_button(
+        clear_scene_frames_button = self.viewer.gui.add_button(
             "Hide All Frames", icon=viser.Icon.EYE_OFF
         )
 
@@ -862,7 +852,7 @@ class Viewer(BaseVisualizer):
         def _on_scene_frame_filter_update(_):
             self._filter_scene_frame_tree(self.scene_frame_filter.value)
 
-        @self.clear_scene_frames_button.on_click
+        @clear_scene_frames_button.on_click
         def _on_clear_scene_frames_click(_):
             self.clearSceneFrames()
 
@@ -889,7 +879,7 @@ class Viewer(BaseVisualizer):
 
     def _frame_focus_option(self, target_name):
         option = "/".join(self._scene_frame_tree_parts(target_name))
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         return option if frame_id is None else f"{option} [{frame_id}]"
 
     def _refresh_frame_focus_options(self):
@@ -913,7 +903,7 @@ class Viewer(BaseVisualizer):
         )
 
     def _scene_frame_tree_parts(self, target_name):
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is None:
             return target_name.strip("/").split("/")
 
@@ -939,7 +929,7 @@ class Viewer(BaseVisualizer):
         model_handles = []
         overlay_targets = []
         for target_name in targets:
-            frame_id = self._landmark_frame_id(target_name)
+            frame_id = self._frame_target_id(target_name)
             shown = (
                 self._frame_handle(frame_id).visible
                 if frame_id is not None
@@ -956,27 +946,23 @@ class Viewer(BaseVisualizer):
                 handle.axes_radius = self._frame_axes_radius
             model_handles.append(handle)
 
-        self._scene_frame_tree_bulk_update = True
-        try:
-            if visibility and model_handles:
-                self.updateFrames()
-            overlay_states = []
-            for target_name in overlay_targets:
-                if visibility:
-                    overlay_states.append(
-                        self._add_scene_frame_overlay(
-                            target_name,
-                            self._frame_axes_length,
-                            self._frame_axes_radius,
-                        )
+        if visibility and model_handles:
+            self.updateFrames()
+        overlay_states = []
+        for target_name in overlay_targets:
+            if visibility:
+                overlay_states.append(
+                    self._add_scene_frame_overlay(
+                        target_name,
+                        self._frame_axes_length,
+                        self._frame_axes_radius,
                     )
-                else:
-                    self._remove_scene_frame_overlay(target_name)
-            self._update_overlays(overlay_states)
-        finally:
-            self._scene_frame_tree_bulk_update = False
-            self._update_scene_frame_tree_toggles()
-            self._update_selection_panel()
+                )
+            else:
+                self._remove_scene_frame_overlay(target_name)
+        self._update_overlays(overlay_states)
+        self._update_scene_frame_tree_toggles()
+        self._update_selection_panel()
 
     def _add_scene_frame_tree_folder_toggle(self, folder, folder_name):
         targets = self._scene_frame_tree_folder_targets[folder_name]
@@ -1111,9 +1097,6 @@ class Viewer(BaseVisualizer):
                 folder.visible = visible
 
     def _update_scene_frame_tree_toggles(self, target_name=None):
-        if self._scene_frame_tree_bulk_update:
-            return
-
         toggles = self._scene_frame_tree_toggles.items()
         if target_name is not None:
             toggle = self._scene_frame_tree_toggles.get(target_name)
@@ -1184,7 +1167,7 @@ class Viewer(BaseVisualizer):
             self._deselect()
             return
 
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is None:
             geom_info = self._node_to_geom_info.get(target_name, {})
             self._selection.geom_name = geom_info.get("name")
@@ -1250,12 +1233,12 @@ class Viewer(BaseVisualizer):
             if (
                 candidate in self.viser_frames
                 or candidate in self._node_to_geom_info
-                or self._landmark_frame_id(candidate) is not None
+                or self._frame_target_id(candidate) is not None
             ):
                 return candidate
         return None
 
-    def _landmark_frame_id(self, node_name):
+    def _frame_target_id(self, node_name):
         if self.framesRootNodeName is None:
             return None
         if not node_name.startswith(self.framesRootNodeName + "/"):
@@ -1274,7 +1257,7 @@ class Viewer(BaseVisualizer):
             return None
         return frame_id if node_name == self._frame_target_name(frame_id) else None
 
-    def _landmark_geometry_state(self, target_name):
+    def _geometry_overlay_state(self, target_name):
         geom_info = self._node_to_geom_info.get(target_name)
         if geom_info is None:
             return None
@@ -1345,12 +1328,9 @@ class Viewer(BaseVisualizer):
             candidates.append(f"{self.viewerRootNodeName}/{stripped}")
 
         for candidate in candidates:
-            if (
-                candidate in self._node_to_geom_info
-                or candidate in self._contact_surface_frames
-            ):
+            if candidate in self._node_to_geom_info:
                 return candidate
-            frame_id = self._landmark_frame_id(candidate)
+            frame_id = self._frame_target_id(candidate)
             if frame_id is not None:
                 return self._frame_target_name(frame_id)
 
@@ -1362,18 +1342,12 @@ class Viewer(BaseVisualizer):
         matches.update(self._model_frame_targets(stripped))
         return next(iter(matches)) if len(matches) == 1 else None
 
-    def _scene_frame_root_name(self):
-        return self._scene_frames_root_name
-
-    def _scene_frame_node_name(self, target_name):
-        return self._scene_frame_root_name() + "/" + quote(target_name, safe="")
-
     def _overlay_state_kwargs(self, target_name):
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is not None:
             return {"frame_id": frame_id}
 
-        geometry_state = self._landmark_geometry_state(target_name)
+        geometry_state = self._geometry_overlay_state(target_name)
         if geometry_state is not None:
             return geometry_state
 
@@ -1386,14 +1360,14 @@ class Viewer(BaseVisualizer):
         return {}
 
     def _add_scene_frame_overlay(self, target_name, axes_length, axes_radius):
-        root_name = self._scene_frame_root_name()
+        root_name = self._scene_frames_root_name
         if self._scene_frames_root is None:
             self._scene_frames_root = self.viewer.scene.add_frame(
                 root_name, show_axes=False
             )
             self.viser_frames[root_name] = self._scene_frames_root
 
-        node_name = self._scene_frame_node_name(target_name)
+        node_name = root_name + "/" + quote(target_name, safe="")
         handle = self.viewer.scene.add_frame(
             node_name,
             axes_length=axes_length,
@@ -1418,7 +1392,7 @@ class Viewer(BaseVisualizer):
         self.viser_frames.pop(state.node_name, None)
         state.handle.remove()
         if not self._scene_frames and self._scene_frames_root is not None:
-            self.viser_frames.pop(self._scene_frame_root_name(), None)
+            self.viser_frames.pop(self._scene_frames_root_name, None)
             self._scene_frames_root.remove()
             self._scene_frames_root = None
         return True
@@ -1437,7 +1411,7 @@ class Viewer(BaseVisualizer):
 
         size = float(size)
         axes_radius = max(0.001, size * 0.04)
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is not None:
             handle = self._set_model_frame_visibility(target_name, frame_id, True)
             handle.axes_length = size
@@ -1466,7 +1440,7 @@ class Viewer(BaseVisualizer):
         else:
             target_exists = True
 
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is not None:
             self._set_model_frame_visibility(target_name, frame_id, False)
             self._update_scene_frame_tree_toggles(target_name)
@@ -1488,7 +1462,7 @@ class Viewer(BaseVisualizer):
         target_name = self._resolve_scene_frame_target(target)
         if target_name is None:
             return False
-        frame_id = self._landmark_frame_id(target_name)
+        frame_id = self._frame_target_id(target_name)
         if frame_id is not None:
             return self._frame_handle(frame_id).visible
         return target_name in self._scene_frames
@@ -1503,7 +1477,7 @@ class Viewer(BaseVisualizer):
             state.handle.remove()
         self._scene_frames.clear()
         if self._scene_frames_root is not None:
-            self.viser_frames.pop(self._scene_frame_root_name(), None)
+            self.viser_frames.pop(self._scene_frames_root_name, None)
             self._scene_frames_root.remove()
             self._scene_frames_root = None
         self._update_scene_frame_tree_toggles()
@@ -1523,8 +1497,8 @@ class Viewer(BaseVisualizer):
 
         self.deleteLandmark(target_name)
 
-        frame_id = self._landmark_frame_id(target_name)
-        geometry_state = self._landmark_geometry_state(target_name)
+        frame_id = self._frame_target_id(target_name)
+        geometry_state = self._geometry_overlay_state(target_name)
         needs_anchor = target_name not in self.viser_frames
         visible = self._landmark_initial_visibility(frame_id, geometry_state)
 
@@ -1960,12 +1934,10 @@ class Viewer(BaseVisualizer):
             }
             geom_id = self.visual_model.getGeometryId(visual.name)
             self._node_to_geom_info[node_name] = geom_info
-            self._geometry_frames[node_name] = [handle]
             entries.append(_BatchedGeometryEntry(node_name=node_name))
             geom_ids.append(geom_id)
 
         batch = _BatchedGeometryState(
-            name=batch_name,
             handle=handle,
             entries=entries,
             geom_ids=geom_ids,
@@ -2116,7 +2088,6 @@ class Viewer(BaseVisualizer):
             self._node_to_geom_info[node_name] = geom_info
             self._register_click_callback(frame, node_name)
 
-            self._geometry_frames[node_name] = frames
             geom_model = (
                 self.collision_model
                 if geometry_type == pin.GeometryType.COLLISION
@@ -2208,24 +2179,6 @@ class Viewer(BaseVisualizer):
             opacity=color[3],
             scale=scale,
         )
-
-    def _get_geometry_frames(self, node_name):
-        """Get all frames associated with a geometry object (handles indexed multi-geometry meshes)."""
-        if node_name in self._geometry_frames:
-            return self._geometry_frames[node_name]
-
-        if node_name in self.viser_frames:
-            return [self.viser_frames[node_name]]
-
-        frames = []
-        indexed_prefix = f"{node_name}_"
-        for key in self.viser_frames:
-            if key.startswith(indexed_prefix):
-                suffix = key[len(indexed_prefix) :]
-                if suffix.isdigit():
-                    frames.append(self.viser_frames[key])
-
-        return frames
 
     def enableProfiling(self, print_every=120, reset=True, reset_after_print=False):
         """Enable lightweight playback/display timing diagnostics.
@@ -2575,11 +2528,8 @@ class Viewer(BaseVisualizer):
         if self.collision_model is None:
             return
 
-        for collision in self.collision_model.geometryObjects:
-            node_name = self.getGeometryObjectNodeName(
-                collision, pin.GeometryType.COLLISION
-            )
-            for frame in self._get_geometry_frames(node_name):
+        for state in self._collision_geometry_frames:
+            for frame in state.frames:
                 frame.visible = visibility
         self._set_landmarks_visibility(
             visibility, geometry_type=pin.GeometryType.COLLISION
@@ -2661,11 +2611,9 @@ class Viewer(BaseVisualizer):
                     self._contact_surface_frames[node_name] = mesh_handle
                     self._contact_surface_joints[node_name] = joint_name
                     self.viser_frames[node_name] = mesh_handle
-                    self._geometry_frames[node_name] = [mesh_handle]
                     self._node_to_geom_info[node_name] = {
                         "name": f"{surface_name}_{idx}",
                         "type": "contact_surface",
-                        "joint": joint_name,
                     }
                     self._register_click_callback(mesh_handle, node_name)
                 except Exception as e:
