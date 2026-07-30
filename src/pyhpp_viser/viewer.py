@@ -1321,28 +1321,28 @@ class Viewer(BaseVisualizer):
         group = _FRAME_TYPE_GROUPS.get(frame.type, "other")
         return self.viser_frames[f"{self.framesRootNodeName}/{group}/{frame.name}"]
 
-    def _resolve_model_frame_target(self, name):
+    def _model_frame_targets(self, name):
+        frame_ids = {
+            frame_id
+            for frame_id, frame in enumerate(self.model.frames)
+            if not isinstance(name, int) and frame.name == name
+        }
         try:
-            frame_id = int(name)
+            frame_ids.add(int(name))
         except (TypeError, ValueError):
-            try:
-                frame_id = self.model.getFrameId(name)
-            except (ValueError, IndexError):
-                return None
-            if frame_id >= len(self.model.frames):
-                return None
-            if self.model.frames[frame_id].name != name:
-                return None
-
-        if frame_id < 0 or frame_id >= len(self.model.frames):
-            return None
-        return self._frame_target_name(frame_id)
+            pass
+        return {
+            self._frame_target_name(frame_id)
+            for frame_id in frame_ids
+            if 0 <= frame_id < len(self.model.frames)
+        }
 
     def _resolve_scene_frame_target(self, target):
         if target is None:
             return None
         if isinstance(target, int):
-            return self._resolve_model_frame_target(target)
+            matches = self._model_frame_targets(target)
+            return next(iter(matches)) if len(matches) == 1 else None
 
         name = str(target).strip()
         if not name:
@@ -1370,9 +1370,7 @@ class Viewer(BaseVisualizer):
             for node_name, geom_info in self._node_to_geom_info.items()
             if geom_info.get("name") in candidates
         }
-        frame_target = self._resolve_model_frame_target(stripped)
-        if frame_target is not None:
-            matches.add(frame_target)
+        matches.update(self._model_frame_targets(stripped))
         return next(iter(matches)) if len(matches) == 1 else None
 
     def _scene_frame_root_name(self):
