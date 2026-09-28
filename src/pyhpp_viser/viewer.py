@@ -52,6 +52,24 @@ _LANDMARK_COLORS = np.array(
     dtype=np.uint8,
 )
 
+_TRAJECTORY_COLORS = (
+    (0, 114, 178),
+    (230, 159, 0),
+    (0, 158, 115),
+    (204, 121, 167),
+    (213, 94, 0),
+    (86, 180, 233),
+    (240, 228, 66),
+)
+
+
+@dataclass
+class _TrajectoryState:
+    path_name: str
+    handle: object
+    label: object
+    folder: object = None
+
 
 @dataclass
 class _PathPlayerState:
@@ -635,20 +653,9 @@ class Viewer(BaseVisualizer):
         )
 
         @self.path_dropdown.on_update
-        def _on_path_select(_):
-            self._path_player.playing = False
-            name = self.path_dropdown.value
-            if name == "None":
-                self._path_player.current = None
-                return
-            self._path_player.current = self._path_player.paths[name]
-            self._path_player.update_lock = True
-            self.path_slider.max = float(self._path_player.current.length())
-            self.path_slider.value = 0.0
-            self._path_player.update_lock = False
-            q, success = self._path_player.current.eval(0.0)
-            if success:
-                self.display(q)
+        def _on_path_select(event):
+            if event.client is not None:
+                self._select_path(self.path_dropdown.value)
 
         @self.path_slider.on_update
         def _on_slider_update(_):
@@ -690,6 +697,12 @@ class Viewer(BaseVisualizer):
             )
 
         with self.viewer.gui.add_folder("Draw"):
+            self.trajectory_path_dropdown = self.viewer.gui.add_dropdown(
+                "Path",
+                options=["None"],
+                initial_value="None",
+                hint="Source path for new trajectories",
+            )
             self.trajectory_samples_slider = self.viewer.gui.add_slider(
                 "Samples",
                 min=2,
@@ -708,10 +721,15 @@ class Viewer(BaseVisualizer):
             self.plot_selected_trajectory_button = self.viewer.gui.add_button(
                 "Plot Selected"
             )
+            self.plot_all_trajectories_button = self.viewer.gui.add_button(
+                "Plot All Paths", hint="Plot this frame for every loaded path"
+            )
             self.clear_trajectories_button = self.viewer.gui.add_button(
                 "Clear Trajectories"
             )
             self._trajectory_status_text = self.viewer.gui.add_markdown("")
+
+        self._trajectory_list_folder = self.viewer.gui.add_folder("Trajectories")
 
         @self.trajectory_frame_filter.on_update
         def _on_frame_filter_update(_):
@@ -723,17 +741,37 @@ class Viewer(BaseVisualizer):
             if frame_id is None:
                 self._set_trajectory_status("Trajectory: select a frame")
                 return
-            self._path_player.playing = False
             self.plotFrameTrajectory(
                 frame_id,
+                path=(
+                    self.trajectory_path_dropdown.value
+                    if self._path_player.paths
+                    else None
+                ),
                 samples=int(self.trajectory_samples_slider.value),
                 line_width=float(self.trajectory_line_width_slider.value),
             )
 
         @self.plot_selected_trajectory_button.on_click
         def _on_plot_selected_trajectory_click(_):
-            self._path_player.playing = False
             self.plotSelectedTrajectory(
+                path=(
+                    self.trajectory_path_dropdown.value
+                    if self._path_player.paths
+                    else None
+                ),
+                samples=int(self.trajectory_samples_slider.value),
+                line_width=float(self.trajectory_line_width_slider.value),
+            )
+
+        @self.plot_all_trajectories_button.on_click
+        def _on_plot_all_click(_):
+            frame_id = self._trajectory_selected_frame_id()
+            if frame_id is None:
+                self._set_trajectory_status("Trajectory: select a frame")
+                return
+            self.plotFrameTrajectories(
+                frame_id,
                 samples=int(self.trajectory_samples_slider.value),
                 line_width=float(self.trajectory_line_width_slider.value),
             )
@@ -2681,7 +2719,7 @@ class Viewer(BaseVisualizer):
         )
 
     def loadPath(self, path, name=None):
-        """Load a path into the path player dropdown."""
+        """Load and select a path. Return its name for plotting trajectories."""
         if not self._viewer_initialized:
             if hasattr(self, "viewer") and self.viewer is not None:
                 self.loadViewerModel()
@@ -2690,20 +2728,36 @@ class Viewer(BaseVisualizer):
 
         if name is None:
             name = f"Path {self._path_player.counter}"
-        self._path_player.counter += 1
+            while name in self._path_player.paths:
+                self._path_player.counter += 1
+                name = f"Path {self._path_player.counter}"
+            self._path_player.counter += 1
 
-        self._path_player.playing = False
+        if name in self._path_player.paths:
+            for trace_name, trace in list(self._path_trajectories.items()):
+                if trace.path_name == name:
+                    self.removeTrajectory(trace_name)
         self._path_player.paths[name] = path
+        options = list(self._path_player.paths)
+        self.path_dropdown.options = options
+        self.trajectory_path_dropdown.options = options
+        self.trajectory_path_dropdown.value = name
+        self._select_path(name)
+        return name
+
+    def _select_path(self, name):
+        """Stop playback before changing its path and resetting the slider."""
+        self._path_player.playing = False
+        thread = self._path_player.thread
+        if thread is not None and thread.is_alive():
+            thread.join()
+        path = self._path_player.paths[name]
         self._path_player.current = path
-
-        self.path_dropdown.options = list(self._path_player.paths.keys())
         self.path_dropdown.value = name
-
         self._path_player.update_lock = True
-        self.path_slider.max = float(path.length())
         self.path_slider.value = 0.0
+        self.path_slider.max = float(path.length())
         self._path_player.update_lock = False
-
         q, success = path.eval(0.0)
         if success:
             self.display(q)
@@ -2726,20 +2780,15 @@ class Viewer(BaseVisualizer):
     def _sample_frame_trajectory(self, path, frame_id, samples):
         samples = max(2, int(samples))
         path_length = float(path.length())
+        data = self.model.createData()
         positions = []
         for t in np.linspace(0.0, path_length, samples):
             q, success = path.eval(float(t))
             if not success:
-                continue
-            pin.forwardKinematics(self.model, self.data, q)
-            pin.updateFramePlacements(self.model, self.data)
-            positions.append(self.data.oMf[frame_id].translation.copy())
-
-        if self._displayed_config is not None:
-            self.display(self._displayed_config)
-
-        if len(positions) < 2:
-            return None
+                return None
+            pin.forwardKinematics(self.model, data, q)
+            pin.updateFramePlacements(self.model, data)
+            positions.append(data.oMf[frame_id].translation.copy())
         return np.asarray(positions, dtype=np.float32)
 
     def plotFrameTrajectory(
@@ -2747,19 +2796,27 @@ class Viewer(BaseVisualizer):
         frame,
         path=None,
         samples=200,
-        color=(255, 180, 60),
+        color=None,
         line_width=3.0,
         name=None,
     ):
-        """Plot the trajectory of a frame over a path in the Viser scene."""
+        """Plot a frame along a path object, loaded path name, or current path.
+
+        Colors cycle automatically; explicit RGB accepts 0-255 or 0-1 values.
+        Replotting the same path/frame replaces its trace and keeps its color.
+        Use distinct scene names to draw multiple traces of the same path/frame.
+        """
         if not self._viewer_initialized:
             if hasattr(self, "viewer") and self.viewer is not None:
                 self.loadViewerModel()
             else:
                 self.initViewer(loadModel=True)
 
+        path_name = path if isinstance(path, str) else None
         if path is None:
             path = self._path_player.current
+        elif isinstance(path, str):
+            path = self._path_player.paths[path]
         if path is None:
             self._set_trajectory_status("Trajectory: no path selected")
             return False
@@ -2771,34 +2828,135 @@ class Viewer(BaseVisualizer):
 
         positions = self._sample_frame_trajectory(path, frame_id, samples)
         if positions is None:
-            self._set_trajectory_status("Trajectory: not enough valid samples")
+            self._set_trajectory_status("Trajectory: path evaluation failed")
             return False
 
+        if path_name is None:
+            path_name = next(
+                (
+                    key
+                    for key, value in self._path_player.paths.items()
+                    if value is path
+                ),
+                None,
+            )
+        if path_name is None:
+            path_name = self.loadPath(path)
         segments = np.stack([positions[:-1], positions[1:]], axis=1)
         target_name = self.model.frames[frame_id].name
         trace_name = name
         if trace_name is None:
             root = self._trajectory_root_name()
-            trace_name = f"{root}/trajectory_{len(self._path_trajectories)}"
+            trace_name = f"{root}/{quote(path_name, safe='')}/frame_{frame_id}"
 
-        color = np.asarray(color[:3], dtype=float)
-        if np.max(color) <= 1.0:
-            color *= 255.0
+        previous = self._path_trajectories.get(trace_name)
+        if color is None:
+            used_colors = {
+                tuple(t.handle.colors) for t in self._path_trajectories.values()
+            }
+            color = (
+                previous.handle.colors
+                if previous is not None
+                else next(
+                    (c for c in _TRAJECTORY_COLORS if c not in used_colors),
+                    _TRAJECTORY_COLORS[
+                        len(self._path_trajectories) % len(_TRAJECTORY_COLORS)
+                    ],
+                )
+            )
+        else:
+            color = np.asarray(color[:3], dtype=float)
+            if np.max(color) <= 1.0:
+                color *= 255.0
+        if previous is not None:
+            self.removeTrajectory(trace_name)
         handle = self.viewer.scene.add_line_segments(
             trace_name,
             points=segments,
             colors=np.clip(color, 0.0, 255.0).astype(np.uint8),
             line_width=float(line_width),
         )
-        self._path_trajectories[trace_name] = handle
-        self._set_trajectory_status(f"Trajectory: {target_name}")
+        title = f"{path_name} — {target_name} [{frame_id}]"
+        label = self.viewer.scene.add_label(
+            trace_name + "/label",
+            title,
+            position=positions[len(positions) // 2],
+            visible=False,
+        )
+        trace = _TrajectoryState(path_name, handle, label)
+        self._path_trajectories[trace_name] = trace
+        self._create_trajectory_entry(trace_name, trace, title)
+        self._set_trajectory_status(f"Trajectory: {title}")
         return True
+
+    def plotFrameTrajectories(self, frame, paths=None, samples=200, line_width=3.0):
+        """Plot a frame for all loaded paths, or an iterable of paths/names."""
+        if paths is None:
+            paths = list(self._path_player.paths)
+        results = [
+            self.plotFrameTrajectory(
+                frame, path=path, samples=samples, line_width=line_width
+            )
+            for path in paths
+        ]
+        return bool(results) and all(results)
+
+    def _create_trajectory_entry(self, name, trace, title):
+        with self._trajectory_list_folder:
+            trace.folder = self.viewer.gui.add_folder(title, expand_by_default=False)
+        with trace.folder:
+            visible = self.viewer.gui.add_checkbox("Visible", initial_value=True)
+            label = self.viewer.gui.add_checkbox("Show Label", initial_value=False)
+            color = self.viewer.gui.add_rgb(
+                "Color",
+                initial_value=tuple(int(c) for c in trace.handle.colors),
+                hint=title,
+            )
+            width = self.viewer.gui.add_slider(
+                "Line Width",
+                min=1,
+                max=max(10, trace.handle.line_width),
+                step=0.5,
+                initial_value=trace.handle.line_width,
+            )
+            follow = self.viewer.gui.add_button(
+                "Select in Player", hint=f"Follow path: {trace.path_name}"
+            )
+            remove = self.viewer.gui.add_button("Remove")
+
+        @visible.on_update
+        def _on_visible(_):
+            trace.handle.visible = visible.value
+            trace.label.visible = visible.value and label.value
+
+        @label.on_update
+        def _on_label(_):
+            trace.label.visible = visible.value and label.value
+
+        @color.on_update
+        def _on_color(_):
+            trace.handle.colors = np.asarray(color.value, dtype=np.uint8)
+
+        @width.on_update
+        def _on_width(_):
+            trace.handle.line_width = width.value
+
+        @follow.on_click
+        def _on_follow(_):
+            self._select_path(trace.path_name)
+            self.trajectory_path_dropdown.value = trace.path_name
+            self._set_trajectory_status(f"Player: {trace.path_name}")
+
+        @remove.on_click
+        def _on_remove(_):
+            self.removeTrajectory(name)
 
     def plotSelectedTrajectory(
         self,
         samples=200,
-        color=(255, 180, 60),
+        color=None,
         line_width=3.0,
+        path=None,
     ):
         """Plot the current selection trajectory over the current path."""
         if self._selection.frame_id is None:
@@ -2806,16 +2964,23 @@ class Viewer(BaseVisualizer):
             return False
         return self.plotFrameTrajectory(
             self._selection.frame_id,
+            path=path,
             samples=samples,
             color=color,
             line_width=line_width,
         )
 
+    def removeTrajectory(self, name):
+        """Remove a trajectory by its scene name, including its controls."""
+        trace = self._path_trajectories.pop(name)
+        trace.label.remove()
+        trace.handle.remove()
+        trace.folder.remove()
+
     def clearTrajectories(self):
         """Remove all plotted path trajectories."""
-        for handle in self._path_trajectories.values():
-            handle.remove()
-        self._path_trajectories.clear()
+        for name in list(self._path_trajectories):
+            self.removeTrajectory(name)
         self._set_trajectory_status("")
 
     def _start_path_animation(self):
