@@ -1,4 +1,5 @@
 import threading
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pinocchio.pinocchio_pywrap_default as pin
@@ -10,7 +11,6 @@ from nav_msgs.msg import Path
 from pinocchio.visualize import BaseVisualizer
 from pyhpp import tools
 from pyhpp.manipulation import Device, modelsInfo
-from pyhpp_plot.graph_viewer_thread import GraphViewerThread
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.publisher import Publisher
@@ -19,6 +19,9 @@ from .publisher.Navigation import NavigationPublisher
 from .publisher.RobotDescriptionPublisher import RobotDescriptionPublisher
 from .publisher.StaticTfPublisher import StaticTFPublisher
 from .publisher.TransformStampedPublisher import TransformStampedPublisher
+
+if TYPE_CHECKING:
+    from pyhpp_plot import GraphViewerThread
 
 
 class RVizVisualizer(BaseVisualizer):
