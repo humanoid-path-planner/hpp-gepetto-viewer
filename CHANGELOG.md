@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+- [rviz] Import pyhpp_plot only when launching the graph viewer
 - [viser] Compare and customize trajectories from multiple paths
 - Reorganize viser UI to simplify frame handling and separate features
 - Viser tree
